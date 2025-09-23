@@ -86,6 +86,30 @@
                                  constraintName="FK_CONSULTATION_ON_TEACHER" referencedColumnNames="id"
                                  referencedTableName="telegram_user"/>
     </changeSet>
+    <changeSet id="1758633447301-1" author="Se2my00of5">
+        <createTable tableName="student_consultation">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_studentconsultation"/>
+            </column>
+            <column name="student_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="consultation_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="1758633447301-2" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="consultation_id" baseTableName="student_consultation"
+                                 constraintName="FK_STUDENTCONSULTATION_ON_CONSULTATION" referencedColumnNames="id"
+                                 referencedTableName="consultation"/>
+    </changeSet>
+    <changeSet id="1758633447301-3" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="student_id" baseTableName="student_consultation"
+                                 constraintName="FK_STUDENTCONSULTATION_ON_STUDENT" referencedColumnNames="id"
+                                 referencedTableName="telegram_user"/>
+    </changeSet>
 
 
 </databaseChangeLog>
