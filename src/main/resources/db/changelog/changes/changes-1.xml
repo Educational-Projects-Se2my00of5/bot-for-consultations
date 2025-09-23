@@ -24,6 +24,7 @@
             </column>
             <column name="telegram_id" type="BIGINT"/>
             <column name="username" type="VARCHAR(255)"/>
+            <column name="full_name" type="VARCHAR(255)"/>
             <column name="phone" type="VARCHAR(255)"/>
             <column name="has_confirmed" type="BOOLEAN">
                 <constraints nullable="false"/>
@@ -66,4 +67,25 @@
         <!-- 3. Обновляем счётчик-->
         <sql>ALTER SEQUENCE user_id_seq RESTART WITH 2;</sql>
     </changeSet>
+    <changeSet id="1758628592923-1" author="Se2my00of5">
+        <createTable tableName="consultation">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_consultation"/>
+            </column>
+            <column name="title" type="VARCHAR(255)"/>
+            <column name="start_time" type="TIME"/>
+            <column name="end_time" type="TIME"/>
+            <column name="date" type="DATE"/>
+            <column name="teacher_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1758628592923-2" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="teacher_id" baseTableName="consultation"
+                                 constraintName="FK_CONSULTATION_ON_TEACHER" referencedColumnNames="id"
+                                 referencedTableName="telegram_user"/>
+    </changeSet>
+
+
 </databaseChangeLog>

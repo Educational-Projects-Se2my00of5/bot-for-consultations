@@ -6,6 +6,8 @@ import jakarta.persistence.Entity;
 public class TelegramUser extends User {
     private Long telegramId;
     private String username;
+    private String fullName;
     private String phone;
+
     private boolean hasConfirmed;
 }
