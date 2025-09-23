@@ -19,6 +19,15 @@ public class AdminController {
     private final AdminService adminService;
     private final UserMapper userMapper;
 
+    @PostMapping("login")
+    @Operation(summary = "Вход в аккаунт", security = @SecurityRequirement(name = "bearerAuth"))
+    @ResponseStatus(HttpStatus.OK)
+    public String login(
+            UserDto.Login request
+    ) {
+        return adminService.login(request);
+    }
+
     @GetMapping("activate-account/{id}")
     @Operation(summary = "Активация аккаунта", security = @SecurityRequirement(name = "bearerAuth"))
     @ResponseStatus(HttpStatus.OK)
