@@ -1,0 +1,20 @@
+services:
+
+  postgres_db:
+    image: postgres:17-alpine3.22
+    container_name: postgres17
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=bot-for-consultations
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - "5432:5432" # 5432 - может быть занят
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+volumes:
+  postgres_data:
+
+
