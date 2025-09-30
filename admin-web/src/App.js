@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
-import RegistrationPage from './components/RegistrationPage';
 import './App.css';
 
 function App() {
@@ -16,7 +15,7 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
 
                     {/* Маршрут для страницы регистрации */}
-                    <Route path="/register" element={<RegistrationPage />} />
+
                 </Routes>
             </div>
         </Router>
