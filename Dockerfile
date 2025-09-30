@@ -3,10 +3,12 @@ FROM maven:3.9.9-eclipse-temurin-17-alpine AS builder
 WORKDIR /app
 
 COPY pom.xml .
+COPY admin-web/package*.json admin-web/
 
 RUN mvn dependency:go-offline
 
-COPY src ./src
+COPY src src
+COPY admin-web/ admin-web/
 
 RUN mvn clean package -DskipTests
 

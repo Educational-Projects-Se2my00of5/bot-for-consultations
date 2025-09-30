@@ -20,7 +20,7 @@ public class AdminController {
     private final UserMapper userMapper;
 
     @PostMapping("login")
-    @Operation(summary = "Вход в аккаунт", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Вход в аккаунт")
     @ResponseStatus(HttpStatus.OK)
     public String login(
             UserDto.Login request

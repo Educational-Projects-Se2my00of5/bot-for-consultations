@@ -3,6 +3,7 @@ package com.example.botforconsultations.api.contoller;
 import com.example.botforconsultations.api.dto.ConsultationDto;
 import com.example.botforconsultations.api.mapper.ConsultationMapper;
 import com.example.botforconsultations.core.service.StudentService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -17,8 +18,8 @@ public class StudentController {
     private final StudentService studentService;
     private final ConsultationMapper consultationMapper;
 
-    // 1. Посмотреть консультации у преподавателя
     @GetMapping("/consultations/{teacherId}")
+    @Operation(summary = "Посмотреть консультации у преподавателя")
     @ResponseStatus(HttpStatus.OK)
     public List<ConsultationDto.ConsultationInfo> getConsultationsByTeacher(@PathVariable Long teacherId) {
         return consultationMapper.toConsultationDto(studentService.getConsultationsByTeacher(teacherId));
