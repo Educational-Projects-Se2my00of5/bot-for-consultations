@@ -1,9 +1,11 @@
 package com.example.botforconsultations.core.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.*;
 
 @Entity
+@Table(name = "telegram_users")
 @Getter
 @Setter
 @NoArgsConstructor

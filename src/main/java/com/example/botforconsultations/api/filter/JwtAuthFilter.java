@@ -3,6 +3,7 @@ package com.example.botforconsultations.api.filter;
 import com.example.botforconsultations.core.repository.AdminUserRepository;
 import com.example.botforconsultations.core.repository.UserRepository;
 import com.example.botforconsultations.core.service.JwtProvider;
+import com.example.botforconsultations.core.util.GetModelOrThrow;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final AdminUserRepository adminUserRepository;
 
+    private final GetModelOrThrow getModelOrThrow;
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -42,7 +45,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if (token != null && jwtProvider.validateToken(token)) {
 
                 String login = jwtProvider.getClaims(token).getSubject();
-                UserDetails userDetails = adminUserRepository.findByLogin(login);
+                UserDetails userDetails = getModelOrThrow.getAdminByLogin(login);
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails,

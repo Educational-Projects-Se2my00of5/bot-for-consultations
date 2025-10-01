@@ -13,4 +13,9 @@ public class UserDto {
             @NotBlank String login, @NotBlank String password
     ) {
     }
+
+    public record Token(
+            @NotBlank String token
+    ) {
+    }
 }

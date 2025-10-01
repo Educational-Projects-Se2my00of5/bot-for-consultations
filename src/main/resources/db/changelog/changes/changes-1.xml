@@ -8,66 +8,17 @@
     <!-- Здесь будут изменения -->
 
 
-    <changeSet id="1758627323817-1" author="Se2my00of5">
-        <createTable tableName="admin_user">
+
+    <changeSet id="1759296139031-1" author="Se2my00of5">
+        <createTable tableName="admin_users">
             <column name="id" type="BIGINT">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_adminuser"/>
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_admin_users"/>
             </column>
             <column name="login" type="VARCHAR(255)"/>
             <column name="password_hash" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet id="1758627323817-2" author="Se2my00of5">
-        <createTable tableName="telegram_user">
-            <column name="id" type="BIGINT">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_telegramuser"/>
-            </column>
-            <column name="telegram_id" type="BIGINT"/>
-            <column name="username" type="VARCHAR(255)"/>
-            <column name="full_name" type="VARCHAR(255)"/>
-            <column name="phone" type="VARCHAR(255)"/>
-            <column name="has_confirmed" type="BOOLEAN">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet id="1758627323817-3" author="Se2my00of5">
-        <createTable tableName="user">
-            <column autoIncrement="true" name="id" type="BIGINT">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_user"/>
-            </column>
-            <column name="role" type="VARCHAR(255)"/>
-        </createTable>
-    </changeSet>
-    <changeSet id="1758627323817-4" author="Se2my00of5">
-        <addForeignKeyConstraint baseColumnNames="id" baseTableName="admin_user" constraintName="FK_ADMINUSER_ON_ID"
-                                 referencedColumnNames="id" referencedTableName="user"/>
-    </changeSet>
-    <changeSet id="1758627323817-5" author="Se2my00of5">
-        <addForeignKeyConstraint baseColumnNames="id" baseTableName="telegram_user"
-                                 constraintName="FK_TELEGRAMUSER_ON_ID" referencedColumnNames="id"
-                                 referencedTableName="user"/>
-    </changeSet>
-
-    <changeSet id="insert-admin-user" author="Se2my00of5">
-        <!-- 1. Добавляем в базовую таблицу -->
-        <insert tableName="user">
-            <column name="id" valueNumeric="1"/>
-            <column name="role" value="ADMIN"/>
-        </insert>
-
-        <!-- 2. Добавляем в admin_users -->
-        <insert tableName="admin_user">
-            <column name="id" valueNumeric="1"/>
-            <column name="login" value="admin"/>
-            <!-- bcrypt hash для "admin123" -->
-            <column name="password_hash" value="$2a$10$O96587v179rbrcrjDpp0Y.ljcJccdAvqgaACBEJrKV4yfiN/0Esia"/>
-        </insert>
-
-        <!-- 3. Обновляем счётчик-->
-        <sql>ALTER SEQUENCE user_id_seq RESTART WITH 2;</sql>
-    </changeSet>
-    <changeSet id="1758628592923-1" author="Se2my00of5">
+    <changeSet id="1759296139031-2" author="Se2my00of5">
         <createTable tableName="consultation">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="pk_consultation"/>
@@ -81,12 +32,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet id="1758628592923-2" author="Se2my00of5">
-        <addForeignKeyConstraint baseColumnNames="teacher_id" baseTableName="consultation"
-                                 constraintName="FK_CONSULTATION_ON_TEACHER" referencedColumnNames="id"
-                                 referencedTableName="telegram_user"/>
-    </changeSet>
-    <changeSet id="1758633447301-1" author="Se2my00of5">
+    <changeSet id="1759296139031-3" author="Se2my00of5">
         <createTable tableName="student_consultation">
             <column autoIncrement="true" name="id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="pk_studentconsultation"/>
@@ -100,16 +46,51 @@
             <column name="message" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet id="1758633447301-2" author="Se2my00of5">
+    <changeSet id="1759296139031-4" author="Se2my00of5">
+        <createTable tableName="telegram_users">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_telegram_users"/>
+            </column>
+            <column name="telegram_id" type="BIGINT"/>
+            <column name="username" type="VARCHAR(255)"/>
+            <column name="full_name" type="VARCHAR(255)"/>
+            <column name="phone" type="VARCHAR(255)"/>
+            <column name="has_confirmed" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1759296139031-5" author="Se2my00of5">
+        <createTable tableName="users">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_users"/>
+            </column>
+            <column name="role" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="1759296139031-6" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="admin_users" constraintName="FK_ADMIN_USERS_ON_ID"
+                                 referencedColumnNames="id" referencedTableName="users"/>
+    </changeSet>
+    <changeSet id="1759296139031-7" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="teacher_id" baseTableName="consultation"
+                                 constraintName="FK_CONSULTATION_ON_TEACHER" referencedColumnNames="id"
+                                 referencedTableName="telegram_users"/>
+    </changeSet>
+    <changeSet id="1759296139031-8" author="Se2my00of5">
         <addForeignKeyConstraint baseColumnNames="consultation_id" baseTableName="student_consultation"
                                  constraintName="FK_STUDENTCONSULTATION_ON_CONSULTATION" referencedColumnNames="id"
                                  referencedTableName="consultation"/>
     </changeSet>
-    <changeSet id="1758633447301-3" author="Se2my00of5">
+    <changeSet id="1759296139031-9" author="Se2my00of5">
         <addForeignKeyConstraint baseColumnNames="student_id" baseTableName="student_consultation"
                                  constraintName="FK_STUDENTCONSULTATION_ON_STUDENT" referencedColumnNames="id"
-                                 referencedTableName="telegram_user"/>
+                                 referencedTableName="telegram_users"/>
     </changeSet>
-
+    <changeSet id="1759296139031-10" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="telegram_users"
+                                 constraintName="FK_TELEGRAM_USERS_ON_ID" referencedColumnNames="id"
+                                 referencedTableName="users"/>
+    </changeSet>
 
 </databaseChangeLog>

@@ -2,9 +2,11 @@ package com.example.botforconsultations.api.contoller;
 
 import com.example.botforconsultations.api.dto.UserDto;
 import com.example.botforconsultations.api.mapper.UserMapper;
+import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.service.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +25,7 @@ public class AdminController {
     @Operation(summary = "Вход в аккаунт")
     @ResponseStatus(HttpStatus.OK)
     public String login(
-            UserDto.Login request
+            @Valid @RequestBody UserDto.Login request
     ) {
         return adminService.login(request);
     }
@@ -52,5 +54,21 @@ public class AdminController {
     public List<UserDto.TelegramUserInfo> getUnactiveAccounts(
     ) {
         return userMapper.toTelegramUserInfo(adminService.getUnactiveAccounts());
+    }
+
+    @PostMapping("check-token")
+    @Operation(summary = "Валидация токена")
+    @ResponseStatus(HttpStatus.OK)
+    public void checkToken(@RequestBody UserDto.Token token) {
+        adminService.checkToken(token.token());
+    }
+
+    @GetMapping("user-info/{id}")
+    @Operation(summary = "Получение информации о пользователе", security = @SecurityRequirement(name = "bearerAuth"))
+    @ResponseStatus(HttpStatus.OK)
+    public UserDto.TelegramUserInfo getUserInfo(
+            @PathVariable Long id
+    ) {
+        return userMapper.toTelegramUserInfo(adminService.getUserInfo(id));
     }
 }

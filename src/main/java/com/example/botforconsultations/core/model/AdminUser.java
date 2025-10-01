@@ -1,6 +1,7 @@
 package com.example.botforconsultations.core.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,6 +11,7 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
+@Table(name = "admin_users")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -11,6 +11,7 @@ import com.example.botforconsultations.core.model.User;
 import com.example.botforconsultations.core.repository.AdminUserRepository;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import com.example.botforconsultations.core.repository.UserRepository;
+import com.example.botforconsultations.core.util.GetModelOrThrow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,9 +28,10 @@ public class AdminService {
     private final TelegramUserRepository telegramUserRepository;
     private final AdminUserRepository adminUserRepository;
 
+    private final GetModelOrThrow getModelOrThrow;
+
     public void activateAcc(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        User user = getModelOrThrow.getUserById(id);
 
         if (user.getRole() == Role.TEACHER && user instanceof TelegramUser telegramUser) {
             telegramUser.setHasConfirmed(true);
@@ -40,8 +42,7 @@ public class AdminService {
     }
 
     public void deactivateAcc(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+        User user = getModelOrThrow.getUserById(id);
 
         if (user.getRole() == Role.TEACHER && user instanceof TelegramUser telegramUser) {
             telegramUser.setHasConfirmed(false);
@@ -56,7 +57,8 @@ public class AdminService {
     }
 
     public String login(UserDto.Login request) {
-        final AdminUser user = adminUserRepository.findByLogin(request.login());
+        final AdminUser user = getModelOrThrow.getAdminByLogin(request.login());
+
 
         // сравниваем сырой и хэшированный пароль
         if (passwordEncoder.matches(request.password(), user.getPasswordHash())) {
@@ -68,4 +70,17 @@ public class AdminService {
         }
     }
 
+    public void checkToken(String token) {
+        jwtProvider.validateToken(token);
+    }
+
+    public TelegramUser getUserInfo(Long id) {
+        User user = getModelOrThrow.getUserById(id);
+
+        if (user.getRole() == Role.TEACHER && user instanceof TelegramUser telegramUser) {
+            return telegramUser;
+        } else {
+            throw new BadRequestException("Пользователь не преподаватель");
+        }
+    }
 }

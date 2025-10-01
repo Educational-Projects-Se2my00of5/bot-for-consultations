@@ -66,7 +66,7 @@ public class SecurityConfig {
                         // сваггер
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // поинты admin
-                        .requestMatchers("/api/admin/login").permitAll()
+                        .requestMatchers("/api/admin/login", "/api/admin/check-token").permitAll()
                         .requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())
 
                         .anyRequest().permitAll()
