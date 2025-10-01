@@ -1,25 +1,60 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './components/LoginPage';
-import './App.css';
+import LoginPage from './pages/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import UsersPage from './pages/UsersPage';
 
 function App() {
-    return (
-        <Router>
-            <div className="App">
-                <Routes>
-                    {/* По умолчанию перенаправляем на страницу входа */}
-                    <Route path="/" element={<Navigate replace to="/login" />} />
+  const [isLoading, setIsLoading] = useState(true);
 
-                    {/* Маршрут для страницы входа */}
-                    <Route path="/login" element={<LoginPage />} />
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = localStorage.getItem('adminToken');
+      
+      if (token) {
+        try {
+          const response = await fetch('/api/admin/check-token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token }),
+          });
 
-                    {/* Маршрут для страницы регистрации */}
+          if (!response.ok) {
+            localStorage.removeItem('adminToken');
+          }
+        } catch (error) {
+          console.error('Ошибка при проверке токена:', error);
+          localStorage.removeItem('adminToken');
+        }
+      }
+      setIsLoading(false);
+    };
 
-                </Routes>
-            </div>
-        </Router>
-    );
+    checkToken();
+  }, []);
+
+  if (isLoading) {
+    return <div>Загрузка...</div>;
+  }
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Navigate to="/users" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route 
+          path="/users" 
+          element={
+            <ProtectedRoute>
+              <UsersPage />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;
