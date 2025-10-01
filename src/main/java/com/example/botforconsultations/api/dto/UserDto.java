@@ -4,8 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 
 public class UserDto {
     public record TelegramUserInfo(
-            Long id, String username,
-            String fullName, String phone
+            Long id, String firstName, String lastName,
+            String phone
     ) {
     }
 

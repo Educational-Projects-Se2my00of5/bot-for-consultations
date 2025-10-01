@@ -26,8 +26,8 @@ public class TestController {
     public void generateTeacher(){
         TelegramUser telegramUser = TelegramUser
                 .builder()
-                .username("teacher")
-                .fullName("teacher")
+                .firstName("teacher")
+                .lastName("teacher")
                 .build();
         telegramUser.setRole(Role.TEACHER);
         telegramUserRepository.save(telegramUser);
@@ -40,8 +40,8 @@ public class TestController {
     public void generateStudent(){
         TelegramUser telegramUser = TelegramUser
                 .builder()
-                .username("student")
-                .fullName("student")
+                .firstName("student")
+                .lastName("student")
                 .build();
         telegramUser.setRole(Role.STUDENT);
         telegramUserRepository.save(telegramUser);

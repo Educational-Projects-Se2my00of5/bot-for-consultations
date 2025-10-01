@@ -10,7 +10,8 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface ConsultationMapper {
 
-    @Mapping(target = "userFullName", source = "consultation.user.fullName")
+    @Mapping(target = "userFullName", 
+            expression = "java(consultation.getUser().getFirstName() + \" \" + (consultation.getUser().getLastName() != null ? consultation.getUser().getLastName() : \"\"))")
     ConsultationDto.ConsultationInfo toConsultationDto(Consultation consultation);
 
     List<ConsultationDto.ConsultationInfo> toConsultationDto(List<Consultation> consultations);

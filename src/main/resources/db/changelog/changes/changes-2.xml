@@ -27,5 +27,17 @@
         <sql>ALTER SEQUENCE users_id_seq RESTART WITH 2;</sql>
     </changeSet>
 
+    <changeSet id="1759318321649-1" author="Se2my00of5">
+        <addColumn tableName="telegram_users">
+            <column name="first_name" type="VARCHAR(255)"/>
+            <column name="last_name" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="1759318321649-3" author="Se2my00of5">
+        <dropColumn columnName="full_name" tableName="telegram_users"/>
+
+        <dropColumn columnName="username" tableName="telegram_users"/>
+    </changeSet>
+
 
 </databaseChangeLog>

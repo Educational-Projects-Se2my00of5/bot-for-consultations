@@ -13,9 +13,8 @@ import lombok.*;
 @Builder
 public class TelegramUser extends User {
     private Long telegramId;
-    private String username;
-    private String fullName;
+    private String firstName;
+    private String lastName;
     private String phone;
-
     private boolean hasConfirmed;
 }

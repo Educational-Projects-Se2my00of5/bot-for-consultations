@@ -25,6 +25,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres_db:5432/bot-for-consultations
       - SPRING_DATASOURCE_USERNAME=admin
       - SPRING_DATASOURCE_PASSWORD=admin
+      - BOT_TOKEN=${BOT_TOKEN}
 
     depends_on:
       - postgres_db
