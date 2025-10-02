@@ -56,7 +56,17 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                     case "/start" -> handleStart(chatId);
                     case "Я студент" -> registerUser(chatId, Role.STUDENT);
                     case "Я преподаватель" -> registerUser(chatId, Role.TEACHER);
-                    default -> sendMessage("Извините, я не понимаю эту команду", chatId);
+                    case "Помощь" -> sendHelp(chatId);
+                    // Команды студента
+                    case "🔍 Преподаватели" -> handleGetConsultation(chatId);
+                    case "📝 Мои записи" -> handleMyRegistrations(chatId);
+                    case "❓ Запросить консультацию" -> handleRequestConsultation(chatId);
+                    case "📋 Просмотреть запросы" -> handleViewRequests(chatId);
+                    // Команды преподавателя
+                    case "📅 Мои консультации" -> handleTeacherConsultations(chatId);
+                    case "➕ Создать консультацию" -> handleCreateConsultation(chatId);
+                    default ->
+                            sendMessage("Извините, я не понимаю эту команду. Отправьте 'Помощь' для получения списка доступных команд.", chatId);
                 }
             }
         }
@@ -232,6 +242,61 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
      *
      * @param chatId ID чата пользователя
      */
+    /**
+     * Отправляет справочную информацию о доступных командах в зависимости от роли пользователя.
+     *
+     * @param chatId ID чата пользователя
+     */
+    private void sendHelp(Long chatId) {
+        Optional<TelegramUser> userOptional = telegramUserRepository.findByTelegramId(chatId);
+        if (userOptional.isEmpty()) {
+            sendMessage("Пожалуйста, сначала зарегистрируйтесь, отправив команду /start", chatId);
+            return;
+        }
+
+        TelegramUser user = userOptional.get();
+        if (user.getRole() == null) {
+            sendMessage("Пожалуйста, сначала выберите роль", chatId);
+            return;
+        }
+
+        StringBuilder helpText = new StringBuilder();
+        if (user.getRole() == Role.STUDENT) {
+            helpText.append("Доступные команды для студента:\n\n")
+                    .append("🔍 Преподаватели - просмотр времени консультаций у преподавателей\n")
+                    .append("📝 Мои записи - просмотр ваших записей на консультации\n")
+                    .append("❓ Запросить консультацию - создание запроса на консультацию\n")
+                    .append("📋 Просмотреть запросы - просмотр запросов на консультации\n\n")
+                    .append("В разделе \"🔍 Преподаватели\" можно:\n")
+                    .append("- Подписаться/отписаться на обновления в расписании\n")
+                    .append("- Выбрать конкретную консультацию и просмотреть/записаться/отписаться\n")
+                    .append("   * При записи на консультацию вам нужно будет указать тему или вопрос для обсуждения.\n\n")
+                    .append("В разделе \"📋 Просмотреть запросы\" можно подписаться под запросом на консультацию(так же как и при записи на консультацию).\n");
+        } else if (user.getRole() == Role.TEACHER) {
+            if (!user.isHasConfirmed()) {
+                sendMessage("Ваша учетная запись ожидает подтверждения администратором", chatId);
+                return;
+            }
+            helpText.append("Доступные команды для преподавателя:\n\n")
+                    .append("📅 Мои консультации - управление вашими консультациями\n")
+                    .append("➕ Создать консультацию - публикация нового времени для консультаций\n")
+                    .append("📋 Просмотреть запросы - просмотр запросов студентов на консультации\n\n")
+                    .append("В разделе \"📅 Мои консультации\" вы можете:\n")
+                    .append("- Просматривать список записавшихся студентов\n")
+                    .append("- Закрывать запись (можно установить лимит)\n")
+                    .append("- Отменять консультации\n\n")
+                    .append("В разделе \"📋 Просмотреть запросы\" можно создавать консультации на основе запросов\n");
+        }
+
+        sendMessage(helpText.toString(), chatId);
+    }
+
+    /**
+     * Отправляет главное меню в зависимости от роли пользователя.
+     * Для преподавателей проверяет подтверждение аккаунта.
+     *
+     * @param chatId ID чата пользователя
+     */
     private void sendMainMenu(Long chatId) {
         Optional<TelegramUser> userOptional = telegramUserRepository.findByTelegramId(chatId);
         if (userOptional.isEmpty()) {
@@ -249,22 +314,31 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
         KeyboardRow row1 = new KeyboardRow();
 
         if (user.getRole() == Role.STUDENT) {
-            row1.add(new KeyboardButton("Получить консультацию"));
-            row1.add(new KeyboardButton("Мои записи"));
+            row1.add(new KeyboardButton("🔍 Преподаватели"));
+            row1.add(new KeyboardButton("📝 Мои записи"));
+
+            KeyboardRow row2 = new KeyboardRow();
+            row2.add(new KeyboardButton("❓ Запросить консультацию"));
+            row2.add(new KeyboardButton("📋 Просмотреть запросы"));
+            keyboard.add(row2);
         } else if (user.getRole() == Role.TEACHER) {
             if (!user.isHasConfirmed()) {
                 sendMessage("Ваша учетная запись ожидает подтверждения администратором", chatId);
                 return;
             }
-            row1.add(new KeyboardButton("Мои консультации"));
-            row1.add(new KeyboardButton("Создать консультацию"));
+            row1.add(new KeyboardButton("📅 Мои консультации"));
+            row1.add(new KeyboardButton("➕ Создать консультацию"));
+
+            KeyboardRow row2 = new KeyboardRow();
+            row2.add(new KeyboardButton("📋 Просмотреть запросы"));
+            keyboard.add(row2);
         }
 
         keyboard.add(row1);
 
-        KeyboardRow row2 = new KeyboardRow();
-        row2.add(new KeyboardButton("Помощь"));
-        keyboard.add(row2);
+        KeyboardRow helpRow = new KeyboardRow();
+        helpRow.add(new KeyboardButton("Помощь"));
+        keyboard.add(helpRow);
 
         ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
                 .keyboard(keyboard)
@@ -286,5 +360,37 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
         } catch (TelegramApiException e) {
             log.error("Error occurred: {}", e.getMessage());
         }
+    }
+
+    // Методы для обработки команд студента
+    private void handleGetConsultation(Long chatId) {
+        sendMessage("Функция просмотра консультаций находится в разработке", chatId);
+        // TODO: Реализовать просмотр времени консультаций у преподавателей
+    }
+
+    private void handleMyRegistrations(Long chatId) {
+        sendMessage("Функция просмотра записей находится в разработке", chatId);
+        // TODO: Реализовать просмотр записей студента на консультации
+    }
+
+    private void handleRequestConsultation(Long chatId) {
+        sendMessage("Функция запроса консультации находится в разработке", chatId);
+        // TODO: Реализовать создание запроса на консультацию
+    }
+
+    private void handleViewRequests(Long chatId) {
+        sendMessage("Функция просмотра запросов находится в разработке", chatId);
+        // TODO: Реализовать просмотр существующих запросов на консультации
+    }
+
+    // Методы для обработки команд преподавателя
+    private void handleTeacherConsultations(Long chatId) {
+        sendMessage("Функция управления консультациями находится в разработке", chatId);
+        // TODO: Реализовать управление консультациями преподавателя
+    }
+
+    private void handleCreateConsultation(Long chatId) {
+        sendMessage("Функция создания консультации находится в разработке", chatId);
+        // TODO: Реализовать создание новой консультации
     }
 }
