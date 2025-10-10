@@ -38,6 +38,54 @@
 
         <dropColumn columnName="username" tableName="telegram_users"/>
     </changeSet>
+    <changeSet id="1759403445167-1" author="Se2my00of5">
+        <addUniqueConstraint columnNames="first_name, last_name" constraintName="uk_telegram_users_name"
+                             tableName="telegram_users"/>
+    </changeSet>
+    <changeSet id="1760106135932-2" author="Se2my00of5">
+        <createTable tableName="subscriptions">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_subscriptions"/>
+            </column>
+            <column name="student_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="teacher_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet id="1760106135932-3" author="Se2my00of5">
+        <addColumn tableName="consultation">
+            <column name="auto_close_on_capacity" type="BOOLEAN"/>
+            <column name="capacity" type="INT"/>
+            <column name="closed_reason" type="VARCHAR(255)"/>
+            <column name="status" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="1760106135932-4" author="Se2my00of5">
+        <addNotNullConstraint columnName="auto_close_on_capacity" tableName="consultation"/>
+    </changeSet>
+    <changeSet id="1760106135932-8" author="Se2my00of5">
+        <addNotNullConstraint columnName="status" tableName="consultation"/>
+    </changeSet>
+    <changeSet id="1760106135932-9" author="Se2my00of5">
+        <addUniqueConstraint columnNames="student_id, teacher_id" constraintName="uk_subscriptions_student_teacher"
+                             tableName="subscriptions"/>
+    </changeSet>
+    <changeSet id="1760106135932-10" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="student_id" baseTableName="subscriptions"
+                                 constraintName="FK_SUBSCRIPTIONS_ON_STUDENT" referencedColumnNames="id"
+                                 referencedTableName="telegram_users"/>
+    </changeSet>
+    <changeSet id="1760106135932-11" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="teacher_id" baseTableName="subscriptions"
+                                 constraintName="FK_SUBSCRIPTIONS_ON_TEACHER" referencedColumnNames="id"
+                                 referencedTableName="telegram_users"/>
+    </changeSet>
+    <changeSet id="1760106135932-1" author="Se2my00of5">
+        <dropNotNullConstraint columnDataType="bigint" columnName="teacher_id" tableName="consultation"/>
+    </changeSet>
 
 
 </databaseChangeLog>

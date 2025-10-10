@@ -10,4 +10,10 @@ import java.util.Optional;
 public interface TelegramUserRepository extends JpaRepository<TelegramUser,Long> {
     List<TelegramUser> findByRoleAndHasConfirmed(Role role, boolean hasConfirmed);
     Optional<TelegramUser> findByTelegramId(Long telegramId);
+
+    List<TelegramUser> findByRoleAndHasConfirmedTrueAndFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(Role role, String searchQuery, String searchQuery1);
+
+    Optional<TelegramUser> findByFirstNameAndLastNameAndRole(String firstName, String lastName, Role role);
+
+    Optional<TelegramUser> findByFirstNameAndRole(String firstName, Role role);
 }
