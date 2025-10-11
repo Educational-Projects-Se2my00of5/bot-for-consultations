@@ -1,8 +1,5 @@
 package com.example.botforconsultations.api.bot;
 
-import com.example.botforconsultations.core.model.Consultation;
-import com.example.botforconsultations.core.model.Role;
-import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.ConsultationRepository;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +10,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,10 +26,6 @@ public class TeacherCommandHandler {
 
     private final Map<Long, UserState> userStates = new HashMap<>();
 
-    private enum UserState {
-        DEFAULT
-    }
-
     public void handleTeacherCommand(String text, Long chatId) {
         // Проверяем, находится ли пользователь в состоянии ожидания ввода
         UserState currentState = userStates.getOrDefault(chatId, UserState.DEFAULT);
@@ -47,7 +39,6 @@ public class TeacherCommandHandler {
             );
         }
     }
-
 
     public void sendHelp(Long chatId) {
         StringBuilder helpText = new StringBuilder();
@@ -91,6 +82,10 @@ public class TeacherCommandHandler {
                         )
                         .build()
         );
+    }
+
+    private enum UserState {
+        DEFAULT
     }
 
 }

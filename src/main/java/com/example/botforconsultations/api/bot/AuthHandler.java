@@ -2,7 +2,6 @@ package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.TelegramUser;
-import com.example.botforconsultations.core.repository.ConsultationRepository;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,8 +11,6 @@ import org.telegram.telegrambots.meta.api.objects.Contact;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,14 +24,15 @@ public class AuthHandler {
     private final TelegramUserRepository telegramUserRepository;
     private final StudentCommandHandler studentCommands;
     private final TeacherCommandHandler teacherCommands;
-    private final TelegramClient telegramClient;
 
     public void handleStart(Long chatId) {
         Optional<TelegramUser> existingUser = telegramUserRepository.findByTelegramId(chatId);
-        if (existingUser.isPresent()) {
-            sendMainMenu(chatId, existingUser.get());
-        } else {
+        if (existingUser.isEmpty()) {
             requestContact(chatId);
+        } else if (existingUser.get().getRole() == null) {
+            sendRoleSelectionMenu(chatId);
+        } else{
+            sendMainMenu(chatId, existingUser.get());
         }
     }
 
@@ -69,7 +67,7 @@ public class AuthHandler {
         }
     }
 
-    public void registerUser(Long chatId, Role role) {
+    public void handleRoleSelection(Long chatId, Role role) {
         Optional<TelegramUser> userOptional = telegramUserRepository.findByTelegramId(chatId);
 
         if (userOptional.isPresent()) {
@@ -98,6 +96,9 @@ public class AuthHandler {
                             "Вы зарегистрированы как преподаватель. Ожидайте подтверждения администратором.",
                             chatId
                     );
+                }
+                case ADMIN -> {
+                    botMessenger.sendText("Регистрация администраторов через бот недоступна.", chatId);
                 }
             }
         } else {
@@ -133,11 +134,7 @@ public class AuthHandler {
                 .replyMarkup(keyboardMarkup)
                 .build();
 
-        try {
-            telegramClient.execute(message);
-        } catch (TelegramApiException e) {
-            log.error("Error sending role selection menu: {}", e.getMessage());
-        }
+        botMessenger.execute(message);
     }
 
     private void requestContact(Long chatId) {

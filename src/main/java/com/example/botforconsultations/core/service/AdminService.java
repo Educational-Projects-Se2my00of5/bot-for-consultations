@@ -26,7 +26,6 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final TelegramUserRepository telegramUserRepository;
-    private final AdminUserRepository adminUserRepository;
 
     private final GetModelOrThrow getModelOrThrow;
 

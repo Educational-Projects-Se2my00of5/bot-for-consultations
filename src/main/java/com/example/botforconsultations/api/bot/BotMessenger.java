@@ -15,7 +15,7 @@ public class BotMessenger {
     private final TelegramClient telegramClient;
 
     // Отправка простого текстового сообщения
-    public void sendText(String text,Long chatId) {
+    public void sendText(String text, Long chatId) {
         SendMessage message = SendMessage.builder()
                 .text(text)
                 .chatId(chatId)

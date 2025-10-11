@@ -2,7 +2,6 @@ package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.TelegramUser;
-import com.example.botforconsultations.core.repository.ConsultationRepository;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +9,6 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.util.LongPollingSingleThreadUpdateConsumer;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.Optional;
 
@@ -19,10 +17,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
 
-    private final TelegramClient telegramClient;
     private final BotMessenger botMessenger;
     private final TelegramUserRepository telegramUserRepository;
-    private final ConsultationRepository consultationRepository;
     private final StudentCommandHandler studentCommands;
     private final TeacherCommandHandler teacherCommands;
     private final AuthHandler authHandler;
@@ -62,10 +58,10 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
             authHandler.handleStart(chatId);
             return;
         } else if (text.equals("Я студент")) {
-            authHandler.registerUser(chatId, Role.STUDENT);
+            authHandler.handleRoleSelection(chatId, Role.STUDENT);
             return;
         } else if (text.equals("Я преподаватель")) {
-            authHandler.registerUser(chatId, Role.TEACHER);
+            authHandler.handleRoleSelection(chatId, Role.TEACHER);
             return;
         }
 

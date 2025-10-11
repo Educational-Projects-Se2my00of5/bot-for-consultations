@@ -1,74 +1,117 @@
 package com.example.botforconsultations.api.bot;
 
+import com.example.botforconsultations.api.bot.service.ConsultationRequestService;
+import com.example.botforconsultations.api.bot.service.ConsultationService;
+import com.example.botforconsultations.api.bot.service.StudentServiceBot;
+import com.example.botforconsultations.api.bot.service.TeacherSearchService;
+import com.example.botforconsultations.api.bot.state.StudentStateManager;
+import com.example.botforconsultations.api.bot.state.StudentStateManager.UserState;
+import com.example.botforconsultations.api.bot.utils.ConsultationMessageFormatter;
+import com.example.botforconsultations.api.bot.utils.StudentKeyboardBuilder;
+import com.example.botforconsultations.api.bot.utils.TeacherNameFormatter;
 import com.example.botforconsultations.core.model.Consultation;
-import com.example.botforconsultations.core.model.Role;
+import com.example.botforconsultations.core.model.StudentConsultation;
+import com.example.botforconsultations.core.model.Subscription;
 import com.example.botforconsultations.core.model.TelegramUser;
-import com.example.botforconsultations.core.repository.ConsultationRepository;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * Рефакторенный обработчик команд студента
+ * Использует паттерн Service Layer для разделения бизнес-логики
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class StudentCommandHandler {
 
+    // Репозитории
     private final TelegramUserRepository telegramUserRepository;
-    private final ConsultationRepository consultationRepository;
+    
+    // Сервисы
+    private final TeacherSearchService teacherSearchService;
+    private final ConsultationService consultationService;
+    private final ConsultationRequestService consultationRequestService;
+    private final StudentServiceBot studentServiceBot;
     private final BotMessenger botMessenger;
+    
+    // Утилиты
+    private final StudentStateManager stateManager;
+    private final StudentKeyboardBuilder keyboardBuilder;
+    private final ConsultationMessageFormatter messageFormatter;
 
-    private final Map<Long, UserState> userStates = new HashMap<>();
-
-    private enum UserState {
-        WAITING_FOR_TEACHER_NAME,
-        DEFAULT
-    }
-
+    /**
+     * Главный обработчик команд студента
+     */
     public void handleStudentCommand(String text, Long chatId) {
-        // Проверяем, находится ли пользователь в состоянии ожидания ввода
-        UserState currentState = userStates.getOrDefault(chatId, UserState.DEFAULT);
+        UserState currentState = stateManager.getState(chatId);
+
+        // Обработка состояний ввода
         if (currentState == UserState.WAITING_FOR_TEACHER_NAME) {
             processTeacherSearch(text, chatId);
-            userStates.put(chatId, UserState.DEFAULT);
             return;
         }
 
-        // Проверяем, является ли текст выбором преподавателя
+        if (currentState == UserState.WAITING_FOR_CONSULTATION_MESSAGE) {
+            processConsultationRegistration(text, chatId);
+            return;
+        }
+
+        if (currentState == UserState.WAITING_FOR_REQUEST_TITLE) {
+            processRequestCreation(text, chatId);
+            return;
+        }
+
+        // Обработка выбора преподавателя (кнопка начинается с эмодзи)
         if (text.startsWith("👨‍🏫")) {
-            showTeacherConsultations(text, chatId);
+            handleTeacherSelection(text, chatId);
             return;
         }
 
+        // Обработка выбора консультации/запроса по номеру
+        if (text.startsWith("№")) {
+            handleNumberSelection(text, chatId);
+            return;
+        }
+
+        // Основные команды
         switch (text) {
             case "Помощь" -> sendHelp(chatId);
-
-            // Основные команды студента
-            case "🔍 Преподаватели" -> handleTeachers(chatId);
-//            case "🔔 Подписки на обновления" -> handleSubscriptions(chatId);
-//            case "📝 Мои записи" -> handleMyRegistrations(chatId);
-//            case "❓ Запросить консультацию" -> handleRequestConsultation(chatId);
-//            case "📋 Просмотреть запросы" -> handleViewRequests(chatId);
-
-            // Команды меню '🔍 Преподаватели'
-            case "👥 Все преподаватели" -> handleAllTeachers(chatId);
-            case "🔍 Поиск преподавателя" -> handleTeacherSearch(chatId);
-
-
+            case "🔍 Преподаватели" -> sendTeachersMenu(chatId);
+            case "📝 Мои записи" -> showMyRegistrations(chatId);
+            case "🔔 Подписки на обновления" -> showMySubscriptions(chatId);
+            
+            // Запросы консультаций
+            case "❓ Запросить консультацию" -> startRequestCreation(chatId);
+            case "📋 Просмотреть запросы" -> showMyRequests(chatId);
+            
+            // Меню преподавателей
+            case "👥 Все преподаватели" -> showAllTeachers(chatId);
+            case "🔍 Поиск преподавателя" -> startTeacherSearch(chatId);
+            
+            // Фильтры консультаций
+            case "📅 Все" -> applyConsultationFilter(chatId, "all");
+            case "⏭️ Будущие" -> applyConsultationFilter(chatId, "future");
+            case "⏮️ Прошедшие" -> applyConsultationFilter(chatId, "past");
+            
+            // Подписки
+            case "🔔 Подписаться" -> handleSubscribe(chatId);
+            case "🔕 Отписаться" -> handleUnsubscribe(chatId);
+            
+            // Действия с консультацией
+            case "✅ Записаться" -> startConsultationRegistration(chatId);
+            case "❌ Отменить запись" -> handleCancelRegistration(chatId);
+            
+            // Навигация
+            case "🔙 К преподавателям" -> sendTeachersMenu(chatId);
+            case "◀️ Назад к списку" -> backToConsultationsList(chatId);
             case "◀️ Назад" -> sendMainMenu(chatId);
-
-//            case "🔔 Подписаться" -> handleSubscribeToTeacher(chatId);
-
+            
             default -> botMessenger.sendText(
                     "Извините, я не понимаю эту команду. Отправьте 'Помощь' для получения списка доступных команд.",
                     chatId
@@ -76,93 +119,48 @@ public class StudentCommandHandler {
         }
     }
 
-    public void sendHelp(Long chatId) {
-        StringBuilder helpText = new StringBuilder();
-        helpText.append("Доступные команды для студента:\n\n")
-                .append("🔍 Преподаватели - просмотр времени консультаций у преподавателей\n")
-                .append("🔔 Подписки на обновления - просмотр ваших подписок на уведомление при изменении в расписании преподавателя\n")
-                .append("📝 Мои записи - просмотр ваших записей на консультации и запросы на консультации\n")
-                .append("❓ Запросить консультацию - создание запроса на консультацию\n")
-                .append("📋 Просмотреть запросы - просмотр запросов на консультации\n\n")
-                .append("В разделе \"🔍 Преподаватели\" можно:\n")
-                .append("- 👥 Все преподаватели - получение всех преподавателей")
-                .append("- 🔍 Поиск преподавателя - поиск по фамилии или имени.")
-                .append("- После '🔍 Поиск преподавателя' можно выбрать конкретного и получить его консультации")
-                .append("В разделе \"📋 Просмотреть запросы\" можно подписаться под запросом на консультацию(так же как и при записи на консультацию).\n");
-
-        botMessenger.sendText(helpText.toString(), chatId);
-    }
+    // ========== Главное меню и справка ==========
 
     public void sendMainMenu(Long chatId) {
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow row1 = new KeyboardRow();
-        KeyboardRow row2 = new KeyboardRow();
-        KeyboardRow row3 = new KeyboardRow();
-        KeyboardRow helpRow = new KeyboardRow();
-
-        helpRow.add(new KeyboardButton("Помощь"));
-        row1.add(new KeyboardButton("🔍 Преподаватели"));
-        row2.add(new KeyboardButton("🔔 Подписки на обновления"));
-        row2.add(new KeyboardButton("📝 Мои записи"));
-        row3.add(new KeyboardButton("❓ Запросить консультацию"));
-        row3.add(new KeyboardButton("📋 Просмотреть запросы"));
-
-        keyboard.add(row1);
-        keyboard.add(row2);
-        keyboard.add(helpRow);
-
-        botMessenger.execute(
-                SendMessage.builder()
-                        .text("Добро пожаловать, студент! Выберите действие:")
-                        .chatId(chatId)
-                        .replyMarkup(
-                                ReplyKeyboardMarkup.builder()
-                                        .keyboard(keyboard)
-                                        .resizeKeyboard(true)
-                                        .build()
-                        )
-                        .build()
-        );
+        stateManager.resetState(chatId);
+        botMessenger.execute(SendMessage.builder()
+                .text("Добро пожаловать, студент! Выберите действие:")
+                .chatId(chatId)
+                .replyMarkup(keyboardBuilder.buildMainMenu())
+                .build());
     }
 
+    public void sendHelp(Long chatId) {
+        String helpText = """
+                Доступные команды для студента:
+                
+                🔍 Преподаватели - просмотр времени консультаций у преподавателей
+                🔔 Подписки на обновления - просмотр ваших подписок на уведомление при изменении в расписании преподавателя
+                📝 Мои записи - просмотр ваших записей на консультации и запросы на консультации
+                ❓ Запросить консультацию - создание запроса на консультацию
+                📋 Просмотреть запросы - просмотр запросов на консультации
+                
+                В разделе "🔍 Преподаватели" можно:
+                - 👥 Все преподаватели - получение всех преподавателей
+                - 🔍 Поиск преподавателя - поиск по фамилии или имени.
+                - После '🔍 Поиск преподавателя' можно выбрать конкретного и получить его консультации
+                В разделе "📋 Просмотреть запросы" можно подписаться под запросом на консультацию(так же как и при записи на консультацию).
+                """;
+        botMessenger.sendText(helpText, chatId);
+    }
 
-    // Меню для работы с преподавателями
-    private void handleTeachers(Long chatId) {
-        List<KeyboardRow> keyboard = new ArrayList<>();
+    // ========== Работа с преподавателями ==========
 
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(new KeyboardButton("👥 Все преподаватели"));
-        row1.add(new KeyboardButton("🔍 Поиск преподавателя"));
-        keyboard.add(row1);
-
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад"));
-        keyboard.add(backRow);
-
-        ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
-
-        SendMessage message = SendMessage.builder()
+    private void sendTeachersMenu(Long chatId) {
+        botMessenger.execute(SendMessage.builder()
                 .text("Выберите действие для работы с преподавателями:")
                 .chatId(chatId)
-                .replyMarkup(keyboardMarkup)
-                .build();
-
-        botMessenger.execute(message);
+                .replyMarkup(keyboardBuilder.buildTeachersMenu())
+                .build());
     }
 
-    private void handleTeacherSearch(Long chatId) {
-        userStates.put(chatId, UserState.WAITING_FOR_TEACHER_NAME);
-        botMessenger.sendText(
-                "Введите часть имени или фамилии преподавателя (или полностью имя и фамилию) для поиска:",
-                chatId
-        );
-    }
-
-    private void handleAllTeachers(Long chatId) {
-        List<TelegramUser> teachers = telegramUserRepository.findByRoleAndHasConfirmed(Role.TEACHER, true);
+    private void showAllTeachers(Long chatId) {
+        List<TelegramUser> teachers = teacherSearchService.getAllTeachers();
 
         if (teachers.isEmpty()) {
             botMessenger.sendText("В данный момент нет доступных преподавателей", chatId);
@@ -171,24 +169,28 @@ public class StudentCommandHandler {
 
         StringBuilder message = new StringBuilder("Список преподавателей:\n\n");
         for (TelegramUser teacher : teachers) {
-            message.append(String.format("👨‍🏫 %s %s\n",
-                    teacher.getFirstName(),
-                    teacher.getLastName() != null ? teacher.getLastName() : ""));
+            message.append(TeacherNameFormatter.formatFullName(teacher)).append("\n");
         }
-
-        userStates.put(chatId, UserState.WAITING_FOR_TEACHER_NAME);
         message.append("\nВведите часть имени или фамилии преподавателя для поиска:");
 
+        stateManager.setState(chatId, UserState.WAITING_FOR_TEACHER_NAME);
         botMessenger.sendText(message.toString(), chatId);
     }
 
-    private void processTeacherSearch(String searchQuery, Long chatId) {
-        // Поиск преподавателей по имени или фамилии (игнорируя регистр)
-        List<TelegramUser> foundTeachers = telegramUserRepository
-                .findByRoleAndHasConfirmedTrueAndFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-                        Role.TEACHER, searchQuery, searchQuery);
+    private void startTeacherSearch(Long chatId) {
+        stateManager.setState(chatId, UserState.WAITING_FOR_TEACHER_NAME);
+        botMessenger.sendText(
+                "Введите часть имени или фамилии преподавателя (или полностью имя и фамилию) для поиска:",
+                chatId
+        );
+    }
 
-        if (foundTeachers.isEmpty()) {
+    private void processTeacherSearch(String searchQuery, Long chatId) {
+        stateManager.resetState(chatId);
+        
+        List<TelegramUser> teachers = teacherSearchService.searchTeachers(searchQuery);
+
+        if (teachers.isEmpty()) {
             botMessenger.sendText(
                     "Преподаватели не найдены. Попробуйте другой запрос или выберите из общего списка.",
                     chatId
@@ -197,111 +199,408 @@ public class StudentCommandHandler {
         }
 
         StringBuilder message = new StringBuilder("Найденные преподаватели:\n\n");
-        for (TelegramUser teacher : foundTeachers) {
-            message.append(String.format("👨‍🏫 %s %s\n",
-                    teacher.getFirstName(),
-                    teacher.getLastName() != null ? teacher.getLastName() : ""));
+        for (TelegramUser teacher : teachers) {
+            message.append(TeacherNameFormatter.formatFullName(teacher)).append("\n");
         }
         message.append("\nВыберите преподавателя, чтобы увидеть его консультации.");
 
-        // Создаем клавиатуру с найденными преподавателями
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        for (TelegramUser teacher : foundTeachers) {
-            KeyboardRow row = new KeyboardRow();
-            String teacherName = String.format("👨‍🏫 %s %s",
-                    teacher.getFirstName(),
-                    teacher.getLastName() != null ? teacher.getLastName() : "");
-            row.add(new KeyboardButton(teacherName));
-            keyboard.add(row);
-        }
-
-
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад"));
-        keyboard.add(backRow);
-
-        ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
-
-        SendMessage searchResults = SendMessage.builder()
+        botMessenger.execute(SendMessage.builder()
                 .text(message.toString())
                 .chatId(chatId)
-                .replyMarkup(keyboardMarkup)
-                .build();
-
-        botMessenger.execute(searchResults);
+                .replyMarkup(keyboardBuilder.buildTeacherSearchResults(teachers))
+                .build());
     }
 
-
-
-    private void showTeacherConsultations(String teacherButton, Long chatId) {
-        // Извлекаем имя преподавателя
-        String teacherName = teacherButton.substring(teacherButton.indexOf(" ") + 1);
-        String[] nameParts = teacherName.split(" ");
-
-        // Ищем преподавателя в базе
-        TelegramUser teacher;
-        if (nameParts.length > 1) {
-            teacher = telegramUserRepository.findByFirstNameAndLastNameAndRole(
-                    nameParts[0], nameParts[1], Role.TEACHER).orElse(null);
-        } else {
-            teacher = telegramUserRepository.findByFirstNameAndRole(
-                    nameParts[0], Role.TEACHER).orElse(null);
-        }
+    private void handleTeacherSelection(String teacherButton, Long chatId) {
+        String[] nameParts = TeacherNameFormatter.extractNameParts(teacherButton);
+        TelegramUser teacher = teacherSearchService.findByNameParts(nameParts);
 
         if (teacher == null) {
             botMessenger.sendText("Преподаватель не найден", chatId);
             return;
         }
 
-        // Получаем список консультаций преподавателя
-        List<Consultation> consultations = consultationRepository.findByTeacherOrderByStartTimeAsc(teacher);
+        stateManager.setCurrentTeacher(chatId, teacher.getId());
+        stateManager.setFilter(chatId, "future");
+        showTeacherConsultations(chatId, teacher);
+    }
 
-        StringBuilder message = new StringBuilder();
-        message.append(String.format("Консультации преподавателя %s:\n\n", teacherName));
+    private void showTeacherConsultations(Long chatId, TelegramUser teacher) {
+        String filter = stateManager.getFilter(chatId);
+        List<Consultation> consultations = consultationService.getTeacherConsultations(teacher, filter);
+        boolean isSubscribed = checkSubscription(chatId, teacher);
 
-        if (consultations.isEmpty()) {
-            message.append("В данный момент нет запланированных консультаций.\n");
+        String messageText = messageFormatter.formatConsultationsList(teacher, consultations, filter);
+        
+        botMessenger.execute(SendMessage.builder()
+                .text(messageText)
+                .chatId(chatId)
+                .replyMarkup(keyboardBuilder.buildTeacherConsultations(consultations, isSubscribed))
+                .build());
+    }
+
+    private void applyConsultationFilter(Long chatId, String filter) {
+        TelegramUser teacher = getCurrentTeacherWithValidation(chatId);
+        if (teacher == null) return;
+
+        stateManager.setFilter(chatId, filter);
+        showTeacherConsultations(chatId, teacher);
+    }
+
+    // ========== Управление подписками ==========
+
+    private void handleSubscribe(Long chatId) {
+        handleSubscriptionAction(chatId, true);
+    }
+
+    private void handleUnsubscribe(Long chatId) {
+        handleSubscriptionAction(chatId, false);
+    }
+
+    /**
+     * Универсальный обработчик подписки/отписки
+     * @param isSubscribe true - подписка, false - отписка
+     */
+    private void handleSubscriptionAction(Long chatId, boolean isSubscribe) {
+        TelegramUser teacher = getCurrentTeacherWithValidation(chatId);
+        if (teacher == null) return;
+
+        TelegramUser student = getCurrentStudent(chatId);
+
+        StudentServiceBot.SubscriptionResult result = isSubscribe
+                ? studentServiceBot.subscribe(student, teacher)
+                : studentServiceBot.unsubscribe(student, teacher);
+
+        if (!result.success()) {
+            botMessenger.sendText(result.message(), chatId);
         } else {
-            for (Consultation consultation : consultations) {
-                message.append(String.format("№%d\n", consultation.getId()));
-                message.append(String.format("📅 %s - %s\n",
-                        consultation.getStartTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")),
-                        consultation.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm"))));
-
-                if (consultation.getTitle() != null && !consultation.getTitle().isEmpty()) {
-                    message.append(String.format("📝 %s\n", consultation.getTitle()));
-                }
-                message.append("\n");
-            }
+            String actionText = isSubscribe ? "подписались на" : "отписались от";
+            botMessenger.sendText(
+                    String.format("Вы успешно %s обновления преподавателя %s",
+                            actionText,
+                            TeacherNameFormatter.formatFullName(teacher)),
+                    chatId
+            );
         }
 
-        // Клавиатура действий
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow actionRow = new KeyboardRow();
-        actionRow.add(new KeyboardButton("🔔 Подписаться"));
-        actionRow.add(new KeyboardButton("❓ Создать запрос"));
-        keyboard.add(actionRow);
+        showTeacherConsultations(chatId, teacher);
+    }
 
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад"));
-        keyboard.add(backRow);
+    private void showMySubscriptions(Long chatId) {
+        TelegramUser student = getCurrentStudent(chatId);
+        List<Subscription> subscriptions = studentServiceBot.getStudentSubscriptions(student);
+        String message = messageFormatter.formatSubscriptions(subscriptions);
+        botMessenger.sendText(message, chatId);
+    }
 
-        ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+    // ========== Работа с консультациями ==========
 
-        SendMessage consultationsMessage = SendMessage.builder()
-                .text(message.toString())
+    /**
+     * Универсальный обработчик выбора по номеру (консультации или запроса)
+     */
+    private void handleNumberSelection(String text, Long chatId) {
+        UserState currentState = stateManager.getState(chatId);
+        
+        try {
+            Long id = extractId(text);
+            
+            // Если в состоянии просмотра запросов - показываем запрос
+            if (currentState == UserState.VIEWING_REQUEST_DETAILS) {
+                showRequestDetails(chatId, id);
+            } else {
+                // Иначе - это консультация
+                showConsultationDetails(chatId, id);
+            }
+        } catch (Exception e) {
+            log.error("Error parsing ID from '{}': {}", text, e.getMessage());
+            botMessenger.sendText(
+                    "Неверный формат номера.\nИспользуйте формат: №123",
+                    chatId
+            );
+        }
+    }
+
+    private Long extractId(String text) {
+        // Формат: "№123" или "№123 - 15.10 14:00" или "№123 - Название"
+        String idStr = text.contains(" ") 
+                ? text.substring(1, text.indexOf(" ")) 
+                : text.substring(1);
+        return Long.parseLong(idStr);
+    }
+
+    private void showConsultationDetails(Long chatId, Long consultationId) {
+        Consultation consultation = consultationService.findById(consultationId);
+        if (consultation == null) {
+            botMessenger.sendText("Консультация не найдена", chatId);
+            return;
+        }
+
+        stateManager.setCurrentConsultation(chatId, consultationId);
+        stateManager.setState(chatId, UserState.VIEWING_CONSULTATION_DETAILS);
+
+        TelegramUser student = getCurrentStudent(chatId);
+        long registeredCount = studentServiceBot.getRegisteredCount(consultation);
+        boolean isRegistered = studentServiceBot.isRegistered(student, consultation);
+
+        String messageText = messageFormatter.formatConsultationDetails(consultation, registeredCount);
+
+        botMessenger.execute(SendMessage.builder()
+                .text(messageText)
                 .chatId(chatId)
-                .replyMarkup(keyboardMarkup)
-                .build();
+                .replyMarkup(keyboardBuilder.buildConsultationDetails(isRegistered))
+                .build());
+    }
 
-        botMessenger.execute(consultationsMessage);
+    private void backToConsultationsList(Long chatId) {
+        UserState currentState = stateManager.getState(chatId);
+        
+        // Если были в просмотре запросов - вернуться к списку запросов
+        if (currentState == UserState.VIEWING_REQUEST_DETAILS) {
+            showMyRequests(chatId);
+            return;
+        }
+        
+        // Иначе - вернуться к списку консультаций преподавателя
+        Long teacherId = stateManager.getCurrentTeacher(chatId);
+        if (teacherId == null) {
+            sendMainMenu(chatId);
+            return;
+        }
+
+        TelegramUser teacher = teacherSearchService.findById(teacherId);
+        if (teacher == null) {
+            sendMainMenu(chatId);
+            return;
+        }
+
+        showTeacherConsultations(chatId, teacher);
+    }
+
+    // ========== Регистрация на консультацию ==========
+
+    private void startConsultationRegistration(Long chatId) {
+        Consultation consultation = getCurrentConsultationWithValidation(chatId);
+        if (consultation == null) return;
+
+        TelegramUser student = getCurrentStudent(chatId);
+        long registeredCount = studentServiceBot.getRegisteredCount(consultation);
+
+        // Проверка: уже записан?
+        if (studentServiceBot.isRegistered(student, consultation)) {
+            botMessenger.sendText("Вы уже записаны на эту консультацию", chatId);
+            return;
+        }
+
+        // Валидация консультации (статус, вместимость)
+        ConsultationService.ValidationResult validation = 
+                consultationService.validateForRegistration(consultation, registeredCount);
+        
+        if (!validation.isValid()) {
+            botMessenger.sendText(validation.errorMessage(), chatId);
+            return;
+        }
+
+        // Запрашиваем тему/вопрос от студента
+        stateManager.setState(chatId, UserState.WAITING_FOR_CONSULTATION_MESSAGE);
+        botMessenger.sendText(
+                "Пожалуйста, укажите тему или вопрос, который хотите обсудить на консультации:\n\n" +
+                "Например: \"Разбор темы 'Рекурсия'\" или \"Помощь с курсовой работой\"",
+                chatId
+        );
+    }
+
+    private void processConsultationRegistration(String message, Long chatId) {
+        Consultation consultation = getCurrentConsultationWithValidation(chatId);
+        if (consultation == null) {
+            stateManager.resetState(chatId);
+            return;
+        }
+
+        TelegramUser student = getCurrentStudent(chatId);
+        StudentServiceBot.RegistrationResult result = studentServiceBot.register(student, consultation, message);
+
+        stateManager.resetState(chatId);
+
+        if (!result.success()) {
+            botMessenger.sendText(result.message(), chatId);
+        } else {
+            long registeredCount = studentServiceBot.getRegisteredCount(consultation);
+            String confirmMessage = messageFormatter.formatRegistrationConfirmation(
+                    consultation, message, registeredCount);
+            botMessenger.sendText(confirmMessage, chatId);
+        }
+
+        showConsultationDetails(chatId, consultation.getId());
+    }
+
+    private void handleCancelRegistration(Long chatId) {
+        Consultation consultation = getCurrentConsultationWithValidation(chatId);
+        if (consultation == null) return;
+
+        TelegramUser student = getCurrentStudent(chatId);
+        StudentServiceBot.RegistrationResult result = studentServiceBot.cancelRegistration(student, consultation);
+
+        if (!result.success()) {
+            botMessenger.sendText(result.message(), chatId);
+        } else {
+            String confirmMessage = messageFormatter.formatCancellationConfirmation(consultation);
+            botMessenger.sendText(confirmMessage, chatId);
+        }
+
+        showConsultationDetails(chatId, consultation.getId());
+    }
+
+    private void showMyRegistrations(Long chatId) {
+        TelegramUser student = getCurrentStudent(chatId);
+        List<StudentConsultation> registrations = studentServiceBot.getStudentRegistrations(student);
+        String message = messageFormatter.formatStudentRegistrations(registrations);
+        botMessenger.sendText(message, chatId);
+    }
+
+    // ========== Вспомогательные методы ==========
+
+    /**
+     * Получить текущего студента по chatId
+     * Гарантированно вернет пользователя, т.к. UpdateConsumer проверяет регистрацию
+     */
+    private TelegramUser getCurrentStudent(Long chatId) {
+        return telegramUserRepository.findByTelegramId(chatId).orElseThrow();
+    }
+
+    /**
+     * Получить текущего преподавателя из состояния с валидацией
+     * @return преподаватель или null если не найден
+     */
+    private TelegramUser getCurrentTeacherWithValidation(Long chatId) {
+        Long teacherId = stateManager.getCurrentTeacher(chatId);
+        if (teacherId == null) {
+            botMessenger.sendText("Сначала выберите преподавателя", chatId);
+            return null;
+        }
+        
+        TelegramUser teacher = teacherSearchService.findById(teacherId);
+        if (teacher == null) {
+            botMessenger.sendText("Преподаватель не найден", chatId);
+            return null;
+        }
+        
+        return teacher;
+    }
+
+    /**
+     * Получить текущую консультацию из состояния с валидацией
+     * @return консультация или null если не найдена
+     */
+    private Consultation getCurrentConsultationWithValidation(Long chatId) {
+        Long consultationId = stateManager.getCurrentConsultation(chatId);
+        if (consultationId == null) {
+            botMessenger.sendText("Ошибка: консультация не выбрана", chatId);
+            return null;
+        }
+        
+        Consultation consultation = consultationService.findById(consultationId);
+        if (consultation == null) {
+            botMessenger.sendText("Консультация не найдена", chatId);
+            return null;
+        }
+        
+        return consultation;
+    }
+
+    /**
+     * Проверить подписку студента на преподавателя
+     */
+    private boolean checkSubscription(Long chatId, TelegramUser teacher) {
+        TelegramUser student = getCurrentStudent(chatId);
+        return studentServiceBot.isSubscribed(student, teacher);
+    }
+
+    // ========== Работа с запросами консультаций ==========
+
+    /**
+     * Начать создание запроса консультации
+     */
+    private void startRequestCreation(Long chatId) {
+        stateManager.setState(chatId, UserState.WAITING_FOR_REQUEST_TITLE);
+        botMessenger.sendText(
+                "❓ Создание запроса консультации\n\n" +
+                "Введите тему консультации, которая вам нужна.\n" +
+                "Например: \"Помощь с курсовой работой по Java\" или \"Разбор темы Многопоточность\"\n\n" +
+                "Ваш запрос увидят все преподаватели, и кто-то из них сможет его принять.",
+                chatId
+        );
+    }
+
+    /**
+     * Обработать создание запроса (после ввода темы)
+     */
+    private void processRequestCreation(String title, Long chatId) {
+        if (title == null || title.trim().isEmpty()) {
+            botMessenger.sendText("Тема не может быть пустой. Попробуйте еще раз:", chatId);
+            return;
+        }
+
+        if (title.length() > 200) {
+            botMessenger.sendText(
+                    "Тема слишком длинная (максимум 200 символов). Попробуйте сократить:",
+                    chatId
+            );
+            return;
+        }
+
+        TelegramUser student = getCurrentStudent(chatId);
+        Consultation request = consultationRequestService.createRequest(student, title.trim());
+        
+        stateManager.resetState(chatId);
+        
+        String message = messageFormatter.formatRequestCreationConfirmation(request);
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text(message)
+                .replyMarkup(keyboardBuilder.buildMainMenu())
+                .build());
+    }
+
+    /**
+     * Показать все запросы консультаций (от всех студентов)
+     */
+    private void showMyRequests(Long chatId) {
+        List<Consultation> requests = consultationRequestService.getAllRequests();
+        
+        String message = messageFormatter.formatRequestsList(requests);
+        
+        if (requests.isEmpty()) {
+            botMessenger.execute(SendMessage.builder()
+                    .chatId(chatId)
+                    .text(message)
+                    .replyMarkup(keyboardBuilder.buildMainMenu())
+                    .build());
+        } else {
+            stateManager.setState(chatId, UserState.VIEWING_REQUEST_DETAILS);
+            botMessenger.execute(SendMessage.builder()
+                    .chatId(chatId)
+                    .text(message)
+                    .replyMarkup(keyboardBuilder.buildRequestsList(requests))
+                    .build());
+        }
+    }
+
+    /**
+     * Показать детали конкретного запроса
+     */
+    private void showRequestDetails(Long chatId, Long requestId) {
+        consultationRequestService.findRequestById(requestId).ifPresentOrElse(
+                request -> {
+                    stateManager.setCurrentRequest(chatId, requestId);
+                    String message = messageFormatter.formatRequestDetails(request);
+                    botMessenger.execute(SendMessage.builder()
+                            .chatId(chatId)
+                            .text(message)
+                            .replyMarkup(keyboardBuilder.buildRequestDetails())
+                            .build());
+                },
+                () -> botMessenger.sendText("Запрос не найден.", chatId)
+        );
     }
 }
-
 
