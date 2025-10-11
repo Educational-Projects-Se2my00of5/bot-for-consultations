@@ -84,6 +84,117 @@ public class ConsultationRequestService {
     }
 
     /**
+     * Записать студента на запрос
+     * @param student студент
+     * @param request запрос консультации
+     * @param message сообщение студента (тема/вопрос)
+     * @return результат записи
+     */
+    @Transactional
+    public RequestRegistrationResult registerOnRequest(TelegramUser student, Consultation request, String message) {
+        // Проверка, что это действительно запрос
+        if (request.getStatus() != ConsultationStatus.REQUEST) {
+            return failureRegistration("Это не запрос консультации");
+        }
+
+        // Проверка: уже записан?
+        boolean alreadyRegistered = studentConsultationRepository
+                .findByConsultationAndStudent(request, student)
+                .isPresent();
+        
+        if (alreadyRegistered) {
+            return failureRegistration("Вы уже записаны на этот запрос");
+        }
+
+        // Создаём запись
+        StudentConsultation registration = StudentConsultation.builder()
+                .consultation(request)
+                .student(student)
+                .message(message)
+                .build();
+        
+        studentConsultationRepository.save(registration);
+
+        return successRegistration();
+    }
+
+    /**
+     * Отписать студента от запроса
+     * @param student студент
+     * @param request запрос консультации
+     * @return результат отписки
+     */
+    @Transactional
+    public RequestUnregistrationResult unregisterFromRequest(TelegramUser student, Consultation request) {
+        // Проверка, что это действительно запрос
+        if (request.getStatus() != ConsultationStatus.REQUEST) {
+            return failureUnregistration("Это не запрос консультации");
+        }
+
+        // Находим запись студента
+        Optional<StudentConsultation> registration = studentConsultationRepository
+                .findByConsultationAndStudent(request, student);
+        
+        if (registration.isEmpty()) {
+            return failureUnregistration("Вы не записаны на этот запрос");
+        }
+
+        // Удаляем запись
+        studentConsultationRepository.delete(registration.get());
+
+        // Проверяем: остались ли записанные студенты?
+        long remainingCount = studentConsultationRepository.countByConsultation(request);
+        
+        if (remainingCount == 0) {
+            // Удаляем запрос, если нет записанных студентов
+            consultationRepository.delete(request);
+            return successUnregistrationWithDeletion();
+        }
+
+        return successUnregistration();
+    }
+
+    /**
+     * Проверить, записан ли студент на запрос
+     */
+    public boolean isRegisteredOnRequest(TelegramUser student, Consultation request) {
+        return studentConsultationRepository
+                .findByConsultationAndStudent(request, student)
+                .isPresent();
+    }
+
+    /**
+     * Результат записи на запрос
+     */
+    public record RequestRegistrationResult(boolean success, String message) {}
+
+    public static RequestRegistrationResult successRegistration() {
+        return new RequestRegistrationResult(true, "Вы успешно записались на запрос");
+    }
+
+    public static RequestRegistrationResult failureRegistration(String message) {
+        return new RequestRegistrationResult(false, message);
+    }
+
+    /**
+     * Результат отписки от запроса
+     */
+    public record RequestUnregistrationResult(boolean success, boolean requestDeleted, String message) {}
+
+    public static RequestUnregistrationResult successUnregistration() {
+        return new RequestUnregistrationResult(true, false, "Вы успешно отписались от запроса");
+    }
+
+    public static RequestUnregistrationResult successUnregistrationWithDeletion() {
+        return new RequestUnregistrationResult(true, true, 
+                "Вы были последним записанным студентом. Запрос удалён.");
+    }
+
+    public static RequestUnregistrationResult failureUnregistration(String message) {
+        return new RequestUnregistrationResult(false, false, message);
+    }
+
+    /**
      * Результат создания запроса
      */
     public record CreateRequestResult(

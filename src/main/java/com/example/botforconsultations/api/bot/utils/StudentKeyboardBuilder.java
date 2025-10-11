@@ -197,9 +197,18 @@ public class StudentKeyboardBuilder {
 
     /**
      * Клавиатура для детального просмотра запроса
+     * @param isRegistered записан ли студент на этот запрос
      */
-    public ReplyKeyboardMarkup buildRequestDetails() {
+    public ReplyKeyboardMarkup buildRequestDetails(boolean isRegistered) {
         List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow actionRow = new KeyboardRow();
+        if (isRegistered) {
+            actionRow.add(new KeyboardButton("❌ Отписаться от запроса"));
+        } else {
+            actionRow.add(new KeyboardButton("✅ Записаться на запрос"));
+        }
+        keyboard.add(actionRow);
 
         KeyboardRow backRow = new KeyboardRow();
         backRow.add(new KeyboardButton("◀️ Назад к списку"));

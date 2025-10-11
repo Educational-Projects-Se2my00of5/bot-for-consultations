@@ -23,6 +23,11 @@ public interface StudentConsultationRepository extends JpaRepository<StudentCons
     Optional<StudentConsultation> findByStudentAndConsultation(TelegramUser student, Consultation consultation);
     
     /**
+     * Находит запись по консультации и студенту (обратный порядок)
+     */
+    Optional<StudentConsultation> findByConsultationAndStudent(Consultation consultation, TelegramUser student);
+    
+    /**
      * Находит все записи студента на консультации
      */
     List<StudentConsultation> findByStudent(TelegramUser student);

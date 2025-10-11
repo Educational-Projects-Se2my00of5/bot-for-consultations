@@ -21,7 +21,7 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
     private final TelegramUserRepository telegramUserRepository;
     private final StudentCommandHandler studentCommands;
     private final TeacherCommandHandler teacherCommands;
-    private final AuthHandler authHandler;
+    private final AuthCommandHandler authCommandHandler;
 
 
     @Override
@@ -31,7 +31,7 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
             Long chatId = message.getChatId();
 
             if (message.hasContact()) {
-                authHandler.handleContact(message.getContact(), chatId);
+                authCommandHandler.handleContact(message.getContact(), chatId);
             } else if (message.hasText()) {
                 String text = message.getText();
                 handleTextMessage(text, chatId);
@@ -55,13 +55,13 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
 
 
         if (text.equals("/start")) {
-            authHandler.handleStart(chatId);
+            authCommandHandler.handleStart(chatId);
             return;
         } else if (text.equals("Я студент")) {
-            authHandler.handleRoleSelection(chatId, Role.STUDENT);
+            authCommandHandler.handleRoleSelection(chatId, Role.STUDENT);
             return;
         } else if (text.equals("Я преподаватель")) {
-            authHandler.handleRoleSelection(chatId, Role.TEACHER);
+            authCommandHandler.handleRoleSelection(chatId, Role.TEACHER);
             return;
         }
 

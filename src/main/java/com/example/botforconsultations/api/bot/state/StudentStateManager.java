@@ -16,8 +16,9 @@ public class StudentStateManager {
         WAITING_FOR_TEACHER_NAME,
         WAITING_FOR_CONSULTATION_MESSAGE,
         VIEWING_CONSULTATION_DETAILS,
-        WAITING_FOR_REQUEST_TITLE,  // ожидание названия запроса
-        VIEWING_REQUEST_DETAILS,    // просмотр деталей запроса
+        WAITING_FOR_REQUEST_TITLE,     // ожидание названия запроса
+        WAITING_FOR_REQUEST_MESSAGE,   // ожидание сообщения для записи на запрос
+        VIEWING_REQUEST_DETAILS,       // просмотр деталей запроса
         DEFAULT
     }
 

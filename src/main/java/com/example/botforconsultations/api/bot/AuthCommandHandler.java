@@ -18,7 +18,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthHandler {
+public class AuthCommandHandler {
 
     private final BotMessenger botMessenger;
     private final TelegramUserRepository telegramUserRepository;

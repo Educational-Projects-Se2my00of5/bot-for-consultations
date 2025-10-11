@@ -67,6 +67,11 @@ public class StudentCommandHandler {
             return;
         }
 
+        if (currentState == UserState.WAITING_FOR_REQUEST_MESSAGE) {
+            processRequestRegistration(text, chatId);
+            return;
+        }
+
         // Обработка выбора преподавателя (кнопка начинается с эмодзи)
         if (text.startsWith("👨‍🏫")) {
             handleTeacherSelection(text, chatId);
@@ -106,6 +111,10 @@ public class StudentCommandHandler {
             // Действия с консультацией
             case "✅ Записаться" -> startConsultationRegistration(chatId);
             case "❌ Отменить запись" -> handleCancelRegistration(chatId);
+            
+            // Действия с запросами консультаций
+            case "✅ Записаться на запрос" -> startRequestRegistration(chatId);
+            case "❌ Отписаться от запроса" -> handleRequestUnregistration(chatId);
             
             // Навигация
             case "🔙 К преподавателям" -> sendTeachersMenu(chatId);
@@ -592,15 +601,111 @@ public class StudentCommandHandler {
         consultationRequestService.findRequestById(requestId).ifPresentOrElse(
                 request -> {
                     stateManager.setCurrentRequest(chatId, requestId);
+                    TelegramUser student = getCurrentStudent(chatId);
+                    boolean isRegistered = consultationRequestService.isRegisteredOnRequest(student, request);
+                    
                     String message = messageFormatter.formatRequestDetails(request);
                     botMessenger.execute(SendMessage.builder()
                             .chatId(chatId)
                             .text(message)
-                            .replyMarkup(keyboardBuilder.buildRequestDetails())
+                            .replyMarkup(keyboardBuilder.buildRequestDetails(isRegistered))
                             .build());
                 },
                 () -> botMessenger.sendText("Запрос не найден.", chatId)
         );
     }
+
+    /**
+     * Начать регистрацию на запрос (запрашиваем сообщение)
+     */
+    private void startRequestRegistration(Long chatId) {
+        Long requestId = stateManager.getCurrentRequest(chatId);
+        if (requestId == null) {
+            botMessenger.sendText("Ошибка: запрос не выбран", chatId);
+            return;
+        }
+
+        stateManager.setState(chatId, UserState.WAITING_FOR_REQUEST_MESSAGE);
+        botMessenger.sendText(
+                "Пожалуйста, укажите тему или вопрос, который хотите обсудить:\n\n" +
+                "Например: \"Интересует эта тема\" или \"Тоже нужна помощь\"",
+                chatId
+        );
+    }
+
+    /**
+     * Обработать регистрацию на запрос (после ввода сообщения)
+     */
+    private void processRequestRegistration(String message, Long chatId) {
+        Long requestId = stateManager.getCurrentRequest(chatId);
+        if (requestId == null) {
+            botMessenger.sendText("Ошибка: запрос не выбран", chatId);
+            stateManager.resetState(chatId);
+            return;
+        }
+
+        consultationRequestService.findRequestById(requestId).ifPresentOrElse(
+                request -> {
+                    TelegramUser student = getCurrentStudent(chatId);
+                    ConsultationRequestService.RequestRegistrationResult result = 
+                            consultationRequestService.registerOnRequest(student, request, message);
+                    
+                    stateManager.resetState(chatId);
+                    
+                    if (!result.success()) {
+                        botMessenger.sendText(result.message(), chatId);
+                    } else {
+                        botMessenger.sendText(
+                                "✅ Вы успешно записались на запрос!\n\n" +
+                                "Когда преподаватель примет этот запрос и создаст консультацию, " +
+                                "вы автоматически будете записаны на неё.",
+                                chatId
+                        );
+                    }
+                    
+                    showRequestDetails(chatId, requestId);
+                },
+                () -> {
+                    botMessenger.sendText("Запрос не найден.", chatId);
+                    stateManager.resetState(chatId);
+                }
+        );
+    }
+
+    /**
+     * Отписаться от запроса
+     */
+    private void handleRequestUnregistration(Long chatId) {
+        Long requestId = stateManager.getCurrentRequest(chatId);
+        if (requestId == null) {
+            botMessenger.sendText("Ошибка: запрос не выбран", chatId);
+            return;
+        }
+
+        consultationRequestService.findRequestById(requestId).ifPresentOrElse(
+                request -> {
+                    TelegramUser student = getCurrentStudent(chatId);
+                    ConsultationRequestService.RequestUnregistrationResult result = 
+                            consultationRequestService.unregisterFromRequest(student, request);
+                    
+                    if (!result.success()) {
+                        botMessenger.sendText(result.message(), chatId);
+                        showRequestDetails(chatId, requestId);
+                    } else {
+                        botMessenger.sendText(result.message(), chatId);
+                        
+                        if (result.requestDeleted()) {
+                            // Запрос удалён - возврат к списку
+                            showMyRequests(chatId);
+                        } else {
+                            // Запрос остался - обновляем детали
+                            showRequestDetails(chatId, requestId);
+                        }
+                    }
+                },
+                () -> botMessenger.sendText("Запрос не найден.", chatId)
+        );
+    }
 }
+
 
