@@ -57,6 +57,16 @@ public class ConsultationMessageFormatter {
         if (consultation.getTitle() != null && !consultation.getTitle().isEmpty()) {
             message.append(String.format("📝 %s\n", consultation.getTitle()));
         }
+        
+        // Добавляем статус консультации
+        String statusEmoji = switch (consultation.getStatus()) {
+            case OPEN -> "✅ Открыта";
+            case CLOSED -> "🔒 Закрыта";
+            case CANCELLED -> "❌ Отменена";
+            case REQUEST -> "⏳ Запрос";
+        };
+        message.append(String.format("%s\n", statusEmoji));
+        
         message.append("\n");
         return message.toString();
     }
@@ -83,6 +93,15 @@ public class ConsultationMessageFormatter {
         if (consultation.getCapacity() != null && consultation.getCapacity() > 0) {
             message.append(String.format("/%d", consultation.getCapacity()));
         }
+        
+        // Добавляем статус консультации
+        String statusText = switch (consultation.getStatus()) {
+            case OPEN -> "✅ Открыта для записи";
+            case CLOSED -> "🔒 Запись закрыта";
+            case CANCELLED -> "❌ Консультация отменена";
+            case REQUEST -> "⏳ Запрос на консультацию";
+        };
+        message.append(String.format("\n📊 Статус: %s", statusText));
 
         message.append("\n\n💡 Выберите действие:");
         return message.toString();

@@ -53,6 +53,19 @@ public class StudentCommandHandler {
      * Главный обработчик команд студента
      */
     public void handleStudentCommand(String text, Long chatId) {
+
+        if (text.equals("◀️ Назад")){
+            sendMainMenu(chatId);
+            return;
+        }
+
+        // Обработка выбора преподавателя (кнопка начинается с эмодзи)
+        if (text.startsWith("👨‍🏫")) {
+            handleTeacherSelection(text, chatId);
+            stateManager.resetState(chatId);
+            return;
+        }
+
         UserState currentState = stateManager.getState(chatId);
 
         // Обработка состояний ввода
@@ -73,12 +86,6 @@ public class StudentCommandHandler {
 
         if (currentState == UserState.WAITING_FOR_REQUEST_MESSAGE) {
             processRequestRegistration(text, chatId);
-            return;
-        }
-
-        // Обработка выбора преподавателя (кнопка начинается с эмодзи)
-        if (text.startsWith("👨‍🏫")) {
-            handleTeacherSelection(text, chatId);
             return;
         }
 
@@ -123,7 +130,6 @@ public class StudentCommandHandler {
             // Навигация
             case "🔙 К преподавателям" -> sendTeachersMenu(chatId);
             case "◀️ Назад к списку" -> backToConsultationsList(chatId);
-            case "◀️ Назад" -> sendMainMenu(chatId);
             
             default -> botMessenger.sendText(
                     "Извините, я не понимаю эту команду. Отправьте 'Помощь' для получения списка доступных команд.",
@@ -176,18 +182,37 @@ public class StudentCommandHandler {
         List<TelegramUser> teachers = teacherSearchService.getAllTeachers();
 
         if (teachers.isEmpty()) {
-            botMessenger.sendText("В данный момент нет доступных преподавателей", chatId);
+            botMessenger.execute(SendMessage.builder()
+                    .chatId(chatId)
+                    .text("В данный момент нет доступных преподавателей")
+                    .replyMarkup(keyboardBuilder.buildMainMenu())
+                    .build());
             return;
         }
 
         StringBuilder message = new StringBuilder("Список преподавателей:\n\n");
+        
+        // Показываем первых 5 преподавателей в кнопках
+        int count = 0;
         for (TelegramUser teacher : teachers) {
+            if (count >= 5) break;
             message.append(TeacherNameFormatter.formatFullName(teacher)).append("\n");
+            count++;
         }
-        message.append("\nВведите часть имени или фамилии преподавателя для поиска:");
+        
+        // Если преподавателей больше 5, сообщаем об этом
+        if (teachers.size() > 5) {
+            message.append("\n... и ещё ").append(teachers.size() - 5).append(" преподавателей\n");
+            message.append("\nИспользуйте поиск или выберите из первых 5:");
+        } else {
+            message.append("\nВыберите преподавателя из списка или используйте поиск:");
+        }
 
-        stateManager.setState(chatId, UserState.WAITING_FOR_TEACHER_NAME);
-        botMessenger.sendText(message.toString(), chatId);
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text(message.toString())
+                .replyMarkup(keyboardBuilder.buildTeacherSearchResults(teachers))
+                .build());
     }
 
     private void startTeacherSearch(Long chatId) {
@@ -360,7 +385,7 @@ public class StudentCommandHandler {
         botMessenger.execute(SendMessage.builder()
                 .text(messageText)
                 .chatId(chatId)
-                .replyMarkup(keyboardBuilder.buildConsultationDetails(isRegistered))
+                .replyMarkup(keyboardBuilder.buildConsultationDetails(consultation, isRegistered))
                 .build());
     }
 

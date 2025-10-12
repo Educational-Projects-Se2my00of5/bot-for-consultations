@@ -42,14 +42,26 @@ public class TeacherSearchService {
 
     /**
      * Найти преподавателя по частям имени (из кнопки)
+     * Формат: [Имя] или [Имя, Фамилия]
      */
     public TelegramUser findByNameParts(String[] nameParts) {
-        if (nameParts.length > 1) {
+        if (nameParts == null || nameParts.length == 0) {
+            return null;
+        }
+        
+        if (nameParts.length >= 2) {
+            // Есть имя и фамилия
             return telegramUserRepository.findByFirstNameAndLastNameAndRole(
-                    nameParts[0], nameParts[1], Role.TEACHER).orElse(null);
+                    nameParts[0].trim(), 
+                    nameParts[1].trim(), 
+                    Role.TEACHER
+            ).orElse(null);
         } else {
+            // Только имя (если нет фамилии)
             return telegramUserRepository.findByFirstNameAndRole(
-                    nameParts[0], Role.TEACHER).orElse(null);
+                    nameParts[0].trim(), 
+                    Role.TEACHER
+            ).orElse(null);
         }
     }
 }

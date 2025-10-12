@@ -75,14 +75,25 @@ public class StudentKeyboardBuilder {
     public ReplyKeyboardMarkup buildTeacherSearchResults(List<TelegramUser> teachers) {
         List<KeyboardRow> keyboard = new ArrayList<>();
         
+        // Добавляем первых 5 преподавателей как кнопки
+        int count = 0;
         for (TelegramUser teacher : teachers) {
+            if (count >= 5) break;
+            
             KeyboardRow row = new KeyboardRow();
             row.add(new KeyboardButton(TeacherNameFormatter.formatFullName(teacher)));
             keyboard.add(row);
+            count++;
         }
 
+        // Кнопка поиска
+        KeyboardRow searchRow = new KeyboardRow();
+        searchRow.add(new KeyboardButton("🔍 Поиск преподавателя"));
+        keyboard.add(searchRow);
+
+        // Кнопка "Назад"
         KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад"));
+        backRow.add(new KeyboardButton("🔙 К преподавателям"));
         keyboard.add(backRow);
 
         return ReplyKeyboardMarkup.builder()
@@ -143,17 +154,22 @@ public class StudentKeyboardBuilder {
 
     /**
      * Клавиатура для детального просмотра консультации
+     * @param consultation консультация для проверки статуса
+     * @param isRegistered записан ли студент
      */
-    public ReplyKeyboardMarkup buildConsultationDetails(boolean isRegistered) {
+    public ReplyKeyboardMarkup buildConsultationDetails(Consultation consultation, boolean isRegistered) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        KeyboardRow actionRow = new KeyboardRow();
-        if (isRegistered) {
-            actionRow.add(new KeyboardButton("❌ Отменить запись"));
-        } else {
-            actionRow.add(new KeyboardButton("✅ Записаться"));
+        // Показываем кнопку записи/отмены только если консультация OPEN
+        if (consultation.getStatus() == com.example.botforconsultations.core.model.ConsultationStatus.OPEN) {
+            KeyboardRow actionRow = new KeyboardRow();
+            if (isRegistered) {
+                actionRow.add(new KeyboardButton("❌ Отменить запись"));
+            } else {
+                actionRow.add(new KeyboardButton("✅ Записаться"));
+            }
+            keyboard.add(actionRow);
         }
-        keyboard.add(actionRow);
 
         KeyboardRow backRow = new KeyboardRow();
         backRow.add(new KeyboardButton("◀️ Назад к списку"));

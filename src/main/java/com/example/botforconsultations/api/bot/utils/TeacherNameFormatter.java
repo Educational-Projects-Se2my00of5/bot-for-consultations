@@ -17,9 +17,11 @@ public class TeacherNameFormatter {
 
     /**
      * Извлекает имя преподавателя из текста кнопки
+     * Формат кнопки: "👨‍🏫 Имя Фамилия"
      */
     public static String[] extractNameParts(String teacherButton) {
-        String teacherName = teacherButton.substring(teacherButton.indexOf(" ") + 1).trim();
-        return teacherName.split(" ");
+        // Убираем эмодзи и лишние пробелы
+        String teacherName = teacherButton.replaceFirst("👨‍🏫\\s*", "").trim();
+        return teacherName.split("\\s+");
     }
 }
