@@ -2,7 +2,9 @@ package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.api.bot.service.ConsultationRequestService;
 import com.example.botforconsultations.api.bot.service.ConsultationService;
+import com.example.botforconsultations.api.bot.service.NotificationService;
 import com.example.botforconsultations.api.bot.service.StudentServiceBot;
+import com.example.botforconsultations.api.bot.service.TeacherConsultationService;
 import com.example.botforconsultations.api.bot.service.TeacherSearchService;
 import com.example.botforconsultations.api.bot.state.StudentStateManager;
 import com.example.botforconsultations.api.bot.state.StudentStateManager.UserState;
@@ -38,6 +40,8 @@ public class StudentCommandHandler {
     private final ConsultationService consultationService;
     private final ConsultationRequestService consultationRequestService;
     private final StudentServiceBot studentServiceBot;
+    private final TeacherConsultationService teacherConsultationService;
+    private final NotificationService notificationService;
     private final BotMessenger botMessenger;
     
     // Утилиты
@@ -437,6 +441,9 @@ public class StudentCommandHandler {
             String confirmMessage = messageFormatter.formatRegistrationConfirmation(
                     consultation, message, registeredCount);
             botMessenger.sendText(confirmMessage, chatId);
+            
+            // Проверяем автозакрытие
+            teacherConsultationService.checkAndAutoClose(consultation);
         }
 
         showConsultationDetails(chatId, consultation.getId());
@@ -447,6 +454,10 @@ public class StudentCommandHandler {
         if (consultation == null) return;
 
         TelegramUser student = getCurrentStudent(chatId);
+        
+        // Считаем до отмены
+        long countBefore = studentServiceBot.getRegisteredCount(consultation);
+        
         StudentServiceBot.RegistrationResult result = studentServiceBot.cancelRegistration(student, consultation);
 
         if (!result.success()) {
@@ -454,6 +465,15 @@ public class StudentCommandHandler {
         } else {
             String confirmMessage = messageFormatter.formatCancellationConfirmation(consultation);
             botMessenger.sendText(confirmMessage, chatId);
+            
+            // Считаем после отмены
+            long countAfter = studentServiceBot.getRegisteredCount(consultation);
+            
+            // Если освободилось место, уведомляем подписчиков
+            if (countAfter < countBefore) {
+                // Отправляем уведомления (исключая текущего студента)
+                notificationService.notifySubscribersAvailableSpots(consultation, student.getId());
+            }
         }
 
         showConsultationDetails(chatId, consultation.getId());
