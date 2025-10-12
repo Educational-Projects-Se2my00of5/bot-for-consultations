@@ -47,6 +47,6 @@ public class Consultation {
     private String closedReason;
 
     
-    @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "consultation", fetch = FetchType.EAGER)
     private Set<StudentConsultation> regUsers;
 }

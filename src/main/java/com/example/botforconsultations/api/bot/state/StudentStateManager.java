@@ -111,6 +111,28 @@ public class StudentStateManager {
     }
 
     /**
+     * Очистить ID текущего преподавателя
+     */
+    public void clearCurrentTeacher(Long chatId) {
+        currentTeacherId.remove(chatId);
+        consultationFilter.remove(chatId);  // Фильтр привязан к преподавателю
+    }
+
+    /**
+     * Очистить ID текущей консультации
+     */
+    public void clearCurrentConsultation(Long chatId) {
+        currentConsultationId.remove(chatId);
+    }
+
+    /**
+     * Очистить ID текущего запроса
+     */
+    public void clearCurrentRequest(Long chatId) {
+        currentRequestId.remove(chatId);
+    }
+
+    /**
      * Очистить все данные пользователя
      */
     public void clearUserData(Long chatId) {

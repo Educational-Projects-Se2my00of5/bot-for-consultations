@@ -141,7 +141,8 @@ public class StudentCommandHandler {
     // ========== Главное меню и справка ==========
 
     public void sendMainMenu(Long chatId) {
-        stateManager.resetState(chatId);
+        // Полная очистка всех данных при возврате в главное меню
+        stateManager.clearUserData(chatId);
         botMessenger.execute(SendMessage.builder()
                 .text("Добро пожаловать, студент! Выберите действие:")
                 .chatId(chatId)
@@ -171,6 +172,11 @@ public class StudentCommandHandler {
     // ========== Работа с преподавателями ==========
 
     private void sendTeachersMenu(Long chatId) {
+        // Очищаем выбранного преподавателя при возврате к меню преподавателей
+        stateManager.clearCurrentTeacher(chatId);
+        stateManager.clearCurrentConsultation(chatId);
+        stateManager.resetState(chatId);
+        
         botMessenger.execute(SendMessage.builder()
                 .text("Выберите действие для работы с преподавателями:")
                 .chatId(chatId)
@@ -390,28 +396,32 @@ public class StudentCommandHandler {
     }
 
     private void backToConsultationsList(Long chatId) {
-        UserState currentState = stateManager.getState(chatId);
+        // Проверяем, откуда мы пришли - из консультаций преподавателя или из запросов
+        Long teacherId = stateManager.getCurrentTeacher(chatId);
+        Long requestId = stateManager.getCurrentRequest(chatId);
         
-        // Если были в просмотре запросов - вернуться к списку запросов
-        if (currentState == UserState.VIEWING_REQUEST_DETAILS) {
+        // Приоритет: если есть teacherId - возврат к консультациям преподавателя
+        if (teacherId != null) {
+            // Очищаем ID консультации, но сохраняем преподавателя
+            stateManager.clearCurrentConsultation(chatId);
+            
+            TelegramUser teacher = teacherSearchService.findById(teacherId);
+            if (teacher != null) {
+                showTeacherConsultations(chatId, teacher);
+                return;
+            }
+        }
+        
+        // Если нет teacherId, но есть requestId - возврат к списку запросов
+        if (requestId != null) {
+            // Очищаем ID запроса перед показом списка
+            stateManager.clearCurrentRequest(chatId);
             showMyRequests(chatId);
             return;
         }
         
-        // Иначе - вернуться к списку консультаций преподавателя
-        Long teacherId = stateManager.getCurrentTeacher(chatId);
-        if (teacherId == null) {
-            sendMainMenu(chatId);
-            return;
-        }
-
-        TelegramUser teacher = teacherSearchService.findById(teacherId);
-        if (teacher == null) {
-            sendMainMenu(chatId);
-            return;
-        }
-
-        showTeacherConsultations(chatId, teacher);
+        // В остальных случаях - главное меню
+        sendMainMenu(chatId);
     }
 
     // ========== Регистрация на консультацию ==========
@@ -630,6 +640,8 @@ public class StudentCommandHandler {
                     .replyMarkup(keyboardBuilder.buildMainMenu())
                     .build());
         } else {
+            // Очищаем ID запроса при показе списка
+            stateManager.clearCurrentRequest(chatId);
             stateManager.setState(chatId, UserState.VIEWING_REQUEST_DETAILS);
             botMessenger.execute(SendMessage.builder()
                     .chatId(chatId)

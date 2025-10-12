@@ -6,7 +6,6 @@ import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.StudentConsultation;
 import com.example.botforconsultations.core.model.Subscription;
 import com.example.botforconsultations.core.model.TelegramUser;
-import com.example.botforconsultations.core.repository.StudentConsultationRepository;
 import com.example.botforconsultations.core.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +25,6 @@ public class NotificationService {
 
     private final BotMessenger botMessenger;
     private final SubscriptionRepository subscriptionRepository;
-    private final StudentConsultationRepository studentConsultationRepository;
     private final TeacherMessageFormatter messageFormatter;
 
     /**
@@ -64,7 +62,9 @@ public class NotificationService {
      * @param changeDescription описание изменения
      */
     public void notifyRegisteredStudentsUpdate(Consultation consultation, String changeDescription) {
-        List<StudentConsultation> registrations = studentConsultationRepository.findByConsultation(consultation);
+        List<StudentConsultation> registrations = consultation.getRegUsers() != null
+                ? List.copyOf(consultation.getRegUsers())
+                : List.of();
         
         if (registrations.isEmpty()) {
             log.debug("No registered students for consultation #{}", consultation.getId());
@@ -105,7 +105,9 @@ public class NotificationService {
         }
 
         // Получаем всех записанных студентов
-        List<StudentConsultation> registrations = studentConsultationRepository.findByConsultation(consultation);
+        List<StudentConsultation> registrations = consultation.getRegUsers() != null
+                ? List.copyOf(consultation.getRegUsers())
+                : List.of();
         Set<Long> registeredStudentIds = registrations.stream()
                 .map(sc -> sc.getStudent().getId())
                 .collect(Collectors.toSet());
@@ -145,7 +147,9 @@ public class NotificationService {
      * @param consultation отменённая консультация
      */
     public void notifyRegisteredStudentsCancellation(Consultation consultation) {
-        List<StudentConsultation> registrations = studentConsultationRepository.findByConsultation(consultation);
+        List<StudentConsultation> registrations = consultation.getRegUsers() != null
+                ? List.copyOf(consultation.getRegUsers())
+                : List.of();
         
         if (registrations.isEmpty()) {
             log.debug("No registered students for consultation #{}", consultation.getId());
@@ -174,7 +178,9 @@ public class NotificationService {
      * @param consultation консультация (бывший запрос)
      */
     public void notifyInterestedStudentsRequestAccepted(Consultation consultation) {
-        List<StudentConsultation> registrations = studentConsultationRepository.findByConsultation(consultation);
+        List<StudentConsultation> registrations = consultation.getRegUsers() != null
+                ? List.copyOf(consultation.getRegUsers())
+                : List.of();
         
         if (registrations.isEmpty()) {
             log.debug("No interested students for consultation #{}", consultation.getId());

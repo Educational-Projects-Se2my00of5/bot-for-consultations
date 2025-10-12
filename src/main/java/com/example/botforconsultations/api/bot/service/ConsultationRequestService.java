@@ -99,7 +99,7 @@ public class ConsultationRequestService {
 
         // Проверка: уже записан?
         boolean alreadyRegistered = studentConsultationRepository
-                .findByConsultationAndStudent(request, student)
+                .findByStudentAndConsultation(student, request)
                 .isPresent();
         
         if (alreadyRegistered) {
@@ -133,21 +133,27 @@ public class ConsultationRequestService {
 
         // Находим запись студента
         Optional<StudentConsultation> registration = studentConsultationRepository
-                .findByConsultationAndStudent(request, student);
+                .findByStudentAndConsultation(student, request);
         
         if (registration.isEmpty()) {
             return failureUnregistration("Вы не записаны на этот запрос");
         }
 
-        // Удаляем запись
+        // Удаляем запись студента напрямую
         studentConsultationRepository.delete(registration.get());
+        studentConsultationRepository.flush();
 
-        // Проверяем: остались ли записанные студенты?
+        // Проверяем: остались ли ещё записанные студенты?
         long remainingCount = studentConsultationRepository.countByConsultation(request);
         
         if (remainingCount == 0) {
-            // Удаляем запрос, если нет записанных студентов
-            consultationRepository.delete(request);
+            // Сначала удаляем ВСЕ оставшиеся записи StudentConsultation
+            studentConsultationRepository.deleteByConsultation(request);
+            studentConsultationRepository.flush();
+            
+            // Теперь можем безопасно удалить сам запрос
+            consultationRepository.deleteById(request.getId());
+            consultationRepository.flush();
             return successUnregistrationWithDeletion();
         }
 
@@ -159,7 +165,7 @@ public class ConsultationRequestService {
      */
     public boolean isRegisteredOnRequest(TelegramUser student, Consultation request) {
         return studentConsultationRepository
-                .findByConsultationAndStudent(request, student)
+                .findByStudentAndConsultation(student, request)
                 .isPresent();
     }
 

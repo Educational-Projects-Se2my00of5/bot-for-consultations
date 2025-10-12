@@ -12,7 +12,6 @@ import com.example.botforconsultations.core.model.ConsultationStatus;
 import com.example.botforconsultations.core.model.StudentConsultation;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.ConsultationRepository;
-import com.example.botforconsultations.core.repository.StudentConsultationRepository;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,6 @@ public class TeacherCommandHandler {
     // Репозитории
     private final TelegramUserRepository telegramUserRepository;
     private final ConsultationRepository consultationRepository;
-    private final StudentConsultationRepository studentConsultationRepository;
 
     // Сервисы
     private final TeacherConsultationService consultationService;
@@ -367,18 +365,20 @@ public class TeacherCommandHandler {
 
     private void showConsultationDetails(Long chatId, Long consultationId) {
         TelegramUser currentTeacher = getCurrentTeacher(chatId);
-        
+
         consultationRepository.findById(consultationId).ifPresentOrElse(
                 consultation -> {
                     stateManager.setCurrentConsultation(chatId, consultationId);
                     stateManager.setState(chatId, TeacherState.VIEWING_CONSULTATION_DETAILS);
 
-                    long registeredCount = studentConsultationRepository.countByConsultation(consultation);
+                    long registeredCount = consultation.getRegUsers() != null
+                            ? consultation.getRegUsers().size()
+                            : 0;
                     String message = messageFormatter.formatConsultationDetails(consultation, registeredCount);
 
                     // Проверяем владельца консультации
-                    boolean isOwner = consultation.getTeacher() != null && 
-                                     consultation.getTeacher().getId().equals(currentTeacher.getId());
+                    boolean isOwner = consultation.getTeacher() != null &&
+                            consultation.getTeacher().getId().equals(currentTeacher.getId());
 
                     if (isOwner) {
                         // Своя консультация - полный функционал
@@ -412,8 +412,9 @@ public class TeacherCommandHandler {
 
             consultationRepository.findById(consultationId).ifPresentOrElse(
                     consultation -> {
-                        List<StudentConsultation> registrations =
-                                studentConsultationRepository.findByConsultation(consultation);
+                        List<StudentConsultation> registrations = consultation.getRegUsers() != null
+                                ? List.copyOf(consultation.getRegUsers())
+                                : List.of();
                         String message = messageFormatter.formatRegisteredStudents(registrations);
 
                         botMessenger.execute(SendMessage.builder()
@@ -453,7 +454,7 @@ public class TeacherCommandHandler {
                         botMessenger.sendText("❌ Вы не можете управлять консультацией другого преподавателя", chatId);
                         return;
                     }
-                    
+
                     consultationService.closeConsultation(consultation);
                     botMessenger.sendText("🔒 Запись на консультацию закрыта", chatId);
                     showConsultationDetails(chatId, consultationId);
@@ -476,7 +477,7 @@ public class TeacherCommandHandler {
                         botMessenger.sendText("❌ Вы не можете управлять консультацией другого преподавателя", chatId);
                         return;
                     }
-                    
+
                     TeacherConsultationService.OpenResult result = consultationService.openConsultation(consultation);
 
                     if (!result.isSuccess()) {
@@ -509,7 +510,7 @@ public class TeacherCommandHandler {
                         botMessenger.sendText("❌ Вы не можете управлять консультацией другого преподавателя", chatId);
                         return;
                     }
-                    
+
                     consultationService.cancelConsultation(consultation, "Отменено преподавателем");
 
                     // Уведомляем всех записанных студентов
@@ -542,11 +543,11 @@ public class TeacherCommandHandler {
                         botMessenger.sendText("❌ Вы не можете редактировать консультацию другого преподавателя", chatId);
                         return;
                     }
-                    
+
                     String dateTime = consultation.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) +
                             " " + consultation.getStartTime().format(TIME_FORMATTER) +
                             "-" + consultation.getEndTime().format(TIME_FORMATTER);
-                    
+
                     String capacityText = (consultation.getCapacity() != null && consultation.getCapacity() > 0)
                             ? String.valueOf(consultation.getCapacity())
                             : "без ограничений";
@@ -596,7 +597,7 @@ public class TeacherCommandHandler {
                         stateManager.setState(chatId, TeacherState.DEFAULT);
                         return;
                     }
-                    
+
                     consultation.setTitle(title);
                     consultationRepository.save(consultation);
 
@@ -636,7 +637,7 @@ public class TeacherCommandHandler {
         }
 
         ParsedDateTime parsed = parseDateTimeInput(dateTimeInput);
-        
+
         // Валидация с автоматической отправкой сообщений об ошибках
         if (!validateParsedDateTime(parsed, chatId)) {
             return;
@@ -650,7 +651,7 @@ public class TeacherCommandHandler {
                         stateManager.setState(chatId, TeacherState.DEFAULT);
                         return;
                     }
-                    
+
                     consultation.setDate(parsed.date());
                     consultation.setStartTime(parsed.startTime());
                     consultation.setEndTime(parsed.endTime());
@@ -673,8 +674,8 @@ public class TeacherCommandHandler {
         SendMessage sendMessage = SendMessage.builder()
                 .chatId(chatId)
                 .text("Введите новую вместимость:\n\n" +
-                      "• Введите число (например: 5)\n" +
-                      "• Или введите 0 для без ограничений")
+                        "• Введите число (например: 5)\n" +
+                        "• Или введите 0 для без ограничений")
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build();
 
@@ -698,9 +699,10 @@ public class TeacherCommandHandler {
                         stateManager.setState(chatId, TeacherState.DEFAULT);
                         return;
                     }
-                    
-                    int registeredCount = (int) studentConsultationRepository
-                            .countByConsultation(consultation);
+
+                    int registeredCount = consultation.getRegUsers() != null
+                            ? consultation.getRegUsers().size()
+                            : 0;
 
                     // Проверяем только если задана конкретная вместимость
                     if (capacity != null && capacity < registeredCount) {
@@ -725,7 +727,7 @@ public class TeacherCommandHandler {
                     }
 
                     stateManager.setState(chatId, TeacherState.DEFAULT);
-                    
+
                     String capacityText = capacity == null ? "без ограничений" : String.valueOf(capacity);
                     botMessenger.sendText("✅ Вместимость изменена на: " + capacityText, chatId);
                     showConsultationDetails(chatId, consultationId);
@@ -761,16 +763,16 @@ public class TeacherCommandHandler {
                         stateManager.setState(chatId, TeacherState.DEFAULT);
                         return;
                     }
-                    
+
                     boolean autoClose = answer.equals("Да");
                     consultation.setAutoCloseOnCapacity(autoClose);
                     consultationRepository.save(consultation);
 
                     // Уведомляем записанных студентов
-                    notificationService.notifyRegisteredStudentsUpdate(
-                            consultation,
-                            "Изменено автозакрытие: " + (autoClose ? "включено" : "выключено")
-                    );
+//                    notificationService.notifyRegisteredStudentsUpdate(
+//                            consultation,
+//                            "Изменено автозакрытие: " + (autoClose ? "включено" : "выключено")
+//                    );
 
                     stateManager.setState(chatId, TeacherState.DEFAULT);
                     botMessenger.sendText(
@@ -812,7 +814,9 @@ public class TeacherCommandHandler {
                 request -> {
                     stateManager.setCurrentRequest(chatId, requestId);
 
-                    int interestedCount = (int) studentConsultationRepository.countByConsultation(request);
+                    int interestedCount = request.getRegUsers() != null
+                            ? request.getRegUsers().size()
+                            : 0;
                     String message = messageFormatter.formatRequestDetails(request, interestedCount);
 
                     botMessenger.execute(SendMessage.builder()
@@ -828,8 +832,9 @@ public class TeacherCommandHandler {
     private void showRequestStudents(Long chatId, Long requestId) {
         requestService.findRequestById(requestId).ifPresentOrElse(
                 request -> {
-                    List<StudentConsultation> registrations =
-                            studentConsultationRepository.findByConsultation(request);
+                    List<StudentConsultation> registrations = request.getRegUsers() != null
+                            ? List.copyOf(request.getRegUsers())
+                            : List.of();
                     String message = messageFormatter.formatRegisteredStudents(registrations);
 
                     botMessenger.execute(SendMessage.builder()
@@ -968,7 +973,7 @@ public class TeacherCommandHandler {
      */
     private void handleBackButton(Long chatId) {
         TeacherState currentState = stateManager.getState(chatId);
-        
+
         // Если мы в просмотре деталей консультации в меню редактирования
         if (currentState == TeacherState.VIEWING_CONSULTATION_DETAILS) {
             Long consultationId = stateManager.getCurrentConsultationId(chatId);
@@ -979,7 +984,15 @@ public class TeacherCommandHandler {
             }
         }
 
-        
+        if (currentState == TeacherState.VIEWING_REQUEST_DETAILS) {
+            Long requestId = stateManager.getCurrentRequest(chatId);
+            if (requestId != null) {
+                // Возврат к деталям запроса
+                showRequestDetails(chatId, requestId);
+                return;
+            }
+        }
+
         // В остальных случаях - возврат в главное меню
         sendMainMenu(chatId);
     }
@@ -1059,12 +1072,13 @@ public class TeacherCommandHandler {
 
     /**
      * Проверка, является ли текущий преподаватель владельцем консультации
+     *
      * @return true если консультация принадлежит преподавателю
      */
     private boolean isConsultationOwner(Consultation consultation, Long chatId) {
         TelegramUser currentTeacher = getCurrentTeacher(chatId);
-        return consultation.getTeacher() != null && 
-               consultation.getTeacher().getId().equals(currentTeacher.getId());
+        return consultation.getTeacher() != null &&
+                consultation.getTeacher().getId().equals(currentTeacher.getId());
     }
 
     /**
@@ -1141,6 +1155,7 @@ public class TeacherCommandHandler {
 
     /**
      * Валидация ParsedDateTime с отправкой сообщений об ошибках
+     *
      * @return true если валидация прошла успешно
      */
     private boolean validateParsedDateTime(ParsedDateTime parsed, Long chatId) {

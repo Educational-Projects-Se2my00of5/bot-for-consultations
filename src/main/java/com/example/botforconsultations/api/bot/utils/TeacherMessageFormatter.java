@@ -90,14 +90,13 @@ public class TeacherMessageFormatter {
         String statusEmoji = getStatusEmoji(consultation.getStatus());
         message.append(String.format("Статус: %s %s\n\n", statusEmoji, getStatusText(consultation.getStatus())));
 
-        // Вместимость
-        message.append(String.format("👥 Записано студентов: %d", registeredCount));
+        // Вместимость - отображаем записанных студентов с учётом лимита
+        message.append("👥 Записано студентов: ");
         if (consultation.getCapacity() != null && consultation.getCapacity() > 0) {
-            message.append(String.format("/%d", consultation.getCapacity()));
+            message.append(String.format("%d/%d\n", registeredCount, consultation.getCapacity()));
         } else {
-            message.append(" (без ограничений)");
+            message.append(String.format("%d (без ограничений)\n", registeredCount));
         }
-        message.append("\n");
 
         // Автозакрытие
         message.append(String.format("🔒 Автозакрытие: %s\n",
@@ -149,24 +148,19 @@ public class TeacherMessageFormatter {
         message.append("📋 Запросы студентов на консультации:\n\n");
 
         for (Consultation request : requests) {
-            message.append(formatRequestShort(request));
+            int interestedCount = request.getRegUsers() != null ? request.getRegUsers().size() : 0;
+            
+            message.append(String.format("⏳ №%d - %s\n",
+                    request.getId(),
+                    request.getTitle()));
+            message.append(String.format("   👤 Автор: %s\n",
+                    TeacherNameFormatter.formatFullName(request.getTeacher())));
+            message.append(String.format("   👥 Заинтересовано: %d\n",
+                    interestedCount));
+            message.append("\n");
         }
 
-        message.append("\n💡 Нажмите на запрос для просмотра деталей");
-        return message.toString();
-    }
-
-    /**
-     * Краткий формат запроса для списка
-     */
-    private String formatRequestShort(Consultation request) {
-        StringBuilder message = new StringBuilder();
-        message.append(String.format("🆔 №%d\n", request.getId()));
-        message.append(String.format("📝 %s\n", request.getTitle()));
-        message.append(String.format("👤 Автор: %s\n",
-                TeacherNameFormatter.formatFullName(request.getTeacher()))); // teacher = студент для запросов
-        message.append("⏳ Ожидает принятия\n");
-        message.append("───────────────\n");
+        message.append("💡 Нажмите на запрос для просмотра деталей");
         return message.toString();
     }
 
@@ -175,17 +169,19 @@ public class TeacherMessageFormatter {
      */
     public String formatRequestDetails(Consultation request, int interestedCount) {
         StringBuilder message = new StringBuilder();
-        message.append("📋 Детали запроса студента\n\n");
-        message.append(String.format("🆔 Номер: %d\n", request.getId()));
+        message.append(String.format("📋 Запрос консультации №%d\n\n", request.getId()));
+        
         message.append(String.format("📝 Тема: %s\n\n", request.getTitle()));
+        
         message.append(String.format("👤 Автор запроса: %s\n",
                 TeacherNameFormatter.formatFullName(request.getTeacher())));
         
-        message.append(String.format("\n👥 Заинтересовано %s: %d\n\n",
-                getStudentWordGenitive(interestedCount),
+        message.append(String.format("\n👥 Заинтересовано студентов: %d\n",
                 interestedCount));
+        
+        message.append("📊 Статус: ⏳ Ожидает принятия\n");
 
-        message.append("💡 Вы можете принять этот запрос и создать консультацию.\n");
+        message.append("\n💡 Вы можете принять этот запрос и создать консультацию.\n");
         message.append("Все заинтересованные студенты автоматически запишутся на неё.");
 
         return message.toString();
@@ -337,17 +333,6 @@ public class TeacherMessageFormatter {
             return "студент";
         } else if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) {
             return "студента";
-        } else {
-            return "студентов";
-        }
-    }
-
-    /**
-     * Склонение "студентов" в родительном падеже
-     */
-    private String getStudentWordGenitive(int count) {
-        if (count % 10 == 1 && count % 100 != 11) {
-            return "студент";
         } else {
             return "студентов";
         }

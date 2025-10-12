@@ -89,9 +89,12 @@ public class ConsultationMessageFormatter {
             message.append(String.format("\n📝 Тема: %s\n", consultation.getTitle()));
         }
 
-        message.append(String.format("\n👥 Записано студентов: %d", registeredCount));
+        // Отображаем количество записанных студентов с учётом вместимости
+        message.append("\n👥 Записано студентов: ");
         if (consultation.getCapacity() != null && consultation.getCapacity() > 0) {
-            message.append(String.format("/%d", consultation.getCapacity()));
+            message.append(String.format("%d/%d", registeredCount, consultation.getCapacity()));
+        } else {
+            message.append(String.format("%d (без ограничений)", registeredCount));
         }
         
         // Добавляем статус консультации
@@ -122,10 +125,15 @@ public class ConsultationMessageFormatter {
                 consultation.getStartTime().format(TIME_FORMATTER),
                 consultation.getEndTime().format(TIME_FORMATTER)));
         message.append(String.format("\n📝 Ваш вопрос: %s\n", studentMessage));
-        message.append(String.format("\n👥 Записано студентов: %d", registeredCount));
+        
+        // Отображаем количество записанных студентов с учётом вместимости
+        message.append("\n👥 Записано студентов: ");
         if (consultation.getCapacity() != null && consultation.getCapacity() > 0) {
-            message.append(String.format("/%d", consultation.getCapacity()));
+            message.append(String.format("%d/%d", registeredCount, consultation.getCapacity()));
+        } else {
+            message.append(String.format("%d (без ограничений)", registeredCount));
         }
+        
         return message.toString();
     }
 
@@ -278,25 +286,27 @@ public class ConsultationMessageFormatter {
         message.append("📋 Запросы консультаций от студентов:\n\n");
 
         for (Consultation request : requests) {
-            message.append(String.format("🆔 №%d\n", request.getId()));
-            message.append(String.format("📝 Тема: %s\n", request.getTitle()));
-            
-            // Автор запроса (teacher = студент в случае запроса)
-            message.append(String.format("👤 Автор: %s\n", 
-                    TeacherNameFormatter.formatFullName(request.getTeacher())));
-            
-            // Статус
             String statusEmoji = switch (request.getStatus()) {
-                case REQUEST -> "⏳ Ожидает";
-                case OPEN -> "✅ Принят";
-                case CLOSED -> "🔒 Закрыт";
-                case CANCELLED -> "❌ Отменён";
+                case REQUEST -> "⏳";
+                case OPEN -> "✅";
+                case CLOSED -> "🔒";
+                case CANCELLED -> "❌";
             };
-            message.append(String.format("%s\n", statusEmoji));
-            message.append("───────────────\n");
+            
+            int interestedCount = request.getRegUsers() != null ? request.getRegUsers().size() : 0;
+            
+            message.append(String.format("%s №%d - %s\n",
+                    statusEmoji,
+                    request.getId(),
+                    request.getTitle()));
+            message.append(String.format("   👤 Автор: %s\n",
+                    TeacherNameFormatter.formatFullName(request.getTeacher())));
+            message.append(String.format("   👥 Заинтересовано: %d\n",
+                    interestedCount));
+            message.append("\n");
         }
 
-        message.append("\nДля просмотра деталей выберите номер запроса");
+        message.append("💡 Выберите запрос для просмотра деталей");
         return message.toString();
     }
 
@@ -305,20 +315,28 @@ public class ConsultationMessageFormatter {
      */
     public String formatRequestDetails(Consultation request) {
         StringBuilder message = new StringBuilder();
-        message.append("📋 Детали запроса консультации\n\n");
-        message.append(String.format("🆔 Номер: %d\n", request.getId()));
-        message.append(String.format("📝 Тема: %s\n", request.getTitle()));
-        message.append(String.format("👤 Автор: %s\n\n", 
+        message.append(String.format("📋 Запрос консультации №%d\n\n", request.getId()));
+        
+        message.append(String.format("📝 Тема: %s\n\n", request.getTitle()));
+        
+        message.append(String.format("👤 Автор запроса: %s\n",
                 TeacherNameFormatter.formatFullName(request.getTeacher())));
 
-        // Статус
+        // Количество заинтересованных студентов
+        int interestedCount = request.getRegUsers() != null ? request.getRegUsers().size() : 0;
+        message.append(String.format("\n👥 Заинтересовано студентов: %d\n",
+                interestedCount));
+
+        // Статус запроса
         String statusText = switch (request.getStatus()) {
             case REQUEST -> "⏳ Ожидает обработки преподавателем";
-            case OPEN -> "✅ Принят преподавателем, назначена дата";
+            case OPEN -> "✅ Принят преподавателем";
             case CLOSED -> "🔒 Запрос закрыт";
             case CANCELLED -> "❌ Запрос отменён";
         };
-        message.append(String.format("Статус: %s\n", statusText));
+        message.append(String.format("📊 Статус: %s\n", statusText));
+        
+        message.append("\n💡 Выберите действие:");
 
         return message.toString();
     }

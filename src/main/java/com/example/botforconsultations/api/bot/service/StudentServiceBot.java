@@ -125,7 +125,9 @@ public class StudentServiceBot {
      * Получить количество записанных студентов на консультацию
      */
     public long getRegisteredCount(Consultation consultation) {
-        return studentConsultationRepository.countByConsultation(consultation);
+        return consultation.getRegUsers() != null 
+                ? consultation.getRegUsers().size() 
+                : 0;
     }
 
     // ========== Результаты операций ==========

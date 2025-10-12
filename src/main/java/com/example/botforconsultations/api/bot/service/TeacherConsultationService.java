@@ -4,7 +4,6 @@ import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.ConsultationStatus;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.ConsultationRepository;
-import com.example.botforconsultations.core.repository.StudentConsultationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,6 @@ import java.util.List;
 public class TeacherConsultationService {
 
     private final ConsultationRepository consultationRepository;
-    private final StudentConsultationRepository studentConsultationRepository;
 
     /**
      * Получить все консультации преподавателя
@@ -76,7 +74,9 @@ public class TeacherConsultationService {
      */
     @Transactional
     public OpenResult openConsultation(Consultation consultation) {
-        long registeredCount = studentConsultationRepository.countByConsultation(consultation);
+        long registeredCount = consultation.getRegUsers() != null 
+                ? consultation.getRegUsers().size() 
+                : 0;
         
         // Проверяем: если автозакрытие включено и нет свободных мест
         if (consultation.isAutoCloseOnCapacity() && 
@@ -140,7 +140,9 @@ public class TeacherConsultationService {
         request.setAutoCloseOnCapacity(autoCloseOnCapacity);
         
         // Определяем статус
-        long interestedCount = studentConsultationRepository.countByConsultation(request);
+        long interestedCount = request.getRegUsers() != null 
+                ? request.getRegUsers().size() 
+                : 0;
         if (autoCloseOnCapacity && capacity != null && interestedCount >= capacity) {
             request.setStatus(ConsultationStatus.CLOSED);
         } else {
@@ -164,7 +166,9 @@ public class TeacherConsultationService {
             return false;
         }
 
-        long registeredCount = studentConsultationRepository.countByConsultation(consultation);
+        long registeredCount = consultation.getRegUsers() != null 
+                ? consultation.getRegUsers().size() 
+                : 0;
         
         if (registeredCount >= consultation.getCapacity() && 
             consultation.getStatus() == ConsultationStatus.OPEN) {

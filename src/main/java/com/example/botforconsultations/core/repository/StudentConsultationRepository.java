@@ -41,4 +41,9 @@ public interface StudentConsultationRepository extends JpaRepository<StudentCons
      * Подсчитывает количество студентов на консультации
      */
     long countByConsultation(Consultation consultation);
+    
+    /**
+     * Удаляет все записи студентов для консультации
+     */
+    void deleteByConsultation(Consultation consultation);
 }
