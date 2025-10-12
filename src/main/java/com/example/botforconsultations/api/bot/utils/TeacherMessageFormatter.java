@@ -90,18 +90,20 @@ public class TeacherMessageFormatter {
         String statusEmoji = getStatusEmoji(consultation.getStatus());
         message.append(String.format("Статус: %s %s\n\n", statusEmoji, getStatusText(consultation.getStatus())));
 
-        // Вместимость и автозакрытие
+        // Вместимость
         message.append(String.format("👥 Записано студентов: %d", registeredCount));
         if (consultation.getCapacity() != null && consultation.getCapacity() > 0) {
             message.append(String.format("/%d", consultation.getCapacity()));
-            if (consultation.isAutoCloseOnCapacity()) {
-                message.append(" (автозакрытие включено)");
-            }
         } else {
             message.append(" (без ограничений)");
         }
+        message.append("\n");
 
-        message.append("\n\n💡 Выберите действие:");
+        // Автозакрытие
+        message.append(String.format("🔒 Автозакрытие: %s\n",
+                consultation.isAutoCloseOnCapacity() ? "включено" : "выключено"));
+
+        message.append("\n💡 Выберите действие:");
         return message.toString();
     }
 

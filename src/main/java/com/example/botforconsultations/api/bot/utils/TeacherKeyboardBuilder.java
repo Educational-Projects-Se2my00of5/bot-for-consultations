@@ -51,10 +51,10 @@ public class TeacherKeyboardBuilder {
     public ReplyKeyboardMarkup buildConsultationsList(List<Consultation> consultations) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Добавляем консультации как кнопки (максимум 10)
+        // Добавляем консультации как кнопки (максимум 5)
         int count = 0;
         for (Consultation consultation : consultations) {
-            if (count >= 10) break;
+            if (count >= 5) break;
             
             KeyboardRow row = new KeyboardRow();
             // Консультации всегда имеют дату и время
@@ -109,15 +109,34 @@ public class TeacherKeyboardBuilder {
             row2.add(new KeyboardButton("✏️ Редактировать"));
             row2.add(new KeyboardButton("❌ Отменить консультацию"));
             keyboard.add(row2);
-            
-        } else if (status == ConsultationStatus.CANCELLED) {
-            // Консультация отменена - только просмотр
-            KeyboardRow infoRow = new KeyboardRow();
-            infoRow.add(new KeyboardButton("ℹ️ Консультация отменена"));
-            keyboard.add(infoRow);
         }
+        // Для CANCELLED статуса не добавляем кнопки управления
 
         // Кнопка "Просмотреть студентов" (если есть записанные)
+        if (registeredCount > 0) {
+            KeyboardRow studentsRow = new KeyboardRow();
+            studentsRow.add(new KeyboardButton("👥 Просмотреть студентов"));
+            keyboard.add(studentsRow);
+        }
+
+        // Кнопка "Назад"
+        KeyboardRow backRow = new KeyboardRow();
+        backRow.add(new KeyboardButton("◀️ Назад к списку"));
+        keyboard.add(backRow);
+
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(keyboard)
+                .resizeKeyboard(true)
+                .build();
+    }
+
+    /**
+     * Клавиатура для просмотра консультации другого преподавателя (только чтение)
+     */
+    public ReplyKeyboardMarkup buildConsultationDetailsReadOnly(long registeredCount) {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        // Только кнопка "Просмотреть студентов" (если есть записанные)
         if (registeredCount > 0) {
             KeyboardRow studentsRow = new KeyboardRow();
             studentsRow.add(new KeyboardButton("👥 Просмотреть студентов"));
@@ -141,10 +160,10 @@ public class TeacherKeyboardBuilder {
     public ReplyKeyboardMarkup buildRequestsList(List<Consultation> requests) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Добавляем запросы как кнопки (максимум 10)
+        // Добавляем запросы как кнопки (максимум 5)
         int count = 0;
         for (Consultation request : requests) {
-            if (count >= 10) break;
+            if (count >= 5) break;
             
             KeyboardRow row = new KeyboardRow();
             String buttonText = String.format("№%d - %s", 
