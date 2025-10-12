@@ -7,11 +7,14 @@ services:
       - ./admin-web:/app      # монтируем код для hot-reload
       - /app/node_modules     # чтобы node_modules не затирался
     environment:
+      - REACT_APP_API_URL=http://backend:8080
       - CHOKIDAR_USEPOLLING=true  # полезно для hot reload внутри Docker
     stdin_open: true
     tty: true
     depends_on:
       - backend
+    networks:
+      - app-network
 
   backend:
     build:
@@ -42,8 +45,14 @@ services:
       - "5432:5432" # 5432 - может быть занят
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
 
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
 

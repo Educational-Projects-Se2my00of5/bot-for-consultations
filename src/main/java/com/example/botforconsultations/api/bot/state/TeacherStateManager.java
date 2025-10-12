@@ -23,8 +23,8 @@ public class TeacherStateManager {
         WAITING_FOR_CONSULTATION_DATETIME,    // Ожидание ввода даты и времени
         WAITING_FOR_CONSULTATION_CAPACITY,    // Ожидание ввода вместимости
         WAITING_FOR_CONSULTATION_AUTOCLOSE,   // Ожидание ответа об автозакрытии
-        VIEWING_CONSULTATION_DETAILS,         // Просмотр деталей консультации
-        VIEWING_REQUEST_DETAILS,              // Просмотр деталей запроса студента
+        VIEWING_CONSULTATION_DETAILS,         // Просмотр списка консультаций (+ деталей, если задан currentConsultationId)
+        VIEWING_REQUEST_DETAILS,              // Просмотр списка запросов (+ деталей, если задан currentRequestId)
         ACCEPTING_REQUEST_DATETIME,           // Ввод даты/времени при принятии запроса
         ACCEPTING_REQUEST_CAPACITY,           // Ввод вместимости при принятии запроса
         ACCEPTING_REQUEST_AUTOCLOSE,          // Ввод автозакрытия при принятии запроса
@@ -106,6 +106,22 @@ public class TeacherStateManager {
      */
     public Long getCurrentRequest(Long chatId) {
         return currentRequestId.get(chatId);
+    }
+
+    /**
+     * Очистить текущую консультацию
+     */
+    public void clearCurrentConsultation(Long chatId) {
+        currentConsultationId.remove(chatId);
+        log.debug("Teacher {} current consultation cleared", chatId);
+    }
+
+    /**
+     * Очистить текущий запрос
+     */
+    public void clearCurrentRequest(Long chatId) {
+        currentRequestId.remove(chatId);
+        log.debug("Teacher {} current request cleared", chatId);
     }
 
     // ========== Временные данные для создания консультации ==========

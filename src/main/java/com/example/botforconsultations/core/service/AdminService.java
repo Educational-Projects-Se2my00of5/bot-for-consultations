@@ -1,5 +1,6 @@
 package com.example.botforconsultations.core.service;
 
+import com.example.botforconsultations.api.bot.service.NotificationService;
 import com.example.botforconsultations.api.dto.UserDto;
 import com.example.botforconsultations.core.exception.AuthenticationException;
 import com.example.botforconsultations.core.exception.BadRequestException;
@@ -24,6 +25,8 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
+    private final NotificationService notificationService;
+
     private final UserRepository userRepository;
     private final TelegramUserRepository telegramUserRepository;
 
@@ -35,6 +38,7 @@ public class AdminService {
         if (user.getRole() == Role.TEACHER && user instanceof TelegramUser telegramUser) {
             telegramUser.setHasConfirmed(true);
             userRepository.save(telegramUser);
+            notificationService.notifyTeacherAccountApproved(telegramUser.getTelegramId());
         } else {
             throw new BadRequestException("Пользователь не преподаватель");
         }

@@ -200,4 +200,29 @@ public class NotificationService {
 
         log.info("Sent {} request accepted notifications for consultation #{}", sent, consultation.getId());
     }
+
+    /**
+     * Уведомить преподавателя о подтверждении аккаунта
+     * @param chatId Telegram ID преподавателя
+     */
+    public void notifyTeacherAccountApproved(Long chatId) {
+        String message = """
+                ✅ Ваш аккаунт преподавателя подтверждён!
+                
+                Теперь вы можете:
+                📅 Создавать консультации
+                📋 Просматривать запросы студентов
+                👥 Упрвлять записями на консультаации
+                
+                Используйте команду /start для начала работы.
+                """;
+        
+        try {
+            botMessenger.sendText(message, chatId);
+            log.info("Sent account approval notification to teacher with chatId #{}", chatId);
+        } catch (Exception e) {
+            log.error("Failed to send account approval notification to teacher #{}: {}", 
+                    chatId, e.getMessage());
+        }
+    }
 }

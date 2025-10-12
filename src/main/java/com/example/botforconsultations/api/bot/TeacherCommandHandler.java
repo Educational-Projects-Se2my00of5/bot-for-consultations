@@ -62,6 +62,12 @@ public class TeacherCommandHandler {
     public void handleTeacherCommand(String text, Long chatId) {
         TeacherState currentState = stateManager.getState(chatId);
 
+        // Проверка кнопки "Отмена" - обрабатывается в первую очередь
+        if (text.equals("❌ Отмена")) {
+            handleCancel(chatId);
+            return;
+        }
+
         // Обработка состояний ввода
         if (currentState != TeacherState.DEFAULT 
                 && currentState != TeacherState.VIEWING_CONSULTATION_DETAILS
@@ -84,9 +90,7 @@ public class TeacherCommandHandler {
         }
 
         // Обработка выбора консультации/запроса по номеру в режиме просмотра
-        if ((currentState == TeacherState.VIEWING_CONSULTATION_DETAILS 
-                || currentState == TeacherState.VIEWING_REQUEST_DETAILS)
-                && text.startsWith("№")) {
+        if (text.startsWith("№")) {
             handleNumberSelection(text, chatId);
             return;
         }
@@ -129,6 +133,8 @@ public class TeacherCommandHandler {
 
     public void sendMainMenu(Long chatId) {
         stateManager.resetState(chatId);
+        stateManager.clearCurrentConsultation(chatId);
+        stateManager.clearCurrentRequest(chatId);
         botMessenger.execute(SendMessage.builder()
                 .text("Добро пожаловать, преподаватель! Выберите действие:")
                 .chatId(chatId)
@@ -158,12 +164,13 @@ public class TeacherCommandHandler {
 
     private void startConsultationCreation(Long chatId) {
         stateManager.setState(chatId, TeacherState.WAITING_FOR_CONSULTATION_TITLE);
-        botMessenger.sendText(
-                "➕ Создание новой консультации\n\n" +
-                "Шаг 1/4: Введите название консультации\n" +
-                "Например: \"Разбор курсовых работ\" или \"Подготовка к экзамену\"",
-                chatId
-        );
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text("➕ Создание новой консультации\n\n" +
+                      "Шаг 1/4: Введите название консультации\n" +
+                      "Например: \"Разбор курсовых работ\" или \"Подготовка к экзамену\"")
+                .replyMarkup(keyboardBuilder.buildCancelKeyboard())
+                .build());
     }
 
     private void processConsultationTitle(String title, Long chatId) {
@@ -214,6 +221,16 @@ public class TeacherCommandHandler {
         if (!parsed.endTime.isAfter(parsed.startTime)) {
             botMessenger.sendText(
                     "❌ Время окончания должно быть позже времени начала!\n" +
+                    "Попробуйте ещё раз:",
+                    chatId
+            );
+            return;
+        }
+
+        // Валидация: дата и время начала не должны быть в прошлом
+        if (parsed.date.atTime(parsed.startTime).isBefore(java.time.LocalDateTime.now())) {
+            botMessenger.sendText(
+                    "❌ Дата и время консультации не могут быть в прошлом!\n" +
                     "Попробуйте ещё раз:",
                     chatId
             );
@@ -317,6 +334,8 @@ public class TeacherCommandHandler {
                     .replyMarkup(keyboardBuilder.buildMainMenu())
                     .build());
         } else {
+            stateManager.clearCurrentConsultation(chatId);  // Очищаем при показе списка
+            stateManager.setState(chatId, TeacherState.VIEWING_CONSULTATION_DETAILS);
             botMessenger.execute(SendMessage.builder()
                     .chatId(chatId)
                     .text(message)
@@ -514,7 +533,7 @@ public class TeacherCommandHandler {
         SendMessage sendMessage = SendMessage.builder()
                 .chatId(chatId)
                 .text("Введите новое название консультации:")
-                .replyMarkup(keyboardBuilder.buildBackKeyboard())
+                .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build();
 
         botMessenger.execute(sendMessage);
@@ -554,7 +573,7 @@ public class TeacherCommandHandler {
                         "25.12.2024 15:30\n" +
                         "25.12.24 15:30\n" +
                         "25.12 15:30")
-                .replyMarkup(keyboardBuilder.buildBackKeyboard())
+                .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build();
 
         botMessenger.execute(sendMessage);
@@ -572,6 +591,16 @@ public class TeacherCommandHandler {
             botMessenger.sendText(
                     "❌ Неверный формат даты/времени.\n" +
                     "Используйте: ДД.ММ.ГГГГ ЧЧ:ММ",
+                    chatId
+            );
+            return;
+        }
+
+        // Валидация: дата и время начала не должны быть в прошлом
+        if (parsed.date.atTime(parsed.startTime).isBefore(java.time.LocalDateTime.now())) {
+            botMessenger.sendText(
+                    "❌ Дата и время консультации не могут быть в прошлом!\n" +
+                    "Попробуйте ещё раз:",
                     chatId
             );
             return;
@@ -600,7 +629,7 @@ public class TeacherCommandHandler {
         SendMessage sendMessage = SendMessage.builder()
                 .chatId(chatId)
                 .text("Введите новую вместимость:")
-                .replyMarkup(keyboardBuilder.buildBackKeyboard())
+                .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build();
 
         botMessenger.execute(sendMessage);
@@ -713,6 +742,7 @@ public class TeacherCommandHandler {
                     .replyMarkup(keyboardBuilder.buildMainMenu())
                     .build());
         } else {
+            stateManager.clearCurrentRequest(chatId);  // Очищаем при показе списка
             stateManager.setState(chatId, TeacherState.VIEWING_REQUEST_DETAILS);
             botMessenger.execute(SendMessage.builder()
                     .chatId(chatId)
@@ -765,16 +795,17 @@ public class TeacherCommandHandler {
         }
 
         stateManager.setState(chatId, TeacherState.ACCEPTING_REQUEST_DATETIME);
-        botMessenger.sendText(
-                "✅ Принятие запроса студента\n\n" +
-                "Название уже указано студентом.\n\n" +
-                "Шаг 1/3: Введите дату и время одной строкой\n\n" +
-                "Формат: ДД.ММ.ГГГГ ЧЧ:ММ-ЧЧ:ММ\n" +
-                "Примеры:\n" +
-                "• 15.10.2025 14:00-16:00\n" +
-                "• 20.10 10:00-12:00",
-                chatId
-        );
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text("✅ Принятие запроса студента\n\n" +
+                      "Название уже указано студентом.\n\n" +
+                      "Шаг 1/3: Введите дату и время одной строкой\n\n" +
+                      "Формат: ДД.ММ.ГГГГ ЧЧ:ММ-ЧЧ:ММ\n" +
+                      "Примеры:\n" +
+                      "• 15.10.2025 14:00-16:00\n" +
+                      "• 20.10 10:00-12:00")
+                .replyMarkup(keyboardBuilder.buildCancelKeyboard())
+                .build());
     }
 
     private void processAcceptRequestDateTime(String input, Long chatId) {
@@ -791,6 +822,16 @@ public class TeacherCommandHandler {
         if (!parsed.endTime.isAfter(parsed.startTime)) {
             botMessenger.sendText(
                     "❌ Время окончания должно быть позже времени начала!",
+                    chatId
+            );
+            return;
+        }
+
+        // Валидация: дата и время начала не должны быть в прошлом
+        if (parsed.date.atTime(parsed.startTime).isBefore(java.time.LocalDateTime.now())) {
+            botMessenger.sendText(
+                    "❌ Дата и время консультации не могут быть в прошлом!\n" +
+                    "Попробуйте ещё раз:",
                     chatId
             );
             return;
@@ -888,6 +929,73 @@ public class TeacherCommandHandler {
         }
     }
 
+    /**
+     * Обработка кнопки "Отмена" - прерывает процесс создания/редактирования
+     */
+    private void handleCancel(Long chatId) {
+        TeacherState currentState = stateManager.getState(chatId);
+        
+        // Определяем, что именно отменяем и куда возвращаемся
+        if (currentState == TeacherState.WAITING_FOR_CONSULTATION_TITLE
+                || currentState == TeacherState.WAITING_FOR_CONSULTATION_DATETIME
+                || currentState == TeacherState.WAITING_FOR_CONSULTATION_CAPACITY
+                || currentState == TeacherState.WAITING_FOR_CONSULTATION_AUTOCLOSE) {
+            // 1) Создание консультации - возврат в главное меню
+            stateManager.clearTempConsultationData(chatId);
+            stateManager.resetState(chatId);
+            
+            botMessenger.execute(SendMessage.builder()
+                    .chatId(chatId)
+                    .text("❌ Создание консультации отменено")
+                    .replyMarkup(keyboardBuilder.buildMainMenu())
+                    .build());
+            
+        } else if (currentState == TeacherState.EDITING_TITLE
+                || currentState == TeacherState.EDITING_DATETIME
+                || currentState == TeacherState.EDITING_CAPACITY
+                || currentState == TeacherState.EDITING_AUTOCLOSE) {
+            // 2) Редактирование консультации - возврат к просмотру консультации
+            Long consultationId = stateManager.getCurrentConsultationId(chatId);
+            stateManager.clearTempConsultationData(chatId);
+            stateManager.resetState(chatId);
+            
+            botMessenger.sendText("❌ Редактирование отменено", chatId);
+            
+            if (consultationId != null) {
+                showConsultationDetails(chatId, consultationId);
+            } else {
+                sendMainMenu(chatId);
+            }
+            
+        } else if (currentState == TeacherState.ACCEPTING_REQUEST_DATETIME
+                || currentState == TeacherState.ACCEPTING_REQUEST_CAPACITY
+                || currentState == TeacherState.ACCEPTING_REQUEST_AUTOCLOSE) {
+            // 3) Принятие запроса - возврат к просмотру запроса
+            Long requestId = stateManager.getCurrentRequest(chatId);
+            stateManager.clearTempConsultationData(chatId);
+            stateManager.resetState(chatId);
+            
+            botMessenger.sendText("❌ Принятие запроса отменено", chatId);
+            
+            if (requestId != null) {
+                showRequestDetails(chatId, requestId);
+            } else {
+                sendMainMenu(chatId);
+            }
+            
+        } else {
+            // Неожиданное состояние - возврат в главное меню
+            stateManager.clearTempConsultationData(chatId);
+            stateManager.resetState(chatId);
+            
+            botMessenger.execute(SendMessage.builder()
+                    .chatId(chatId)
+                    .text("❌ Операция отменена")
+                    .replyMarkup(keyboardBuilder.buildMainMenu())
+                    .build());
+        }
+    }
+
     // ========== Вспомогательные методы ==========
 
     private TelegramUser getCurrentTeacher(Long chatId) {
@@ -929,23 +1037,28 @@ public class TeacherCommandHandler {
     }
 
     private LocalDate parseDate(String dateStr) {
+        // Пробуем все форматы с парсером
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
-                LocalDate date = LocalDate.parse(dateStr, formatter);
-                
-                // Если год не указан (формат dd.MM), добавляем текущий год
-                if (dateStr.split("\\.").length == 2) {
-                    date = date.withYear(LocalDate.now().getYear());
-                    // Если дата в прошлом, берём следующий год
-                    if (date.isBefore(LocalDate.now())) {
-                        date = date.plusYears(1);
-                    }
-                }
-                
-                return date;
+                return LocalDate.parse(dateStr, formatter);
             } catch (DateTimeParseException ignored) {
             }
         }
+        
+        // Если ни один формат не подошёл, пробуем вручную парсить dd.MM (без года)
+        String[] parts = dateStr.split("\\.");
+        if (parts.length == 2) {
+            try {
+                int day = Integer.parseInt(parts[0]);
+                int month = Integer.parseInt(parts[1]);
+                int year = LocalDate.now().getYear();
+                
+                // Создаём дату с текущим годом
+                return LocalDate.of(year, month, day);
+            } catch (Exception ignored) {
+            }
+        }
+        
         return null;
     }
 

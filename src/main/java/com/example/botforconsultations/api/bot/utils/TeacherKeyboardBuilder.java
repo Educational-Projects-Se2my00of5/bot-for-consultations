@@ -256,4 +256,20 @@ public class TeacherKeyboardBuilder {
                 .resizeKeyboard(true)
                 .build();
     }
+
+    /**
+     * Клавиатура с кнопкой "Отмена" для прерывания процесса создания/редактирования
+     */
+    public ReplyKeyboardMarkup buildCancelKeyboard() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow cancelRow = new KeyboardRow();
+        cancelRow.add(new KeyboardButton("❌ Отмена"));
+        keyboard.add(cancelRow);
+
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(keyboard)
+                .resizeKeyboard(true)
+                .build();
+    }
 }
