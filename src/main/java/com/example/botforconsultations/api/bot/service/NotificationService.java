@@ -26,12 +26,13 @@ public class NotificationService {
     private final BotMessenger botMessenger;
     private final SubscriptionRepository subscriptionRepository;
     private final TeacherMessageFormatter messageFormatter;
+    private final ConsultationService consultationService;
 
     /**
      * Уведомить подписчиков о новой консультации
-     * @param consultation новая консультация
      */
-    public void notifySubscribersNewConsultation(Consultation consultation) {
+    public void notifySubscribersNewConsultation(Long consultationId) {
+        Consultation consultation = consultationService.findById(consultationId);
         List<Subscription> subscriptions = subscriptionRepository.findByTeacher(consultation.getTeacher());
         
         if (subscriptions.isEmpty()) {
@@ -58,10 +59,9 @@ public class NotificationService {
 
     /**
      * Уведомить записанных студентов об изменении консультации
-     * @param consultation изменённая консультация
-     * @param changeDescription описание изменения
      */
-    public void notifyRegisteredStudentsUpdate(Consultation consultation, String changeDescription) {
+    public void notifyRegisteredStudentsUpdate(Long consultationId, String changeDescription) {
+        Consultation consultation = consultationService.findById(consultationId);
         List<StudentConsultation> registrations = consultation.getRegUsers() != null
                 ? List.copyOf(consultation.getRegUsers())
                 : List.of();
@@ -91,11 +91,9 @@ public class NotificationService {
     /**
      * Уведомить подписчиков о появлении свободных мест
      * Отправляет только тем, кто подписан на преподавателя, но НЕ записан на консультацию
-     * 
-     * @param consultation консультация с освободившимися местами
-     * @param excludeStudentId ID студента, который отписался (не уведомлять его)
      */
-    public void notifySubscribersAvailableSpots(Consultation consultation, Long excludeStudentId) {
+    public void notifySubscribersAvailableSpots(Long consultationId, Long excludeStudentId) {
+        Consultation consultation = consultationService.findById(consultationId);
         // Получаем всех подписчиков преподавателя
         List<Subscription> subscriptions = subscriptionRepository.findByTeacher(consultation.getTeacher());
         
@@ -144,9 +142,9 @@ public class NotificationService {
 
     /**
      * Уведомить записанных студентов об отмене консультации
-     * @param consultation отменённая консультация
      */
-    public void notifyRegisteredStudentsCancellation(Consultation consultation) {
+    public void notifyRegisteredStudentsCancellation(Long consultationId) {
+        Consultation consultation = consultationService.findById(consultationId);
         List<StudentConsultation> registrations = consultation.getRegUsers() != null
                 ? List.copyOf(consultation.getRegUsers())
                 : List.of();
@@ -175,9 +173,9 @@ public class NotificationService {
 
     /**
      * Уведомить записанных студентов о превращении запроса в консультацию
-     * @param consultation консультация (бывший запрос)
      */
-    public void notifyInterestedStudentsRequestAccepted(Consultation consultation) {
+    public void notifyInterestedStudentsRequestAccepted(Long consultationId) {
+        Consultation consultation = consultationService.findById(consultationId);
         List<StudentConsultation> registrations = consultation.getRegUsers() != null
                 ? List.copyOf(consultation.getRegUsers())
                 : List.of();

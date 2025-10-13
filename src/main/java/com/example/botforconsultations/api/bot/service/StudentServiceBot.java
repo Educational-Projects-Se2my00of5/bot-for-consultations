@@ -115,6 +115,13 @@ public class StudentServiceBot {
     }
 
     /**
+     * Получить регистрацию студента на консультацию
+     */
+    public Optional<StudentConsultation> getStudentRegistration(TelegramUser student, Consultation consultation) {
+        return studentConsultationRepository.findByStudentAndConsultation(student, consultation);
+    }
+
+    /**
      * Получить все записи студента
      */
     public List<StudentConsultation> getStudentRegistrations(TelegramUser student) {

@@ -74,7 +74,7 @@ public class ConsultationMessageFormatter {
     /**
      * Детальная информация о консультации
      */
-    public String formatConsultationDetails(Consultation consultation, long registeredCount) {
+    public String formatConsultationDetails(Consultation consultation, long registeredCount, StudentConsultation studentRegistration) {
         StringBuilder message = new StringBuilder();
         message.append(String.format("📋 Консультация №%d\n\n", consultation.getId()));
         message.append(String.format("👨‍🏫 Преподаватель: %s %s\n",
@@ -87,6 +87,11 @@ public class ConsultationMessageFormatter {
 
         if (consultation.getTitle() != null && !consultation.getTitle().isEmpty()) {
             message.append(String.format("\n📝 Тема: %s\n", consultation.getTitle()));
+        }
+
+        // Если студент зарегистрирован - показываем его сообщение
+        if (studentRegistration != null && studentRegistration.getMessage() != null && !studentRegistration.getMessage().isEmpty()) {
+            message.append(String.format("\n💬 Ваш вопрос: %s\n", studentRegistration.getMessage()));
         }
 
         // Отображаем количество записанных студентов с учётом вместимости
@@ -113,26 +118,26 @@ public class ConsultationMessageFormatter {
     /**
      * Сообщение о подтверждении записи
      */
-    public String formatRegistrationConfirmation(Consultation consultation, String studentMessage, long registeredCount) {
+    public String formatRegistrationConfirmation(){//(Consultation consultation, String studentMessage, long registeredCount) {
         StringBuilder message = new StringBuilder();
-        message.append("✅ Вы успешно записались на консультацию!\n\n");
-        message.append(String.format("📋 Консультация №%d\n", consultation.getId()));
-        message.append(String.format("👨‍🏫 Преподаватель: %s %s\n",
-                consultation.getTeacher().getFirstName(),
-                consultation.getTeacher().getLastName() != null ? consultation.getTeacher().getLastName() : ""));
-        message.append(String.format("📅 Дата: %s\n", consultation.getDate().format(DATE_FORMATTER)));
-        message.append(String.format("🕐 Время: %s - %s\n",
-                consultation.getStartTime().format(TIME_FORMATTER),
-                consultation.getEndTime().format(TIME_FORMATTER)));
-        message.append(String.format("\n📝 Ваш вопрос: %s\n", studentMessage));
-        
-        // Отображаем количество записанных студентов с учётом вместимости
-        message.append("\n👥 Записано студентов: ");
-        if (consultation.getCapacity() != null && consultation.getCapacity() > 0) {
-            message.append(String.format("%d/%d", registeredCount, consultation.getCapacity()));
-        } else {
-            message.append(String.format("%d (без ограничений)", registeredCount));
-        }
+        message.append("✅ Вы успешно записались на консультацию!\n");
+//        message.append(String.format("📋 Консультация №%d\n", consultation.getId()));
+//        message.append(String.format("👨‍🏫 Преподаватель: %s %s\n",
+//                consultation.getTeacher().getFirstName(),
+//                consultation.getTeacher().getLastName() != null ? consultation.getTeacher().getLastName() : ""));
+//        message.append(String.format("📅 Дата: %s\n", consultation.getDate().format(DATE_FORMATTER)));
+//        message.append(String.format("🕐 Время: %s - %s\n",
+//                consultation.getStartTime().format(TIME_FORMATTER),
+//                consultation.getEndTime().format(TIME_FORMATTER)));
+//        message.append(String.format("\n📝 Ваш вопрос: %s\n", studentMessage));
+//
+//        // Отображаем количество записанных студентов с учётом вместимости
+//        message.append("\n👥 Записано студентов: ");
+//        if (consultation.getCapacity() != null && consultation.getCapacity() > 0) {
+//            message.append(String.format("%d/%d", registeredCount, consultation.getCapacity()));
+//        } else {
+//            message.append(String.format("%d (без ограничений)", registeredCount));
+//        }
         
         return message.toString();
     }
@@ -140,17 +145,17 @@ public class ConsultationMessageFormatter {
     /**
      * Сообщение об отмене записи
      */
-    public String formatCancellationConfirmation(Consultation consultation) {
+    public String formatCancellationConfirmation(){//(Consultation consultation) {
         StringBuilder message = new StringBuilder();
-        message.append("❌ Запись отменена\n\n");
-        message.append(String.format("📋 Консультация №%d\n", consultation.getId()));
-        message.append(String.format("👨‍🏫 Преподаватель: %s %s\n",
-                consultation.getTeacher().getFirstName(),
-                consultation.getTeacher().getLastName() != null ? consultation.getTeacher().getLastName() : ""));
-        message.append(String.format("📅 Дата: %s\n", consultation.getDate().format(DATE_FORMATTER)));
-        message.append(String.format("🕐 Время: %s - %s\n",
-                consultation.getStartTime().format(TIME_FORMATTER),
-                consultation.getEndTime().format(TIME_FORMATTER)));
+        message.append("❌ Запись отменена\n");
+//        message.append(String.format("📋 Консультация №%d\n", consultation.getId()));
+//        message.append(String.format("👨‍🏫 Преподаватель: %s %s\n",
+//                consultation.getTeacher().getFirstName(),
+//                consultation.getTeacher().getLastName() != null ? consultation.getTeacher().getLastName() : ""));
+//        message.append(String.format("📅 Дата: %s\n", consultation.getDate().format(DATE_FORMATTER)));
+//        message.append(String.format("🕐 Время: %s - %s\n",
+//                consultation.getStartTime().format(TIME_FORMATTER),
+//                consultation.getEndTime().format(TIME_FORMATTER)));
         return message.toString();
     }
 

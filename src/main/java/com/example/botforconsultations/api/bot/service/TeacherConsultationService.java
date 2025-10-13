@@ -35,12 +35,12 @@ public class TeacherConsultationService {
      */
     @Transactional
     public Consultation createConsultation(TelegramUser teacher, String title, LocalDate date,
-                                          LocalTime startTime, LocalTime endTime,
-                                          Integer capacity, boolean autoCloseOnCapacity) {
-        
+                                           LocalTime startTime, LocalTime endTime,
+                                           Integer capacity, boolean autoCloseOnCapacity) {
+
         // Определяем статус: если автозакрытие включено и capacity = 0, то OPEN
         ConsultationStatus status = ConsultationStatus.OPEN;
-        
+
         Consultation consultation = Consultation.builder()
                 .title(title)
                 .teacher(teacher)
@@ -54,7 +54,7 @@ public class TeacherConsultationService {
 
         Consultation saved = consultationRepository.save(consultation);
         log.info("Created consultation #{} by teacher #{}", saved.getId(), teacher.getId());
-        
+
         return saved;
     }
 
@@ -74,15 +74,15 @@ public class TeacherConsultationService {
      */
     @Transactional
     public OpenResult openConsultation(Consultation consultation) {
-        long registeredCount = consultation.getRegUsers() != null 
-                ? consultation.getRegUsers().size() 
+        long registeredCount = consultation.getRegUsers() != null
+                ? consultation.getRegUsers().size()
                 : 0;
-        
+
         // Проверяем: если автозакрытие включено и нет свободных мест
-        if (consultation.isAutoCloseOnCapacity() && 
-            consultation.getCapacity() != null && 
-            registeredCount >= consultation.getCapacity()) {
-            
+        if (consultation.isAutoCloseOnCapacity() &&
+                consultation.getCapacity() != null &&
+                registeredCount >= consultation.getCapacity()) {
+
             // Нужно сначала отключить автозакрытие
             return OpenResult.requiresDisableAutoClose();
         }
@@ -90,7 +90,7 @@ public class TeacherConsultationService {
         consultation.setStatus(ConsultationStatus.OPEN);
         consultationRepository.save(consultation);
         log.info("Opened consultation #{}", consultation.getId());
-        
+
         return OpenResult.successful();
     }
 
@@ -117,12 +117,13 @@ public class TeacherConsultationService {
 
     /**
      * Принять запрос студента и превратить его в консультацию
-     * @param request запрос (consultation со статусом REQUEST)
-     * @param teacher преподаватель, принимающий запрос
-     * @param date дата консультации
-     * @param startTime время начала
-     * @param endTime время окончания
-     * @param capacity вместимость (null = без ограничений)
+     *
+     * @param request             запрос (consultation со статусом REQUEST)
+     * @param teacher             преподаватель, принимающий запрос
+     * @param date                дата консультации
+     * @param startTime           время начала
+     * @param endTime             время окончания
+     * @param capacity            вместимость (null = без ограничений)
      * @param autoCloseOnCapacity автозакрытие при достижении лимита
      * @return обновлённая консультация
      */
@@ -130,7 +131,7 @@ public class TeacherConsultationService {
     public Consultation acceptRequest(Consultation request, TelegramUser teacher,
                                       LocalDate date, LocalTime startTime, LocalTime endTime,
                                       Integer capacity, boolean autoCloseOnCapacity) {
-        
+
         // Обновляем запрос, превращая его в консультацию
         request.setTeacher(teacher);  // Меняем автора (студента) на преподавателя
         request.setDate(date);
@@ -138,10 +139,10 @@ public class TeacherConsultationService {
         request.setEndTime(endTime);
         request.setCapacity(capacity);
         request.setAutoCloseOnCapacity(autoCloseOnCapacity);
-        
+
         // Определяем статус
-        long interestedCount = request.getRegUsers() != null 
-                ? request.getRegUsers().size() 
+        long interestedCount = request.getRegUsers() != null
+                ? request.getRegUsers().size()
                 : 0;
         if (autoCloseOnCapacity && capacity != null && interestedCount >= capacity) {
             request.setStatus(ConsultationStatus.CLOSED);
@@ -150,32 +151,69 @@ public class TeacherConsultationService {
         }
 
         Consultation updated = consultationRepository.save(request);
-        log.info("Accepted request #{} by teacher #{}, converted to consultation", 
+        log.info("Accepted request #{} by teacher #{}, converted to consultation",
                 request.getId(), teacher.getId());
-        
+
         return updated;
     }
 
     /**
      * Проверить, нужно ли автоматически закрыть консультацию
      * Вызывается после записи студента
+     *
+     * @param consultationId ID консультации для перезагрузки свежих данных
      */
     @Transactional
-    public boolean checkAndAutoClose(Consultation consultation) {
+    public boolean checkAndAutoClose(Long consultationId) {
+        // Перезагружаем консультацию из БД для получения актуальной коллекции regUsers
+        Consultation consultation = consultationRepository.findById(consultationId).orElse(null);
+        if (consultation == null) {
+            return false;
+        }
+
         if (!consultation.isAutoCloseOnCapacity() || consultation.getCapacity() == null) {
             return false;
         }
 
-        long registeredCount = consultation.getRegUsers() != null 
-                ? consultation.getRegUsers().size() 
+        long registeredCount = consultation.getRegUsers() != null
+                ? consultation.getRegUsers().size()
                 : 0;
-        
-        if (registeredCount >= consultation.getCapacity() && 
-            consultation.getStatus() == ConsultationStatus.OPEN) {
-            
+
+        if (registeredCount >= consultation.getCapacity() &&
+                consultation.getStatus() == ConsultationStatus.OPEN) {
+
             consultation.setStatus(ConsultationStatus.CLOSED);
             consultationRepository.save(consultation);
             log.info("Auto-closed consultation #{} (capacity reached)", consultation.getId());
+            return true;
+        }
+
+        return false;
+    }
+
+    @Transactional
+    public boolean checkAndAutoOpen(Long consultationId, long countBefore) {
+        // Перезагружаем консультацию из БД для получения актуальной коллекции regUsers
+        Consultation consultation = consultationRepository.findById(consultationId).orElse(null);
+        if (consultation == null) {
+            return false;
+        }
+
+        if (!consultation.isAutoCloseOnCapacity() || consultation.getCapacity() == null) {
+            return false;
+        }
+
+        long registeredCount = consultation.getRegUsers() != null
+                ? consultation.getRegUsers().size()
+                : 0;
+
+        if (consultation.getCapacity()==countBefore &&
+                registeredCount < countBefore &&
+                consultation.getStatus().equals(ConsultationStatus.CLOSED)
+        ) {
+            consultation.setStatus(ConsultationStatus.OPEN);
+            consultationRepository.save(consultation);
+            log.info("Auto-open consultation #{} (capacity reached)", consultation.getId());
             return true;
         }
 
@@ -193,9 +231,9 @@ public class TeacherConsultationService {
         }
 
         public static OpenResult requiresDisableAutoClose() {
-            return new OpenResult(false, true, 
+            return new OpenResult(false, true,
                     "Невозможно открыть: все места заняты и включено автозакрытие.\n" +
-                    "Сначала отключите автозакрытие или увеличьте вместимость.");
+                            "Сначала отключите автозакрытие или увеличьте вместимость.");
         }
     }
 }

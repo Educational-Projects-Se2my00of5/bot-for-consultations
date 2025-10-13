@@ -1,6 +1,7 @@
 package com.example.botforconsultations.api.bot.utils;
 
 import com.example.botforconsultations.core.model.Consultation;
+import com.example.botforconsultations.core.model.ConsultationStatus;
 import com.example.botforconsultations.core.model.TelegramUser;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -160,8 +161,8 @@ public class StudentKeyboardBuilder {
     public ReplyKeyboardMarkup buildConsultationDetails(Consultation consultation, boolean isRegistered) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Показываем кнопку записи/отмены только если консультация OPEN
-        if (consultation.getStatus() == com.example.botforconsultations.core.model.ConsultationStatus.OPEN) {
+        // Показываем кнопку записи/отмены только если консультация Open
+        if (consultation.getStatus().equals(ConsultationStatus.OPEN)) {
             KeyboardRow actionRow = new KeyboardRow();
             if (isRegistered) {
                 actionRow.add(new KeyboardButton("❌ Отменить запись"));
@@ -169,6 +170,14 @@ public class StudentKeyboardBuilder {
                 actionRow.add(new KeyboardButton("✅ Записаться"));
             }
             keyboard.add(actionRow);
+        }
+        // Показываем кнопку записи/отмены только если консультация не Closed
+        if (consultation.getStatus().equals(ConsultationStatus.CLOSED)) {
+            KeyboardRow actionRow = new KeyboardRow();
+            if (isRegistered) {
+                actionRow.add(new KeyboardButton("❌ Отменить запись"));
+                keyboard.add(actionRow);
+            } 
         }
 
         KeyboardRow backRow = new KeyboardRow();

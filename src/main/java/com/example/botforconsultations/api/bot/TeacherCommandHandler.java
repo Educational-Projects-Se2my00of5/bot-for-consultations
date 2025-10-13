@@ -268,7 +268,7 @@ public class TeacherCommandHandler {
         stateManager.resetState(chatId);
 
         // Отправляем уведомления подписчикам
-        notificationService.notifySubscribersNewConsultation(consultation);
+        notificationService.notifySubscribersNewConsultation(consultation.getId());
 
         // Подтверждение
         botMessenger.execute(SendMessage.builder()
@@ -487,7 +487,7 @@ public class TeacherCommandHandler {
                         botMessenger.sendText("🔓 Запись на консультацию открыта", chatId);
 
                         // Уведомляем подписчиков о появлении мест
-                        notificationService.notifySubscribersAvailableSpots(consultation, null);
+                        notificationService.notifySubscribersAvailableSpots(consultation.getId(), null);
                     }
 
                     showConsultationDetails(chatId, consultationId);
@@ -514,7 +514,7 @@ public class TeacherCommandHandler {
                     consultationService.cancelConsultation(consultation, "Отменено преподавателем");
 
                     // Уведомляем всех записанных студентов
-                    notificationService.notifyRegisteredStudentsCancellation(consultation);
+                    notificationService.notifyRegisteredStudentsCancellation(consultation.getId());
 
                     botMessenger.sendText(
                             "❌ Консультация отменена.\n" +
@@ -602,7 +602,7 @@ public class TeacherCommandHandler {
                     consultationRepository.save(consultation);
 
                     // Уведомляем записанных студентов
-                    notificationService.notifyRegisteredStudentsUpdate(consultation, "Изменено название консультации");
+                    notificationService.notifyRegisteredStudentsUpdate(consultation.getId(), "Изменено название консультации");
 
                     stateManager.setState(chatId, TeacherState.DEFAULT);
                     botMessenger.sendText("✅ Название изменено", chatId);
@@ -658,7 +658,7 @@ public class TeacherCommandHandler {
                     consultationRepository.save(consultation);
 
                     // Уведомляем записанных студентов
-                    notificationService.notifyRegisteredStudentsUpdate(consultation, "Изменены дата и время консультации");
+                    notificationService.notifyRegisteredStudentsUpdate(consultation.getId(), "Изменены дата и время консультации");
 
                     stateManager.setState(chatId, TeacherState.DEFAULT);
                     botMessenger.sendText("✅ Дата и время изменены", chatId);
@@ -719,11 +719,11 @@ public class TeacherCommandHandler {
                     consultationRepository.save(consultation);
 
                     // Уведомляем записанных студентов
-                    notificationService.notifyRegisteredStudentsUpdate(consultation, "Изменена вместимость консультации");
+                    // notificationService.notifyRegisteredStudentsUpdate(consultation, "Изменена вместимость консультации");
 
                     // Если появились свободные места, уведомляем подписчиков
                     if (capacity != null && (oldCapacity == null || capacity > oldCapacity) && registeredCount < capacity) {
-                        notificationService.notifySubscribersAvailableSpots(consultation, null);
+                        notificationService.notifySubscribersAvailableSpots(consultation.getId(), null);
                     }
 
                     stateManager.setState(chatId, TeacherState.DEFAULT);
@@ -930,7 +930,7 @@ public class TeacherCommandHandler {
                     stateManager.resetState(chatId);
 
                     // Уведомляем заинтересованных студентов
-                    notificationService.notifyInterestedStudentsRequestAccepted(consultation);
+                    notificationService.notifyInterestedStudentsRequestAccepted(consultation.getId());
 
                     botMessenger.execute(SendMessage.builder()
                             .chatId(chatId)

@@ -19,6 +19,7 @@ import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.util.List;
@@ -385,8 +386,11 @@ public class StudentCommandHandler {
         TelegramUser student = getCurrentStudent(chatId);
         long registeredCount = studentServiceBot.getRegisteredCount(consultation);
         boolean isRegistered = studentServiceBot.isRegistered(student, consultation);
+        
+        // Получаем регистрацию студента, если он записан
+        StudentConsultation studentRegistration = studentServiceBot.getStudentRegistration(student, consultation).orElse(null);
 
-        String messageText = messageFormatter.formatConsultationDetails(consultation, registeredCount);
+        String messageText = messageFormatter.formatConsultationDetails(consultation, registeredCount, studentRegistration);
 
         botMessenger.execute(SendMessage.builder()
                 .text(messageText)
@@ -472,13 +476,11 @@ public class StudentCommandHandler {
         if (!result.success()) {
             botMessenger.sendText(result.message(), chatId);
         } else {
-            long registeredCount = studentServiceBot.getRegisteredCount(consultation);
-            String confirmMessage = messageFormatter.formatRegistrationConfirmation(
-                    consultation, message, registeredCount);
+            String confirmMessage = messageFormatter.formatRegistrationConfirmation();
             botMessenger.sendText(confirmMessage, chatId);
             
-            // Проверяем автозакрытие
-            teacherConsultationService.checkAndAutoClose(consultation);
+            // Проверяем автозакрытие (передаём ID для перезагрузки свежих данных)
+            teacherConsultationService.checkAndAutoClose(consultation.getId());
         }
 
         showConsultationDetails(chatId, consultation.getId());
@@ -498,16 +500,21 @@ public class StudentCommandHandler {
         if (!result.success()) {
             botMessenger.sendText(result.message(), chatId);
         } else {
-            String confirmMessage = messageFormatter.formatCancellationConfirmation(consultation);
+            String confirmMessage = messageFormatter.formatCancellationConfirmation();
             botMessenger.sendText(confirmMessage, chatId);
+            
+            // Перезагружаем консультацию для актуальных данных
+            consultation = consultationService.findById(consultation.getId());
             
             // Считаем после отмены
             long countAfter = studentServiceBot.getRegisteredCount(consultation);
             
+
+            teacherConsultationService.checkAndAutoOpen(consultation.getId(), countBefore);
             // Если освободилось место, уведомляем подписчиков
             if (countAfter < countBefore) {
                 // Отправляем уведомления (исключая текущего студента)
-                notificationService.notifySubscribersAvailableSpots(consultation, student.getId());
+                notificationService.notifySubscribersAvailableSpots(consultation.getId(), student.getId());
             }
         }
 
