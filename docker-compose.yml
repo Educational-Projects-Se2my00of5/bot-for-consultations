@@ -13,8 +13,7 @@ services:
     tty: true
     depends_on:
       - backend
-    networks:
-      - app-network
+
 
   backend:
     build:
@@ -33,6 +32,7 @@ services:
     depends_on:
       - postgres_db
 
+
   postgres_db:
     image: postgres:17-alpine3.22
     container_name: postgres17
@@ -45,14 +45,11 @@ services:
       - "5432:5432" # 5432 - может быть занят
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
+
 
 
 volumes:
   postgres_data:
 
-networks:
-  app-network:
-    driver: bridge
+
 
