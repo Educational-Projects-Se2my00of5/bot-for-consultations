@@ -44,7 +44,45 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
                         chatId
                 );
             }
+        } else if (update.hasCallbackQuery()) {
+            // Обработка callback-запросов от inline-кнопок
+            handleCallbackQuery(update);
         }
+    }
+
+    /**
+     * Обработка callback-запросов от inline-кнопок
+     */
+    private void handleCallbackQuery(Update update) {
+        String callbackData = update.getCallbackQuery().getData();
+        Long chatId = update.getCallbackQuery().getMessage().getChatId();
+
+        // Формат: "view_consultation:123"
+        if (callbackData.startsWith("view_consultation:")) {
+            String consultationIdStr = callbackData.substring("view_consultation:".length());
+            try {
+                Long consultationId = Long.parseLong(consultationIdStr);
+                handleViewConsultation(consultationId, chatId);
+            } catch (NumberFormatException e) {
+                log.error("Invalid consultation ID in callback: {}", callbackData);
+                botMessenger.sendText("Ошибка: неверный формат консультации", chatId);
+            }
+        }
+    }
+
+    /**
+     * Обработка просмотра консультации из уведомления
+     */
+    private void handleViewConsultation(Long consultationId, Long chatId) {
+        Optional<TelegramUser> userOptional = telegramUserRepository.findByTelegramId(chatId);
+
+        if (userOptional.isEmpty() || userOptional.get().getRole() != Role.STUDENT) {
+            botMessenger.sendText("Эта функция доступна только для студентов", chatId);
+            return;
+        }
+
+        // Делегируем студенту для показа консультации
+        studentCommands.showConsultationFromNotification(consultationId, chatId);
     }
 
     /**

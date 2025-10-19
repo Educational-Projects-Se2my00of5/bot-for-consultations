@@ -1,5 +1,6 @@
 package com.example.botforconsultations.api.bot.service;
 
+import com.example.botforconsultations.api.bot.utils.TeacherNameFormatter;
 import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
@@ -35,33 +36,24 @@ public class TeacherSearchService {
 
     /**
      * Найти преподавателя по ID
+     * Проверяет, что пользователь является подтвержденным преподавателем
      */
     public TelegramUser findById(Long id) {
-        return telegramUserRepository.findById(id).orElse(null);
+        return telegramUserRepository.findById(id)
+                .filter(user -> user.getRole() == Role.TEACHER && user.isHasConfirmed())
+                .orElse(null);
     }
 
     /**
-     * Найти преподавателя по частям имени (из кнопки)
-     * Формат: [Имя] или [Имя, Фамилия]
+     * Найти преподавателя по ID из кнопки
+     * Формат кнопки: "👨‍🏫 №123 Имя Фамилия"
+     * Проверяет, что пользователь является подтвержденным преподавателем
      */
-    public TelegramUser findByNameParts(String[] nameParts) {
-        if (nameParts == null || nameParts.length == 0) {
+    public TelegramUser findByIdFromButton(String teacherButton) {
+        Long teacherId = TeacherNameFormatter.extractTeacherId(teacherButton);
+        if (teacherId == null) {
             return null;
         }
-
-        if (nameParts.length >= 2) {
-            // Есть имя и фамилия
-            return telegramUserRepository.findByFirstNameAndLastNameAndRole(
-                    nameParts[0].trim(),
-                    nameParts[1].trim(),
-                    Role.TEACHER
-            ).orElse(null);
-        } else {
-            // Только имя (если нет фамилии)
-            return telegramUserRepository.findByFirstNameAndRole(
-                    nameParts[0].trim(),
-                    Role.TEACHER
-            ).orElse(null);
-        }
+        return findById(teacherId);
     }
 }

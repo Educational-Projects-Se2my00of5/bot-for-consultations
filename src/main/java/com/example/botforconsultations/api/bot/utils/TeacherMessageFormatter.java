@@ -213,8 +213,8 @@ public class TeacherMessageFormatter {
             message.append("👥 Мест: без ограничений\n");
         }
 
-        message.append("\n✅ Вы можете записаться через:\n");
-        message.append("🔍 Преподаватели → выбрать преподавателя → выбрать консультацию");
+//        message.append("\n✅ Вы можете записаться через:\n");
+//        message.append("🔍 Преподаватели → выбрать преподавателя → выбрать консультацию");
 
         return message.toString();
     }
@@ -266,7 +266,7 @@ public class TeacherMessageFormatter {
             message.append(String.format("👥 Свободных мест: %d\n\n", availableSpots));
         }
 
-        message.append("✅ Запись теперь открыта! Вы можете записаться.");
+        message.append("✅ Запись теперь открыта!");
 
         return message.toString();
     }
@@ -290,11 +290,9 @@ public class TeacherMessageFormatter {
                 consultation.getStartTime().format(TIME_FORMATTER),
                 consultation.getEndTime().format(TIME_FORMATTER)));
 
-        if (consultation.getClosedReason() != null && !consultation.getClosedReason().isEmpty()) {
-            message.append(String.format("Причина: %s\n\n", consultation.getClosedReason()));
-        }
-
-        message.append("Приносим извинения за неудобства.");
+        // if (consultation.getClosedReason() != null && !consultation.getClosedReason().isEmpty()) {
+        //     message.append(String.format("Причина: %s\n\n", consultation.getClosedReason()));
+        // }
 
         return message.toString();
     }

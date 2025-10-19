@@ -10,7 +10,11 @@ import com.example.botforconsultations.core.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,6 +33,26 @@ public class NotificationService {
     private final ConsultationService consultationService;
 
     /**
+     * Создать inline-клавиатуру с кнопкой перехода к консультации
+     */
+    private InlineKeyboardMarkup buildConsultationButton(Long consultationId) {
+        InlineKeyboardButton button = InlineKeyboardButton.builder()
+                .text("📋 Открыть консультацию")
+                .callbackData("view_consultation:" + consultationId)
+                .build();
+
+        InlineKeyboardRow row = new InlineKeyboardRow();
+        row.add(button);
+
+        List<InlineKeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(row);
+
+        return InlineKeyboardMarkup.builder()
+                .keyboard(keyboard)
+                .build();
+    }
+
+    /**
      * Уведомить подписчиков о новой консультации
      */
     public void notifySubscribersNewConsultation(Long consultationId) {
@@ -41,12 +65,13 @@ public class NotificationService {
         }
 
         String message = messageFormatter.formatNewConsultationNotification(consultation);
+        InlineKeyboardMarkup keyboard = buildConsultationButton(consultationId);
 
         int sent = 0;
         for (Subscription subscription : subscriptions) {
             Long chatId = subscription.getStudent().getTelegramId();
             try {
-                botMessenger.sendText(message, chatId);
+                botMessenger.sendTextWithInlineKeyboard(message, chatId, keyboard);
                 sent++;
             } catch (Exception e) {
                 log.error("Failed to send notification to student #{}: {}",
@@ -124,12 +149,13 @@ public class NotificationService {
 
         long currentCount = registrations.size();
         String message = messageFormatter.formatAvailableSpotsNotification(consultation, currentCount);
+        InlineKeyboardMarkup keyboard = buildConsultationButton(consultationId);
 
         int sent = 0;
         for (TelegramUser student : studentsToNotify) {
             Long chatId = student.getTelegramId();
             try {
-                botMessenger.sendText(message, chatId);
+                botMessenger.sendTextWithInlineKeyboard(message, chatId, keyboard);
                 sent++;
             } catch (Exception e) {
                 log.error("Failed to send available spots notification to student #{}: {}",
@@ -189,12 +215,14 @@ public class NotificationService {
         String message = messageFormatter.formatNewConsultationNotification(consultation);
         String header = "✅ Ваш запрос принят преподавателем!\n\n";
         message = header + message;
+        
+        InlineKeyboardMarkup keyboard = buildConsultationButton(consultationId);
 
         int sent = 0;
         for (StudentConsultation sc : registrations) {
             Long chatId = sc.getStudent().getTelegramId();
             try {
-                botMessenger.sendText(message, chatId);
+                botMessenger.sendTextWithInlineKeyboard(message, chatId, keyboard);
                 sent++;
             } catch (Exception e) {
                 log.error("Failed to send request accepted notification to student #{}: {}",

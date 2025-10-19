@@ -38,10 +38,6 @@
 
         <dropColumn columnName="username" tableName="telegram_users"/>
     </changeSet>
-    <changeSet id="1759403445167-1" author="Se2my00of5">
-        <addUniqueConstraint columnNames="first_name, last_name" constraintName="uk_telegram_users_name"
-                             tableName="telegram_users"/>
-    </changeSet>
     <changeSet id="1760106135932-2" author="Se2my00of5">
         <createTable tableName="subscriptions">
             <column autoIncrement="true" name="id" type="BIGINT">

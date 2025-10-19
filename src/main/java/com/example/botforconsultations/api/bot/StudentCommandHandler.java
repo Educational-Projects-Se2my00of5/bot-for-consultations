@@ -269,8 +269,7 @@ public class StudentCommandHandler {
     }
 
     private void handleTeacherSelection(String teacherButton, Long chatId) {
-        String[] nameParts = TeacherNameFormatter.extractNameParts(teacherButton);
-        TelegramUser teacher = teacherSearchService.findByNameParts(nameParts);
+        TelegramUser teacher = teacherSearchService.findByIdFromButton(teacherButton);
 
         if (teacher == null) {
             botMessenger.sendText("Преподаватель не найден", chatId);
@@ -384,6 +383,25 @@ public class StudentCommandHandler {
                 ? text.substring(1, text.indexOf(" "))
                 : text.substring(1);
         return Long.parseLong(idStr);
+    }
+
+    /**
+     * Показать консультацию из уведомления (по клику на inline-кнопку)
+     * Устанавливает необходимые состояния и показывает детали
+     */
+    public void showConsultationFromNotification(Long consultationId, Long chatId) {
+        Consultation consultation = consultationService.findById(consultationId);
+        if (consultation == null) {
+            botMessenger.sendText("Консультация не найдена или удалена", chatId);
+            return;
+        }
+
+        // Устанавливаем преподавателя и фильтр
+        stateManager.setCurrentTeacher(chatId, consultation.getTeacher().getId());
+        stateManager.setFilter(chatId, "future");
+        
+        // Показываем детали консультации
+        showConsultationDetails(chatId, consultationId);
     }
 
     private void showConsultationDetails(Long chatId, Long consultationId) {
