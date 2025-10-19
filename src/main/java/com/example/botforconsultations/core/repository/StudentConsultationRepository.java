@@ -4,8 +4,12 @@ import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.StudentConsultation;
 import com.example.botforconsultations.core.model.TelegramUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,4 +50,11 @@ public interface StudentConsultationRepository extends JpaRepository<StudentCons
      * Удаляет все записи студентов для консультации
      */
     void deleteByConsultation(Consultation consultation);
+    
+    /**
+     * Удаляет все записи студентов для консультаций старше заданной даты (bulk delete)
+     */
+    @Modifying
+    @Query("DELETE FROM StudentConsultation sc WHERE sc.consultation.date < :date")
+    int deleteByConsultationDateBefore(@Param("date") LocalDate date);
 }

@@ -781,11 +781,42 @@ public class TeacherCommandHandler {
                     consultation.setCapacity(capacity);
                     consultationRepository.save(consultation);
 
+                    // Проверяем автоматическое изменение статуса при включённом автозакрытии
+                    if (consultation.isAutoCloseOnCapacity()) {
+                        ConsultationStatus oldStatus = consultation.getStatus();
+                        
+                        // Случай 1: Уменьшили capacity или убрали ограничение → проверяем автозакрытие
+                        if (capacity != null && registeredCount >= capacity && 
+                            consultation.getStatus() == ConsultationStatus.OPEN) {
+                            // Автозакрытие: мест больше нет
+                            consultationService.closeConsultation(consultation);
+                            botMessenger.sendText("🔒 Консультация автоматически закрыта (достигнут лимит)", chatId);
+                        } 
+                        // Случай 2: Увеличили capacity или убрали ограничение → проверяем автооткрытие
+                        else if ((capacity == null || registeredCount < capacity) && 
+                                 consultation.getStatus() == ConsultationStatus.CLOSED) {
+                            // Автооткрытие: появились свободные места
+                            TeacherConsultationService.OpenResult result = 
+                                consultationService.openConsultation(consultation);
+                            if (result.isSuccess()) {
+                                botMessenger.sendText("🔓 Консультация автоматически открыта (есть свободные места)", chatId);
+                            }
+                        }
+                        
+                        // Если статус изменился, уведомляем
+                        if (consultation.getStatus() != oldStatus) {
+                            if (consultation.getStatus() == ConsultationStatus.OPEN) {
+                                notificationService.notifySubscribersAvailableSpots(consultation.getId(), null);
+                            }
+                        }
+                    }
+
                     // Уведомляем записанных студентов
                     // notificationService.notifyRegisteredStudentsUpdate(consultation, "Изменена вместимость консультации");
 
-                    // Если появились свободные места, уведомляем подписчиков
-                    if (capacity != null && (oldCapacity == null || capacity > oldCapacity) && registeredCount < capacity) {
+                    // Если появились свободные места И статус не изменился, уведомляем подписчиков
+                    if (capacity != null && (oldCapacity == null || capacity > oldCapacity) && 
+                        registeredCount < capacity && consultation.getStatus() == ConsultationStatus.OPEN) {
                         notificationService.notifySubscribersAvailableSpots(consultation.getId(), null);
                     }
 
@@ -827,9 +858,26 @@ public class TeacherCommandHandler {
                         return;
                     }
 
+                    boolean wasAutoCloseEnabled = consultation.isAutoCloseOnCapacity();
                     boolean autoClose = answer.equals("Да");
                     consultation.setAutoCloseOnCapacity(autoClose);
                     consultationRepository.save(consultation);
+
+                    // Проверяем автозакрытие, если оно было выключено, а теперь включено
+                    if (!wasAutoCloseEnabled && autoClose) {
+                        // Автозакрытие включено - проверяем, нужно ли закрыть консультацию
+                        long registeredCount = consultation.getRegUsers() != null
+                                ? consultation.getRegUsers().size()
+                                : 0;
+                        
+                        if (consultation.getCapacity() != null && 
+                            registeredCount >= consultation.getCapacity() &&
+                            consultation.getStatus() == ConsultationStatus.OPEN) {
+                            // Автоматически закрываем консультацию
+                            consultationService.closeConsultation(consultation);
+                            botMessenger.sendText("🔒 Консультация автоматически закрыта (достигнут лимит)", chatId);
+                        }
+                    }
 
                     // Уведомляем записанных студентов
 //                    notificationService.notifyRegisteredStudentsUpdate(
