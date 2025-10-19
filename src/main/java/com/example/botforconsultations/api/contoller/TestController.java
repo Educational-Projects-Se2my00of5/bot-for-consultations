@@ -6,7 +6,6 @@ import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import com.example.botforconsultations.core.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +28,7 @@ public class TestController {
                 .builder()
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
-                .hasConfirmed(true)
+                .hasConfirmed(false)
                 .build();
         telegramUser.setRole(Role.TEACHER);
         telegramUserRepository.save(telegramUser);

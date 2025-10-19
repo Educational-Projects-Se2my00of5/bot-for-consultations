@@ -96,7 +96,7 @@ public class StudentServiceBot {
      */
     @Transactional
     public RegistrationResult cancelRegistration(TelegramUser student, Consultation consultation) {
-        Optional<StudentConsultation> registration = 
+        Optional<StudentConsultation> registration =
                 studentConsultationRepository.findByStudentAndConsultation(student, consultation);
 
         if (registration.isEmpty()) {
@@ -132,8 +132,8 @@ public class StudentServiceBot {
      * Получить количество записанных студентов на консультацию
      */
     public long getRegisteredCount(Consultation consultation) {
-        return consultation.getRegUsers() != null 
-                ? consultation.getRegUsers().size() 
+        return consultation.getRegUsers() != null
+                ? consultation.getRegUsers().size()
                 : 0;
     }
 

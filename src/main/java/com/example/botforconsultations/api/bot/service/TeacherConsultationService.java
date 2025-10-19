@@ -207,7 +207,7 @@ public class TeacherConsultationService {
                 ? consultation.getRegUsers().size()
                 : 0;
 
-        if (consultation.getCapacity()==countBefore &&
+        if (consultation.getCapacity() == countBefore &&
                 registeredCount < countBefore &&
                 consultation.getStatus().equals(ConsultationStatus.CLOSED)
         ) {

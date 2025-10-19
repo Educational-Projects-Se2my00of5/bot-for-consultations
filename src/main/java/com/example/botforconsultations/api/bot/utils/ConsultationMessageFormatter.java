@@ -57,7 +57,7 @@ public class ConsultationMessageFormatter {
         if (consultation.getTitle() != null && !consultation.getTitle().isEmpty()) {
             message.append(String.format("📝 %s\n", consultation.getTitle()));
         }
-        
+
         // Добавляем статус консультации
         String statusEmoji = switch (consultation.getStatus()) {
             case OPEN -> "✅ Открыта";
@@ -66,7 +66,7 @@ public class ConsultationMessageFormatter {
             case REQUEST -> "⏳ Запрос";
         };
         message.append(String.format("%s\n", statusEmoji));
-        
+
         message.append("\n");
         return message.toString();
     }
@@ -101,7 +101,7 @@ public class ConsultationMessageFormatter {
         } else {
             message.append(String.format("%d (без ограничений)", registeredCount));
         }
-        
+
         // Добавляем статус консультации
         String statusText = switch (consultation.getStatus()) {
             case OPEN -> "✅ Открыта для записи";
@@ -118,7 +118,7 @@ public class ConsultationMessageFormatter {
     /**
      * Сообщение о подтверждении записи
      */
-    public String formatRegistrationConfirmation(){//(Consultation consultation, String studentMessage, long registeredCount) {
+    public String formatRegistrationConfirmation() {//(Consultation consultation, String studentMessage, long registeredCount) {
         StringBuilder message = new StringBuilder();
         message.append("✅ Вы успешно записались на консультацию!\n");
 //        message.append(String.format("📋 Консультация №%d\n", consultation.getId()));
@@ -138,14 +138,14 @@ public class ConsultationMessageFormatter {
 //        } else {
 //            message.append(String.format("%d (без ограничений)", registeredCount));
 //        }
-        
+
         return message.toString();
     }
 
     /**
      * Сообщение об отмене записи
      */
-    public String formatCancellationConfirmation(){//(Consultation consultation) {
+    public String formatCancellationConfirmation() {//(Consultation consultation) {
         StringBuilder message = new StringBuilder();
         message.append("❌ Запись отменена\n");
 //        message.append(String.format("📋 Консультация №%d\n", consultation.getId()));
@@ -165,7 +165,7 @@ public class ConsultationMessageFormatter {
     public String formatStudentRegistrations(List<StudentConsultation> registrations) {
         if (registrations.isEmpty()) {
             return "У вас пока нет записей на консультации.\n\n" +
-                   "Используйте \"🔍 Преподаватели\" для поиска консультаций.";
+                    "Используйте \"🔍 Преподаватели\" для поиска консультаций.";
         }
 
         LocalDate today = LocalDate.now();
@@ -245,8 +245,8 @@ public class ConsultationMessageFormatter {
     public String formatSubscriptions(List<Subscription> subscriptions) {
         if (subscriptions.isEmpty()) {
             return "У вас пока нет подписок на обновления преподавателей.\n\n" +
-                   "Вы можете подписаться на преподавателя при просмотре его консультаций.\n" +
-                   "Используйте \"🔍 Преподаватели\" → выберите преподавателя → \"🔔 Подписаться\"";
+                    "Вы можете подписаться на преподавателя при просмотре его консультаций.\n" +
+                    "Используйте \"🔍 Преподаватели\" → выберите преподавателя → \"🔔 Подписаться\"";
         }
 
         StringBuilder message = new StringBuilder();
@@ -283,8 +283,8 @@ public class ConsultationMessageFormatter {
     public String formatRequestsList(List<Consultation> requests) {
         if (requests.isEmpty()) {
             return "❓ Пока нет запросов консультаций от студентов.\n\n" +
-                   "Любой студент может создать запрос через главное меню:\n" +
-                   "\"❓ Запросить консультацию\"";
+                    "Любой студент может создать запрос через главное меню:\n" +
+                    "\"❓ Запросить консультацию\"";
         }
 
         StringBuilder message = new StringBuilder();
@@ -297,9 +297,9 @@ public class ConsultationMessageFormatter {
                 case CLOSED -> "🔒";
                 case CANCELLED -> "❌";
             };
-            
+
             int interestedCount = request.getRegUsers() != null ? request.getRegUsers().size() : 0;
-            
+
             message.append(String.format("%s №%d - %s\n",
                     statusEmoji,
                     request.getId(),
@@ -321,9 +321,9 @@ public class ConsultationMessageFormatter {
     public String formatRequestDetails(Consultation request) {
         StringBuilder message = new StringBuilder();
         message.append(String.format("📋 Запрос консультации №%d\n\n", request.getId()));
-        
+
         message.append(String.format("📝 Тема: %s\n\n", request.getTitle()));
-        
+
         message.append(String.format("👤 Автор запроса: %s\n",
                 TeacherNameFormatter.formatFullName(request.getTeacher())));
 
@@ -340,7 +340,7 @@ public class ConsultationMessageFormatter {
             case CANCELLED -> "❌ Запрос отменён";
         };
         message.append(String.format("📊 Статус: %s\n", statusText));
-        
+
         message.append("\n💡 Выберите действие:");
 
         return message.toString();
@@ -352,11 +352,11 @@ public class ConsultationMessageFormatter {
     public String formatRequestCreationConfirmation(Consultation request) {
         return String.format(
                 "✅ Запрос консультации успешно создан!\n\n" +
-                "🆔 Номер запроса: %d\n" +
-                "📝 Тема: %s\n\n" +
-                "Ваш запрос отправлен преподавателям. " +
-                "Когда кто-то из них примет запрос, вы получите уведомление.\n\n" +
-                "Вы можете просмотреть все свои запросы в разделе \"📋 Просмотреть запросы\"",
+                        "🆔 Номер запроса: %d\n" +
+                        "📝 Тема: %s\n\n" +
+                        "Ваш запрос отправлен преподавателям. " +
+                        "Когда кто-то из них примет запрос, вы получите уведомление.\n\n" +
+                        "Вы можете просмотреть все свои запросы в разделе \"📋 Просмотреть запросы\"",
                 request.getId(),
                 request.getTitle()
         );

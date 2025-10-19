@@ -76,20 +76,17 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
         }
         TelegramUser user = userOptional.get();
 
-
+        // Обрабатываем по роли
         if (user.getRole() == Role.STUDENT) {
             studentCommands.handleStudentCommand(text, chatId);
         } else if (user.getRole() == Role.TEACHER) {
             if (!user.isHasConfirmed()) {
-                botMessenger.sendText(
-                        "Ваша учетная запись ожидает подтверждения администратором",
-                        chatId
-                );
-                return;
+                // Неподтвержденные преподаватели используют специальный обработчик
+                teacherCommands.handleUnconfirmedTeacherCommand(text, chatId);
+            } else {
+                // Подтвержденные преподаватели используют полный функционал
+                teacherCommands.handleTeacherCommand(text, chatId);
             }
-
-            teacherCommands.handleTeacherCommand(text, chatId);
         }
     }
-
 }

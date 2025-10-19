@@ -2,7 +2,6 @@ package com.example.botforconsultations.api.contoller;
 
 import com.example.botforconsultations.api.dto.UserDto;
 import com.example.botforconsultations.api.mapper.UserMapper;
-import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.service.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

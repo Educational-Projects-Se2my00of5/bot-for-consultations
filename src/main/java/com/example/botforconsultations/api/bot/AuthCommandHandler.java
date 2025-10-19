@@ -1,5 +1,6 @@
 package com.example.botforconsultations.api.bot;
 
+import com.example.botforconsultations.api.bot.utils.TeacherKeyboardBuilder;
 import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
@@ -24,6 +25,7 @@ public class AuthCommandHandler {
     private final TelegramUserRepository telegramUserRepository;
     private final StudentCommandHandler studentCommands;
     private final TeacherCommandHandler teacherCommands;
+    private final TeacherKeyboardBuilder teacherKeyboardBuilder;
 
     public void handleStart(Long chatId) {
         Optional<TelegramUser> existingUser = telegramUserRepository.findByTelegramId(chatId);
@@ -31,7 +33,7 @@ public class AuthCommandHandler {
             requestContact(chatId);
         } else if (existingUser.get().getRole() == null) {
             sendRoleSelectionMenu(chatId);
-        } else{
+        } else {
             sendMainMenu(chatId, existingUser.get());
         }
     }
@@ -62,7 +64,9 @@ public class AuthCommandHandler {
                         "Пожалуйста, обратитесь к администратору для уточнения данных.", chatId);
             } else {
                 log.error("Error saving user: {}", e.getMessage());
-                botMessenger.sendText("Произошла ошибка при регистрации. Пожалуйста, попробуйте позже или обратитесь к администратору.", chatId);
+                botMessenger.sendText(
+                        "Произошла ошибка при регистрации. Пожалуйста, попробуйте позже или обратитесь к администратору.",
+                        chatId);
             }
         }
     }
@@ -92,10 +96,13 @@ public class AuthCommandHandler {
                     studentCommands.sendMainMenu(chatId);
                 }
                 case TEACHER -> {
-                    botMessenger.sendText(
-                            "Вы зарегистрированы как преподаватель. Ожидайте подтверждения администратором.",
-                            chatId
-                    );
+                    botMessenger.execute(SendMessage.builder()
+                            .chatId(chatId)
+                            .text("Вы зарегистрированы как преподаватель.\n\n" +
+                                    "⏳ Ваш аккаунт ожидает подтверждения администратором.\n\n" +
+                                    "Вы можете отредактировать свой профиль в ожидании подтверждения.")
+                            .replyMarkup(teacherKeyboardBuilder.buildWaitingForApprovalMenu())
+                            .build());
                 }
                 case ADMIN -> {
                     botMessenger.sendText("Регистрация администраторов через бот недоступна.", chatId);
@@ -104,17 +111,21 @@ public class AuthCommandHandler {
         } else {
             botMessenger.sendText(
                     "Пожалуйста, сначала зарегистрируйтесь, отправив команду /start",
-                    chatId
-            );
+                    chatId);
         }
     }
 
-    private void sendMainMenu(Long chatId, TelegramUser telegramUser) {
+    public void sendMainMenu(Long chatId, TelegramUser telegramUser) {
         if (telegramUser.getRole().equals(Role.STUDENT)) {
             studentCommands.sendMainMenu(chatId);
         } else if (telegramUser.getRole().equals(Role.TEACHER)) {
-            teacherCommands.sendMainMenu(chatId);
+            if (telegramUser.isHasConfirmed()) {
+                teacherCommands.sendMainMenu(chatId);
+            } else {
+                teacherCommands.sendWaitingApprovalMenu(chatId);
+            }
         }
+
     }
 
     private void sendRoleSelectionMenu(Long chatId) {

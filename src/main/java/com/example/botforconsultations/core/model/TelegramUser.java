@@ -7,13 +7,7 @@ import lombok.*;
 
 @Entity
 @Table(
-    name = "telegram_users",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "uk_telegram_users_name",
-            columnNames = {"firstName", "lastName"}
-        )
-    }
+    name = "telegram_users"
 )
 @Getter
 @Setter

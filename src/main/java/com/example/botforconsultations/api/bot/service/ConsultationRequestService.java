@@ -51,8 +51,9 @@ public class ConsultationRequestService {
 
     /**
      * Создать запрос консультации
+     *
      * @param student студент, создающий запрос
-     * @param title название запроса (и сообщение для записи)
+     * @param title   название запроса (и сообщение для записи)
      * @return созданный запрос
      */
     @Transactional
@@ -68,7 +69,7 @@ public class ConsultationRequestService {
                 .capacity(null)
                 .autoCloseOnCapacity(false)
                 .build();
-        
+
         request = consultationRepository.save(request);
 
         // Сразу создаём запись студента на этот запрос
@@ -77,7 +78,7 @@ public class ConsultationRequestService {
                 .student(student)
                 .message(title)  // message = title
                 .build();
-        
+
         studentConsultationRepository.save(studentRecord);
 
         return request;
@@ -85,6 +86,7 @@ public class ConsultationRequestService {
 
     /**
      * Записать студента на запрос
+     *
      * @param student студент
      * @param request запрос консультации
      * @param message сообщение студента (тема/вопрос)
@@ -101,7 +103,7 @@ public class ConsultationRequestService {
         boolean alreadyRegistered = studentConsultationRepository
                 .findByStudentAndConsultation(student, request)
                 .isPresent();
-        
+
         if (alreadyRegistered) {
             return failureRegistration("Вы уже записаны на этот запрос");
         }
@@ -112,7 +114,7 @@ public class ConsultationRequestService {
                 .student(student)
                 .message(message)
                 .build();
-        
+
         studentConsultationRepository.save(registration);
 
         return successRegistration();
@@ -120,6 +122,7 @@ public class ConsultationRequestService {
 
     /**
      * Отписать студента от запроса
+     *
      * @param student студент
      * @param request запрос консультации
      * @return результат отписки
@@ -134,7 +137,7 @@ public class ConsultationRequestService {
         // Находим запись студента
         Optional<StudentConsultation> registration = studentConsultationRepository
                 .findByStudentAndConsultation(student, request);
-        
+
         if (registration.isEmpty()) {
             return failureUnregistration("Вы не записаны на этот запрос");
         }
@@ -145,12 +148,12 @@ public class ConsultationRequestService {
 
         // Проверяем: остались ли ещё записанные студенты?
         long remainingCount = studentConsultationRepository.countByConsultation(request);
-        
+
         if (remainingCount == 0) {
             // Сначала удаляем ВСЕ оставшиеся записи StudentConsultation
             studentConsultationRepository.deleteByConsultation(request);
             studentConsultationRepository.flush();
-            
+
             // Теперь можем безопасно удалить сам запрос
             consultationRepository.deleteById(request.getId());
             consultationRepository.flush();
@@ -172,7 +175,8 @@ public class ConsultationRequestService {
     /**
      * Результат записи на запрос
      */
-    public record RequestRegistrationResult(boolean success, String message) {}
+    public record RequestRegistrationResult(boolean success, String message) {
+    }
 
     public static RequestRegistrationResult successRegistration() {
         return new RequestRegistrationResult(true, "Вы успешно записались на запрос");
@@ -185,14 +189,15 @@ public class ConsultationRequestService {
     /**
      * Результат отписки от запроса
      */
-    public record RequestUnregistrationResult(boolean success, boolean requestDeleted, String message) {}
+    public record RequestUnregistrationResult(boolean success, boolean requestDeleted, String message) {
+    }
 
     public static RequestUnregistrationResult successUnregistration() {
         return new RequestUnregistrationResult(true, false, "Вы успешно отписались от запроса");
     }
 
     public static RequestUnregistrationResult successUnregistrationWithDeletion() {
-        return new RequestUnregistrationResult(true, true, 
+        return new RequestUnregistrationResult(true, true,
                 "Вы были последним записанным студентом. Запрос удалён.");
     }
 

@@ -31,18 +31,22 @@ public class TeacherStateManager {
         EDITING_TITLE,                        // Редактирование названия
         EDITING_DATETIME,                     // Редактирование даты и времени
         EDITING_CAPACITY,                     // Редактирование вместимости
-        EDITING_AUTOCLOSE                     // Редактирование автозакрытия
+        EDITING_AUTOCLOSE,                    // Редактирование автозакрытия
+        EDITING_PROFILE_FIRST_NAME,           // Редактирование имени (для активированных)
+        EDITING_PROFILE_LAST_NAME,            // Редактирование фамилии (для активированных)
+        WAITING_APPROVAL_EDITING_FIRST_NAME,  // Редактирование имени (для неактивированных)
+        WAITING_APPROVAL_EDITING_LAST_NAME    // Редактирование фамилии (для неактивированных)
     }
 
     // Состояния пользователей
     private final Map<Long, TeacherState> userStates = new HashMap<>();
-    
+
     // Текущая просматриваемая консультация
     private final Map<Long, Long> currentConsultationId = new HashMap<>();
-    
+
     // Текущий просматриваемый запрос
     private final Map<Long, Long> currentRequestId = new HashMap<>();
-    
+
     // Временные данные для создания консультации
     private final Map<Long, String> tempConsultationTitle = new HashMap<>();
     private final Map<Long, String> tempConsultationDate = new HashMap<>();

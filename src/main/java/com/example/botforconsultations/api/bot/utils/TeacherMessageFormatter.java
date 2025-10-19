@@ -24,7 +24,7 @@ public class TeacherMessageFormatter {
     public String formatConsultationsList(List<Consultation> consultations) {
         if (consultations.isEmpty()) {
             return "📅 У вас пока нет консультаций.\n\n" +
-                   "Создайте новую через \"➕ Создать консультацию\"";
+                    "Создайте новую через \"➕ Создать консультацию\"";
         }
 
         StringBuilder message = new StringBuilder();
@@ -46,7 +46,7 @@ public class TeacherMessageFormatter {
     private String formatConsultationShort(Consultation consultation) {
         StringBuilder message = new StringBuilder();
         message.append(String.format("№%d\n", consultation.getId()));
-        
+
         if (consultation.getDate() != null && consultation.getStartTime() != null) {
             message.append(String.format("📅 %s %s - %s\n",
                     consultation.getDate().format(SHORT_DATE_FORMATTER),
@@ -61,7 +61,7 @@ public class TeacherMessageFormatter {
         String statusEmoji = getStatusEmoji(consultation.getStatus());
         message.append(String.format("%s %s\n", statusEmoji, getStatusText(consultation.getStatus())));
         message.append("\n");
-        
+
         return message.toString();
     }
 
@@ -79,7 +79,7 @@ public class TeacherMessageFormatter {
         if (consultation.getDate() != null) {
             message.append(String.format("📅 Дата: %s\n", consultation.getDate().format(DATE_FORMATTER)));
         }
-        
+
         if (consultation.getStartTime() != null && consultation.getEndTime() != null) {
             message.append(String.format("🕐 Время: %s - %s\n\n",
                     consultation.getStartTime().format(TIME_FORMATTER),
@@ -124,7 +124,7 @@ public class TeacherMessageFormatter {
             message.append(String.format("%d. %s\n",
                     count++,
                     TeacherNameFormatter.formatFullName(sc.getStudent())));
-            
+
             if (sc.getMessage() != null && !sc.getMessage().isEmpty()) {
                 message.append(String.format("   📝 Вопрос: %s\n", sc.getMessage()));
             }
@@ -140,8 +140,8 @@ public class TeacherMessageFormatter {
     public String formatRequestsList(List<Consultation> requests) {
         if (requests.isEmpty()) {
             return "📋 Пока нет запросов от студентов.\n\n" +
-                   "Студенты могут создавать запросы через бота,\n" +
-                   "и вы сможете принимать их, создав консультацию.";
+                    "Студенты могут создавать запросы через бота,\n" +
+                    "и вы сможете принимать их, создав консультацию.";
         }
 
         StringBuilder message = new StringBuilder();
@@ -149,7 +149,7 @@ public class TeacherMessageFormatter {
 
         for (Consultation request : requests) {
             int interestedCount = request.getRegUsers() != null ? request.getRegUsers().size() : 0;
-            
+
             message.append(String.format("⏳ №%d - %s\n",
                     request.getId(),
                     request.getTitle()));
@@ -170,15 +170,15 @@ public class TeacherMessageFormatter {
     public String formatRequestDetails(Consultation request, int interestedCount) {
         StringBuilder message = new StringBuilder();
         message.append(String.format("📋 Запрос консультации №%d\n\n", request.getId()));
-        
+
         message.append(String.format("📝 Тема: %s\n\n", request.getTitle()));
-        
+
         message.append(String.format("👤 Автор запроса: %s\n",
                 TeacherNameFormatter.formatFullName(request.getTeacher())));
-        
+
         message.append(String.format("\n👥 Заинтересовано студентов: %d\n",
                 interestedCount));
-        
+
         message.append("📊 Статус: ⏳ Ожидает принятия\n");
 
         message.append("\n💡 Вы можете принять этот запрос и создать консультацию.\n");
@@ -197,7 +197,7 @@ public class TeacherMessageFormatter {
         message.append("🔔 Новая консультация!\n\n");
         message.append(String.format("👨‍🏫 Преподаватель: %s\n\n",
                 TeacherNameFormatter.formatFullName(consultation.getTeacher())));
-        
+
         if (consultation.getTitle() != null && !consultation.getTitle().isEmpty()) {
             message.append(String.format("📝 Тема: %s\n\n", consultation.getTitle()));
         }

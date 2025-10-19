@@ -1,7 +1,6 @@
 package com.example.botforconsultations.api.filter;
 
 import com.example.botforconsultations.core.repository.AdminUserRepository;
-import com.example.botforconsultations.core.repository.UserRepository;
 import com.example.botforconsultations.core.service.JwtProvider;
 import com.example.botforconsultations.core.util.GetModelOrThrow;
 import jakarta.servlet.FilterChain;
@@ -13,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;

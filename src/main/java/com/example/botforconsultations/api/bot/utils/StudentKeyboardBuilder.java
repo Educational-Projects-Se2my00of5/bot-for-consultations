@@ -29,19 +29,20 @@ public class StudentKeyboardBuilder {
         KeyboardRow row1 = new KeyboardRow();
         KeyboardRow row2 = new KeyboardRow();
         KeyboardRow row3 = new KeyboardRow();
-        KeyboardRow helpRow = new KeyboardRow();
+        KeyboardRow row4 = new KeyboardRow();
 
         row1.add(new KeyboardButton("🔍 Преподаватели"));
         row2.add(new KeyboardButton("🔔 Подписки на обновления"));
         row2.add(new KeyboardButton("📝 Мои записи"));
         row3.add(new KeyboardButton("❓ Запросить консультацию"));
         row3.add(new KeyboardButton("📋 Просмотреть запросы"));
-        helpRow.add(new KeyboardButton("Помощь"));
+        row4.add(new KeyboardButton("👤 Профиль"));
+        row4.add(new KeyboardButton("Помощь"));
 
         keyboard.add(row1);
         keyboard.add(row2);
         keyboard.add(row3);
-        keyboard.add(helpRow);
+        keyboard.add(row4);
 
         return ReplyKeyboardMarkup.builder()
                 .keyboard(keyboard)
@@ -75,12 +76,12 @@ public class StudentKeyboardBuilder {
      */
     public ReplyKeyboardMarkup buildTeacherSearchResults(List<TelegramUser> teachers) {
         List<KeyboardRow> keyboard = new ArrayList<>();
-        
+
         // Добавляем первых 5 преподавателей как кнопки
         int count = 0;
         for (TelegramUser teacher : teachers) {
             if (count >= 5) break;
-            
+
             KeyboardRow row = new KeyboardRow();
             row.add(new KeyboardButton(TeacherNameFormatter.formatFullName(teacher)));
             keyboard.add(row);
@@ -107,9 +108,9 @@ public class StudentKeyboardBuilder {
      * Клавиатура со списком консультаций преподавателя
      */
     public ReplyKeyboardMarkup buildTeacherConsultations(
-            List<Consultation> consultations, 
+            List<Consultation> consultations,
             boolean isSubscribed) {
-        
+
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         // Добавляем консультации как кнопки (максимум 5 последних)
@@ -155,6 +156,7 @@ public class StudentKeyboardBuilder {
 
     /**
      * Клавиатура для детального просмотра консультации
+     *
      * @param consultation консультация для проверки статуса
      * @param isRegistered записан ли студент
      */
@@ -177,7 +179,7 @@ public class StudentKeyboardBuilder {
             if (isRegistered) {
                 actionRow.add(new KeyboardButton("❌ Отменить запись"));
                 keyboard.add(actionRow);
-            } 
+            }
         }
 
         KeyboardRow backRow = new KeyboardRow();
@@ -201,11 +203,11 @@ public class StudentKeyboardBuilder {
         for (Consultation request : requests) {
             if (count >= 10) break;
             KeyboardRow row = new KeyboardRow();
-            row.add(new KeyboardButton(String.format("№%d - %s", 
-                    request.getId(), 
-                    request.getTitle().length() > 30 
-                        ? request.getTitle().substring(0, 30) + "..." 
-                        : request.getTitle())));
+            row.add(new KeyboardButton(String.format("№%d - %s",
+                    request.getId(),
+                    request.getTitle().length() > 30
+                            ? request.getTitle().substring(0, 30) + "..."
+                            : request.getTitle())));
             keyboard.add(row);
             count++;
         }
@@ -222,6 +224,7 @@ public class StudentKeyboardBuilder {
 
     /**
      * Клавиатура для детального просмотра запроса
+     *
      * @param isRegistered записан ли студент на этот запрос
      */
     public ReplyKeyboardMarkup buildRequestDetails(boolean isRegistered) {

@@ -34,14 +34,14 @@ public class NotificationService {
     public void notifySubscribersNewConsultation(Long consultationId) {
         Consultation consultation = consultationService.findById(consultationId);
         List<Subscription> subscriptions = subscriptionRepository.findByTeacher(consultation.getTeacher());
-        
+
         if (subscriptions.isEmpty()) {
             log.debug("No subscribers for teacher #{}", consultation.getTeacher().getId());
             return;
         }
 
         String message = messageFormatter.formatNewConsultationNotification(consultation);
-        
+
         int sent = 0;
         for (Subscription subscription : subscriptions) {
             Long chatId = subscription.getStudent().getTelegramId();
@@ -49,7 +49,7 @@ public class NotificationService {
                 botMessenger.sendText(message, chatId);
                 sent++;
             } catch (Exception e) {
-                log.error("Failed to send notification to student #{}: {}", 
+                log.error("Failed to send notification to student #{}: {}",
                         subscription.getStudent().getId(), e.getMessage());
             }
         }
@@ -65,14 +65,14 @@ public class NotificationService {
         List<StudentConsultation> registrations = consultation.getRegUsers() != null
                 ? List.copyOf(consultation.getRegUsers())
                 : List.of();
-        
+
         if (registrations.isEmpty()) {
             log.debug("No registered students for consultation #{}", consultation.getId());
             return;
         }
 
         String message = messageFormatter.formatConsultationUpdateNotification(consultation, changeDescription);
-        
+
         int sent = 0;
         for (StudentConsultation sc : registrations) {
             Long chatId = sc.getStudent().getTelegramId();
@@ -80,7 +80,7 @@ public class NotificationService {
                 botMessenger.sendText(message, chatId);
                 sent++;
             } catch (Exception e) {
-                log.error("Failed to send update notification to student #{}: {}", 
+                log.error("Failed to send update notification to student #{}: {}",
                         sc.getStudent().getId(), e.getMessage());
             }
         }
@@ -96,7 +96,7 @@ public class NotificationService {
         Consultation consultation = consultationService.findById(consultationId);
         // Получаем всех подписчиков преподавателя
         List<Subscription> subscriptions = subscriptionRepository.findByTeacher(consultation.getTeacher());
-        
+
         if (subscriptions.isEmpty()) {
             log.debug("No subscribers for teacher #{}", consultation.getTeacher().getId());
             return;
@@ -124,7 +124,7 @@ public class NotificationService {
 
         long currentCount = registrations.size();
         String message = messageFormatter.formatAvailableSpotsNotification(consultation, currentCount);
-        
+
         int sent = 0;
         for (TelegramUser student : studentsToNotify) {
             Long chatId = student.getTelegramId();
@@ -132,7 +132,7 @@ public class NotificationService {
                 botMessenger.sendText(message, chatId);
                 sent++;
             } catch (Exception e) {
-                log.error("Failed to send available spots notification to student #{}: {}", 
+                log.error("Failed to send available spots notification to student #{}: {}",
                         student.getId(), e.getMessage());
             }
         }
@@ -148,14 +148,14 @@ public class NotificationService {
         List<StudentConsultation> registrations = consultation.getRegUsers() != null
                 ? List.copyOf(consultation.getRegUsers())
                 : List.of();
-        
+
         if (registrations.isEmpty()) {
             log.debug("No registered students for consultation #{}", consultation.getId());
             return;
         }
 
         String message = messageFormatter.formatCancellationNotification(consultation);
-        
+
         int sent = 0;
         for (StudentConsultation sc : registrations) {
             Long chatId = sc.getStudent().getTelegramId();
@@ -163,7 +163,7 @@ public class NotificationService {
                 botMessenger.sendText(message, chatId);
                 sent++;
             } catch (Exception e) {
-                log.error("Failed to send cancellation notification to student #{}: {}", 
+                log.error("Failed to send cancellation notification to student #{}: {}",
                         sc.getStudent().getId(), e.getMessage());
             }
         }
@@ -179,7 +179,7 @@ public class NotificationService {
         List<StudentConsultation> registrations = consultation.getRegUsers() != null
                 ? List.copyOf(consultation.getRegUsers())
                 : List.of();
-        
+
         if (registrations.isEmpty()) {
             log.debug("No interested students for consultation #{}", consultation.getId());
             return;
@@ -189,7 +189,7 @@ public class NotificationService {
         String message = messageFormatter.formatNewConsultationNotification(consultation);
         String header = "✅ Ваш запрос принят преподавателем!\n\n";
         message = header + message;
-        
+
         int sent = 0;
         for (StudentConsultation sc : registrations) {
             Long chatId = sc.getStudent().getTelegramId();
@@ -197,7 +197,7 @@ public class NotificationService {
                 botMessenger.sendText(message, chatId);
                 sent++;
             } catch (Exception e) {
-                log.error("Failed to send request accepted notification to student #{}: {}", 
+                log.error("Failed to send request accepted notification to student #{}: {}",
                         sc.getStudent().getId(), e.getMessage());
             }
         }
@@ -207,6 +207,7 @@ public class NotificationService {
 
     /**
      * Уведомить преподавателя о подтверждении аккаунта
+     *
      * @param chatId Telegram ID преподавателя
      */
     public void notifyTeacherAccountApproved(Long chatId) {
@@ -220,12 +221,12 @@ public class NotificationService {
                 
                 Используйте команду /start для начала работы.
                 """;
-        
+
         try {
             botMessenger.sendText(message, chatId);
             log.info("Sent account approval notification to teacher with chatId #{}", chatId);
         } catch (Exception e) {
-            log.error("Failed to send account approval notification to teacher #{}: {}", 
+            log.error("Failed to send account approval notification to teacher #{}: {}",
                     chatId, e.getMessage());
         }
     }

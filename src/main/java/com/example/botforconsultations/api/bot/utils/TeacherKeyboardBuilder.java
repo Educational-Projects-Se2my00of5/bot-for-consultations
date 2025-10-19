@@ -21,11 +21,27 @@ public class TeacherKeyboardBuilder {
     private static final DateTimeFormatter BUTTON_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     /**
+     * Меню ожидания подтверждения для неактивированных преподавателей
+     */
+    public ReplyKeyboardMarkup buildWaitingForApprovalMenu() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(new KeyboardButton("👤 Профиль"));
+        keyboard.add(row1);
+
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(keyboard)
+                .resizeKeyboard(true)
+                .build();
+    }
+
+    /**
      * Главное меню преподавателя
      */
     public ReplyKeyboardMarkup buildMainMenu() {
         List<KeyboardRow> keyboard = new ArrayList<>();
-        
+
         KeyboardRow row1 = new KeyboardRow();
         row1.add(new KeyboardButton("📅 Мои консультации"));
         row1.add(new KeyboardButton("➕ Создать консультацию"));
@@ -35,9 +51,10 @@ public class TeacherKeyboardBuilder {
         row2.add(new KeyboardButton("📋 Просмотреть запросы"));
         keyboard.add(row2);
 
-        KeyboardRow helpRow = new KeyboardRow();
-        helpRow.add(new KeyboardButton("Помощь"));
-        keyboard.add(helpRow);
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(new KeyboardButton("👤 Профиль"));
+        row3.add(new KeyboardButton("Помощь"));
+        keyboard.add(row3);
 
         return ReplyKeyboardMarkup.builder()
                 .keyboard(keyboard)
@@ -55,14 +72,14 @@ public class TeacherKeyboardBuilder {
         int count = 0;
         for (Consultation consultation : consultations) {
             if (count >= 5) break;
-            
+
             KeyboardRow row = new KeyboardRow();
             // Консультации всегда имеют дату и время
-            String buttonText = String.format("№%d - %s %s", 
+            String buttonText = String.format("№%d - %s %s",
                     consultation.getId(),
                     consultation.getDate().format(BUTTON_DATE_FORMATTER),
                     consultation.getStartTime().format(BUTTON_TIME_FORMATTER));
-            
+
             row.add(new KeyboardButton(buttonText));
             keyboard.add(row);
             count++;
@@ -81,7 +98,8 @@ public class TeacherKeyboardBuilder {
 
     /**
      * Клавиатура для детального просмотра консультации
-     * @param consultation консультация
+     *
+     * @param consultation    консультация
      * @param registeredCount количество записанных студентов
      */
     public ReplyKeyboardMarkup buildConsultationDetails(Consultation consultation, long registeredCount) {
@@ -94,17 +112,17 @@ public class TeacherKeyboardBuilder {
             KeyboardRow row1 = new KeyboardRow();
             row1.add(new KeyboardButton("🔒 Закрыть запись"));
             keyboard.add(row1);
-            
+
             KeyboardRow row2 = new KeyboardRow();
             row2.add(new KeyboardButton("✏️ Редактировать"));
             row2.add(new KeyboardButton("❌ Отменить консультацию"));
             keyboard.add(row2);
-            
+
         } else if (status == ConsultationStatus.CLOSED) {
             KeyboardRow row1 = new KeyboardRow();
             row1.add(new KeyboardButton("🔓 Открыть запись"));
             keyboard.add(row1);
-            
+
             KeyboardRow row2 = new KeyboardRow();
             row2.add(new KeyboardButton("✏️ Редактировать"));
             row2.add(new KeyboardButton("❌ Отменить консультацию"));
@@ -164,13 +182,13 @@ public class TeacherKeyboardBuilder {
         int count = 0;
         for (Consultation request : requests) {
             if (count >= 5) break;
-            
+
             KeyboardRow row = new KeyboardRow();
-            String buttonText = String.format("№%d - %s", 
-                    request.getId(), 
-                    request.getTitle().length() > 30 
-                        ? request.getTitle().substring(0, 30) + "..." 
-                        : request.getTitle());
+            String buttonText = String.format("№%d - %s",
+                    request.getId(),
+                    request.getTitle().length() > 30
+                            ? request.getTitle().substring(0, 30) + "..."
+                            : request.getTitle());
             row.add(new KeyboardButton(buttonText));
             keyboard.add(row);
             count++;
@@ -189,6 +207,7 @@ public class TeacherKeyboardBuilder {
 
     /**
      * Клавиатура для детального просмотра запроса студента
+     *
      * @param interestedCount количество заинтересованных студентов
      */
     public ReplyKeyboardMarkup buildRequestDetails(int interestedCount) {

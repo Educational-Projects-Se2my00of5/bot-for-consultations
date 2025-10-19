@@ -2,6 +2,7 @@ package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.api.bot.service.ConsultationRequestService;
 import com.example.botforconsultations.api.bot.service.NotificationService;
+import com.example.botforconsultations.api.bot.service.ProfileService;
 import com.example.botforconsultations.api.bot.service.TeacherConsultationService;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager.TeacherState;
@@ -40,12 +41,14 @@ public class TeacherCommandHandler {
     private final TeacherConsultationService consultationService;
     private final ConsultationRequestService requestService;
     private final NotificationService notificationService;
+    private final ProfileService profileService;
     private final BotMessenger botMessenger;
 
     // Утилиты
     private final TeacherStateManager stateManager;
     private final TeacherKeyboardBuilder keyboardBuilder;
     private final TeacherMessageFormatter messageFormatter;
+    private final ProfileCommandHandler profileCommandHandler;
 
     // Форматтеры для парсинга
     private static final DateTimeFormatter[] DATE_FORMATTERS = {
@@ -83,6 +86,14 @@ public class TeacherCommandHandler {
                 case EDITING_DATETIME -> processEditDateTime(chatId, text);
                 case EDITING_CAPACITY -> processEditCapacity(chatId, text);
                 case EDITING_AUTOCLOSE -> processEditAutoClose(chatId, text);
+                case EDITING_PROFILE_FIRST_NAME -> {
+                    profileCommandHandler.processFirstNameUpdate(text, chatId, getCurrentTeacher(chatId));
+                    stateManager.resetState(chatId);
+                }
+                case EDITING_PROFILE_LAST_NAME -> {
+                    profileCommandHandler.processLastNameUpdate(text, chatId, getCurrentTeacher(chatId));
+                    stateManager.resetState(chatId);
+                }
                 default -> {
                 } // Никогда не должно произойти из-за условия if
             }
@@ -99,6 +110,10 @@ public class TeacherCommandHandler {
         }
 
         // Основные команды
+        // case "👤 Профиль", "✏️ Изменить имя", "✏️ Изменить фамилию" 
+        if(profileCommandHandler.handleProfileCommand(text, chatId)){
+            return;
+        }
         switch (text) {
             case "Помощь" -> sendHelp(chatId);
             case "📅 Мои консультации" -> showMyConsultations(chatId);
@@ -130,6 +145,54 @@ public class TeacherCommandHandler {
                     chatId
             );
         }
+    }
+
+    /**
+     * Обработчик команд для неактивированных преподавателей
+     * Они могут редактировать только свой профиль
+     */
+    public void handleUnconfirmedTeacherCommand(String text, Long chatId) {
+        TeacherState currentState = stateManager.getState(chatId);
+
+        // Обработка состояний ввода для неактивированных преподавателей
+        if (currentState == TeacherState.WAITING_APPROVAL_EDITING_FIRST_NAME) {
+            profileCommandHandler.processFirstNameUpdate(text, chatId, getCurrentTeacher(chatId));
+            stateManager.resetState(chatId);
+            return;
+        }
+
+        if (currentState == TeacherState.WAITING_APPROVAL_EDITING_LAST_NAME) {
+            profileCommandHandler.processLastNameUpdate(text, chatId, getCurrentTeacher(chatId));
+            stateManager.resetState(chatId);
+            return;
+        }
+
+        // Основные команды
+        // case "👤 Профиль", "✏️ Изменить имя", "✏️ Изменить фамилию" 
+        if (profileCommandHandler.handleProfileCommand(text, chatId)){
+            return;
+        }
+        switch (text) {
+            case "◀️ Назад" -> sendWaitingApprovalMenu(chatId);
+            default -> botMessenger.sendText(
+                    "Извините, я не понимаю эту команду.",
+                    chatId
+            );
+        }
+    }
+
+    /**
+     * Отправить меню ожидания подтверждения
+     */
+    public void sendWaitingApprovalMenu(Long chatId) {
+        stateManager.resetState(chatId);
+        botMessenger.execute(SendMessage.builder()
+                .text("⏳ Ваш аккаунт ожидает подтверждения администратором.\n" +
+                        "Вы сможете создавать консультации после активации.\n\n" +
+                        "Пока вы можете редактировать свой профиль:")
+                .chatId(chatId)
+                .replyMarkup(keyboardBuilder.buildWaitingForApprovalMenu())
+                .build());
     }
 
     // ========== Главное меню и справка ==========
