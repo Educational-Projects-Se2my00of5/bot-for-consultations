@@ -200,6 +200,8 @@ public class ConsultationMessageFormatter {
             message.append(String.format(" (предстоящих: %d, прошедших: %d)",
                     futureRegistrations.size(), pastRegistrations.size()));
         }
+        
+        message.append("\n\n💡 Введите №... для просмотра деталей конкретной консультации");
 
         return message.toString();
     }

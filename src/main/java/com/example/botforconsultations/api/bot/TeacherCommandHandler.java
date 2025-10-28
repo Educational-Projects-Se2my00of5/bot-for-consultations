@@ -386,7 +386,8 @@ public class TeacherCommandHandler {
                     .replyMarkup(keyboardBuilder.buildMainMenu())
                     .build());
         } else {
-            stateManager.clearCurrentConsultation(chatId);  // Очищаем при показе списка
+            // Просмотр списка консультаций: устанавливаем состояние, очищаем ID конкретной консультации
+            stateManager.clearCurrentConsultation(chatId);
             stateManager.setState(chatId, TeacherState.VIEWING_CONSULTATION_DETAILS);
             botMessenger.execute(SendMessage.builder()
                     .chatId(chatId)
@@ -445,6 +446,7 @@ public class TeacherCommandHandler {
 
         consultationRepository.findById(consultationId).ifPresentOrElse(
                 consultation -> {
+                    // Просмотр конкретной консультации: устанавливаем ID и состояние
                     stateManager.setCurrentConsultation(chatId, consultationId);
                     stateManager.setState(chatId, TeacherState.VIEWING_CONSULTATION_DETAILS);
 
@@ -924,7 +926,8 @@ public class TeacherCommandHandler {
                     .replyMarkup(keyboardBuilder.buildMainMenu())
                     .build());
         } else {
-            stateManager.clearCurrentRequest(chatId);  // Очищаем при показе списка
+            // Просмотр списка запросов: устанавливаем состояние, очищаем ID конкретного запроса
+            stateManager.clearCurrentRequest(chatId);
             stateManager.setState(chatId, TeacherState.VIEWING_REQUEST_DETAILS);
             botMessenger.execute(SendMessage.builder()
                     .chatId(chatId)
@@ -937,7 +940,9 @@ public class TeacherCommandHandler {
     private void showRequestDetails(Long chatId, Long requestId) {
         requestService.findRequestById(requestId).ifPresentOrElse(
                 request -> {
+                    // Просмотр конкретного запроса: устанавливаем ID и состояние
                     stateManager.setCurrentRequest(chatId, requestId);
+                    stateManager.setState(chatId, TeacherState.VIEWING_REQUEST_DETAILS);
 
                     int interestedCount = request.getRegUsers() != null
                             ? request.getRegUsers().size()

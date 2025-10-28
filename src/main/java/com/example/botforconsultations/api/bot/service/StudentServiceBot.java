@@ -122,10 +122,10 @@ public class StudentServiceBot {
     }
 
     /**
-     * Получить все записи студента
+     * Получить все записи студента (только консультации, без запросов)
      */
     public List<StudentConsultation> getStudentRegistrations(TelegramUser student) {
-        return studentConsultationRepository.findByStudent(student);
+        return studentConsultationRepository.findByStudentExcludingRequests(student);
     }
 
     /**

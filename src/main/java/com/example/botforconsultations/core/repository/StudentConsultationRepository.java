@@ -37,6 +37,12 @@ public interface StudentConsultationRepository extends JpaRepository<StudentCons
     List<StudentConsultation> findByStudent(TelegramUser student);
     
     /**
+     * Находит все записи студента только на консультации (исключая запросы)
+     */
+    @Query("SELECT sc FROM StudentConsultation sc WHERE sc.student = :student AND sc.consultation.status != 'REQUEST'")
+    List<StudentConsultation> findByStudentExcludingRequests(@Param("student") TelegramUser student);
+    
+    /**
      * Находит всех студентов, записанных на консультацию
      */
     List<StudentConsultation> findByConsultation(Consultation consultation);

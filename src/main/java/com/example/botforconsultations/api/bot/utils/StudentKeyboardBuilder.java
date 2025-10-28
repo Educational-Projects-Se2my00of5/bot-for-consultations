@@ -247,4 +247,21 @@ public class StudentKeyboardBuilder {
                 .resizeKeyboard(true)
                 .build();
     }
+
+    /**
+     * Простая клавиатура с кнопкой "Назад"
+     * Используется для отмены операций (например, создание запроса)
+     */
+    public ReplyKeyboardMarkup buildBackKeyboard() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        KeyboardRow backRow = new KeyboardRow();
+        backRow.add(new KeyboardButton("◀️ Назад"));
+        keyboard.add(backRow);
+
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(keyboard)
+                .resizeKeyboard(true)
+                .build();
+    }
 }

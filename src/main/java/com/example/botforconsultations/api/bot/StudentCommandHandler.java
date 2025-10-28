@@ -303,6 +303,7 @@ public class StudentCommandHandler {
 
         String messageText = messageFormatter.formatConsultationsList(teacher, consultations, filter);
 
+        // Просмотр списка консультаций: устанавливаем состояние, очищаем ID конкретной консультации
         stateManager.clearCurrentConsultation(chatId);
         stateManager.setState(chatId, UserState.VIEWING_CONSULTATION_DETAILS);
 
@@ -379,12 +380,18 @@ public class StudentCommandHandler {
         try {
             Long id = extractId(text);
 
-            // Если в состоянии просмотра запросов - показываем запрос
+            // Определяем тип по состоянию
             if (currentState == UserState.VIEWING_REQUEST_DETAILS) {
                 showRequestDetails(chatId, id);
-            } else {
-                // Иначе - это консультация
+            } else if (currentState == UserState.VIEWING_CONSULTATION_DETAILS) {
                 showConsultationDetails(chatId, id);
+            } else {
+                // Неизвестное состояние - сообщаем об ошибке
+                botMessenger.sendText(
+                        "Ошибка: неверный контекст для выбора по номеру.\n" +
+                        "Пожалуйста, перейдите в раздел консультаций или запросов.",
+                        chatId
+                );
             }
         } catch (Exception e) {
             log.error("Error parsing ID from '{}': {}", text, e.getMessage());
@@ -430,7 +437,9 @@ public class StudentCommandHandler {
             return;
         }
 
+        // Просмотр конкретной консультации: устанавливаем ID и состояние
         stateManager.setCurrentConsultation(chatId, consultationId);
+        stateManager.setState(chatId, UserState.VIEWING_CONSULTATION_DETAILS);
 
         TelegramUser student = getCurrentStudent(chatId);
         long registeredCount = studentServiceBot.getRegisteredCount(consultation);
@@ -474,6 +483,7 @@ public class StudentCommandHandler {
         }
 
         // В остальных случаях - главное меню
+        stateManager.clearUserData(chatId);
         sendMainMenu(chatId);
     }
 
@@ -574,7 +584,16 @@ public class StudentCommandHandler {
         TelegramUser student = getCurrentStudent(chatId);
         List<StudentConsultation> registrations = studentServiceBot.getStudentRegistrations(student);
         String message = messageFormatter.formatStudentRegistrations(registrations);
-        botMessenger.sendText(message, chatId);
+        
+        if (registrations.isEmpty()) {
+            // Нет записей - просто показываем сообщение
+            botMessenger.sendText(message, chatId);
+        } else {
+            // Есть записи - устанавливаем состояние для возможности выбора по номеру
+            stateManager.setState(chatId, UserState.VIEWING_CONSULTATION_DETAILS);
+            stateManager.clearCurrentConsultation(chatId);
+            botMessenger.sendText(message, chatId);
+        }
     }
 
     // ========== Вспомогательные методы ==========
@@ -644,13 +663,14 @@ public class StudentCommandHandler {
      */
     private void startRequestCreation(Long chatId) {
         stateManager.setState(chatId, UserState.WAITING_FOR_REQUEST_TITLE);
-        botMessenger.sendText(
-                "❓ Создание запроса консультации\n\n" +
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text("❓ Создание запроса консультации\n\n" +
                         "Введите тему консультации, которая вам нужна.\n" +
                         "Например: \"Помощь с курсовой работой по Java\" или \"Разбор темы Многопоточность\"\n\n" +
-                        "Ваш запрос увидят все преподаватели, и кто-то из них сможет его принять.",
-                chatId
-        );
+                        "Ваш запрос увидят все преподаватели, и кто-то из них сможет его принять.")
+                .replyMarkup(keyboardBuilder.buildBackKeyboard())
+                .build());
     }
 
     /**
@@ -698,7 +718,7 @@ public class StudentCommandHandler {
                     .replyMarkup(keyboardBuilder.buildMainMenu())
                     .build());
         } else {
-            // Очищаем ID запроса при показе списка
+            // Просмотр списка запросов: устанавливаем состояние, очищаем ID конкретного запроса
             stateManager.clearCurrentRequest(chatId);
             stateManager.setState(chatId, UserState.VIEWING_REQUEST_DETAILS);
             botMessenger.execute(SendMessage.builder()
@@ -715,7 +735,10 @@ public class StudentCommandHandler {
     private void showRequestDetails(Long chatId, Long requestId) {
         consultationRequestService.findRequestById(requestId).ifPresentOrElse(
                 request -> {
+                    // Просмотр конкретного запроса: устанавливаем ID и состояние
                     stateManager.setCurrentRequest(chatId, requestId);
+                    stateManager.setState(chatId, UserState.VIEWING_REQUEST_DETAILS);
+                    
                     TelegramUser student = getCurrentStudent(chatId);
                     boolean isRegistered = consultationRequestService.isRegisteredOnRequest(student, request);
 
