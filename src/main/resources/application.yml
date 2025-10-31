@@ -16,7 +16,8 @@ spring:
 jwt:
   secret: QfCzUQ8hGk9cG+2Yv4WmRoM6n8gqvZ5b8k4Yl2OigvYfFc7aKqFvQeV+5yQDx5l5M0E9hLmYVZl+K7z4s8qv0A==
   expiration: 3600
-
 bot:
   name: consultations1_bot
   token: ${BOT_TOKEN}
+server:
+  port: 8080

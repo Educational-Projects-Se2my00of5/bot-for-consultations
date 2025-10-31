@@ -7,7 +7,7 @@ services:
       - ./admin-web:/app      # монтируем код для hot-reload
       - /app/node_modules     # чтобы node_modules не затирался
     environment:
-      - REACT_APP_API_URL=http://backend:8080
+      - REACT_APP_API_URL=https://consult.kupriyanov.space
       - CHOKIDAR_USEPOLLING=true  # полезно для hot reload внутри Docker
     stdin_open: true
     tty: true

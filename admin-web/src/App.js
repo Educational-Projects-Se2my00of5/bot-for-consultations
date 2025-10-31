@@ -4,6 +4,8 @@ import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import UsersPage from './pages/UsersPage';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 function App() {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -13,7 +15,7 @@ function App() {
       
       if (token) {
         try {
-          const response = await fetch('/api/admin/check-token', {
+          const response = await fetch(`${API_URL}/api/admin/check-token`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

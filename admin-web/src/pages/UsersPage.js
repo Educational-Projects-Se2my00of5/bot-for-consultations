@@ -3,6 +3,8 @@ import Header from '../components/Header';
 import Modal from '../components/Modal';
 import './UsersPage.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 const UsersPage = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -13,7 +15,7 @@ const UsersPage = () => {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/admin/unactive-accounts', {
+            const response = await fetch(`${API_URL}/api/admin/unactive-accounts`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
                 }
@@ -34,7 +36,7 @@ const UsersPage = () => {
 
     const getUserDetails = async (userId) => {
         try {
-            const response = await fetch(`/api/admin/user-info/${userId}`, {
+            const response = await fetch(`${API_URL}/api/admin/user-info/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
                 }
@@ -54,7 +56,7 @@ const UsersPage = () => {
 
     const activateUser = async (userId) => {
         try {
-            const response = await fetch(`/api/admin/activate-account/${userId}`, {
+            const response = await fetch(`${API_URL}/api/admin/activate-account/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
                 }
