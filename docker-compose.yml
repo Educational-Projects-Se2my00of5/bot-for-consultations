@@ -1,16 +1,12 @@
 services:
   admin-web:
-    build: ./admin-web
+    build:
+      context: ./admin-web
+      dockerfile: Dockerfile.prod
+      args:
+        REACT_APP_API_URL: http://localhost:8080 #https://consult.kupriyanov.space
     ports:
       - "3000:3000"
-    volumes:
-      - ./admin-web:/app      # монтируем код для hot-reload
-      - /app/node_modules     # чтобы node_modules не затирался
-    environment:
-      - REACT_APP_API_URL=https://consult.kupriyanov.space
-      - CHOKIDAR_USEPOLLING=true  # полезно для hot reload внутри Docker
-    stdin_open: true
-    tty: true
     depends_on:
       - backend
 

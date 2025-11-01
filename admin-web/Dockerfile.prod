@@ -1,0 +1,24 @@
+FROM node:21-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+# Получаем переменную из docker-compose
+ARG REACT_APP_API_URL
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+
+# Собираем production build
+RUN npm run build
+
+# Устанавливаем serve для production
+RUN npm install -g serve
+
+# Запускаем HTTP сервер для раздачи статики
+CMD ["serve", "-s", "build", "-l", "3000"]
+
+EXPOSE 3000
