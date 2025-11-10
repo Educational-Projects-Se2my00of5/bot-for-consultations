@@ -34,7 +34,10 @@ public class SecurityConfig {
                             "http://localhost:*",                       // локальная разработка (любой порт)
                             "http://127.0.0.1:*",                       // локальная разработка (любой порт)
                             "https://admin.consult.kupriyanov.space",    // продакшн фронтенд
-                            "http://158.160.201.34:*"
+                            "http://admin.consult.kupriyanov.space",
+                            "http://158.160.201.34:*",
+                            "http://bot.se2botconsult.tech",
+                            "https://bot.se2botconsult.tech"
                     ));
                     config.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(java.util.Arrays.asList("*"));
