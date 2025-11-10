@@ -4,7 +4,7 @@ services:
       context: ./admin-web
       dockerfile: Dockerfile.prod
       args:
-        REACT_APP_API_URL: http://bot.se2botconsult.tech
+        REACT_APP_API_URL: https://bot.se2botconsult.tech
     ports:
       - "3000:3000"
     depends_on:
