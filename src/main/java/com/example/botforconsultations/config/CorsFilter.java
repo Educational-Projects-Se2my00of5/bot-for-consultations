@@ -13,11 +13,11 @@ import java.io.IOException;
  * CORS фильтр, который работает ДО Spring Security
  * Обрабатывает OPTIONS запросы на самом раннем этапе
  */
-//@Component
-//@Order(Ordered.HIGHEST_PRECEDENCE)
-public class CorsFilter {//implements Filter {
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class CorsFilter implements Filter {
 
-    //@Override
+    @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
 
@@ -51,13 +51,13 @@ public class CorsFilter {//implements Filter {
         chain.doFilter(req, res);
     }
 
-//    @Override
-//    public void init(FilterConfig filterConfig) {
-//        // не требуется
-//    }
-//
-//    @Override
-//    public void destroy() {
-//        // не требуется
-//    }
+    @Override
+    public void init(FilterConfig filterConfig) {
+        // не требуется
+    }
+
+    @Override
+    public void destroy() {
+        // не требуется
+    }
 }
