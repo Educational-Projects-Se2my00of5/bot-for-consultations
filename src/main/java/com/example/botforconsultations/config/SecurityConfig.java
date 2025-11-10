@@ -33,7 +33,8 @@ public class SecurityConfig {
                     config.setAllowedOriginPatterns(java.util.Arrays.asList(
                             "http://localhost:*",                       // локальная разработка (любой порт)
                             "http://127.0.0.1:*",                       // локальная разработка (любой порт)
-                            "https://admin.consult.kupriyanov.space"    // продакшн фронтенд
+                            "https://admin.consult.kupriyanov.space",    // продакшн фронтенд
+                            "http://158.160.201.34:*"
                     ));
                     config.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(java.util.Arrays.asList("*"));

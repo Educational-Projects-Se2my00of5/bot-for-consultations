@@ -4,7 +4,7 @@ services:
       context: ./admin-web
       dockerfile: Dockerfile.prod
       args:
-        REACT_APP_API_URL: https://consult.kupriyanov.space
+        REACT_APP_API_URL: http://158.160.201.34:8080
     ports:
       - "3000:3000"
     depends_on:
