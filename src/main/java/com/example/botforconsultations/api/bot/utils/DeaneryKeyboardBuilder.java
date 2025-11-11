@@ -4,22 +4,20 @@ import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.model.TodoTask;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
-public class DeaneryKeyboardBuilder {
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.*;
 
-    private static final DateTimeFormatter BUTTON_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM");
-    private static final DateTimeFormatter BUTTON_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+/**
+ * Утилита для построения клавиатур деканата.
+ * Наследуется от BaseKeyboardBuilder с общими методами.
+ */
+@Component
+public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
 
     /**
      * Главное меню деканата
@@ -27,101 +25,72 @@ public class DeaneryKeyboardBuilder {
     public ReplyKeyboardMarkup buildMainMenu() {
         List<KeyboardRow> keyboard = new ArrayList<>();
         
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(new KeyboardButton("🔍 Найти преподавателя"));
-        
-        KeyboardRow row2 = new KeyboardRow();
-        row2.add(new KeyboardButton("🏠 Главное меню"));
-        
-        keyboard.add(row1);
-        keyboard.add(row2);
+        keyboard.add(createTwoButtonRow(TEACHERS_MENU, ALL_TASKS));
+        keyboard.add(createTwoButtonRow(PROFILE, HELP));
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
-     * Список найденных преподавателей
-     * (аналогично студенту - первые 5 в кнопках)
+     * Меню ожидания подтверждения для неактивированного деканата
+     */
+    public ReplyKeyboardMarkup buildWaitingForApprovalMenu() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        
+        keyboard.add(createSingleButtonRow(PROFILE));
+
+        return buildKeyboard(keyboard);
+    }
+
+    // ========== Работа с преподавателями ==========
+
+    /**
+     * Меню для работы с преподавателями
+     */
+    public ReplyKeyboardMarkup buildTeachersMenu() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createTwoButtonRow(ALL_TEACHERS, SEARCH_TEACHER));
+        keyboard.add(createSingleButtonRow(BACK));
+
+        return buildKeyboard(keyboard);
+    }
+
+    /**
+     * Список найденных преподавателей (первые 5 в кнопках)
      */
     public ReplyKeyboardMarkup buildTeacherListKeyboard(List<TelegramUser> teachers) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Добавляем первых 5 преподавателей как кнопки
-        int count = 0;
-        for (TelegramUser teacher : teachers) {
-            if (count >= 5) break;
+        // Добавляем первых 5 преподавателей
+        addTeacherButtons(keyboard, teachers, MAX_LIST_ITEMS);
+        
+        keyboard.add(createSingleButtonRow(SEARCH_TEACHER));
+        keyboard.add(createSingleButtonRow(BACK_TO_TEACHERS));
 
-            KeyboardRow row = new KeyboardRow();
-            row.add(new KeyboardButton(TeacherNameFormatter.formatFullName(teacher)));
-            keyboard.add(row);
-            count++;
-        }
-
-        // Кнопка поиска
-        KeyboardRow searchRow = new KeyboardRow();
-        searchRow.add(new KeyboardButton("🔍 Поиск преподавателя"));
-        keyboard.add(searchRow);
-
-        // Кнопка "Назад"
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад"));
-        keyboard.add(backRow);
-
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
      * Клавиатура со списком консультаций преподавателя
-     * (аналогично студенту, но с кнопкой создания задачи вместо подписки)
+     * (с кнопками для управления задачами вместо подписки)
      */
     public ReplyKeyboardMarkup buildTeacherConsultations(List<Consultation> consultations) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Добавляем консультации как кнопки (максимум 5 последних)
-        int count = 0;
-        for (Consultation consultation : consultations) {
-            if (count >= 5) break;
-            KeyboardRow row = new KeyboardRow();
-            row.add(new KeyboardButton(String.format("№%d - %s %s",
-                    consultation.getId(),
-                    consultation.getDate().format(BUTTON_DATE_FORMATTER),
-                    consultation.getStartTime().format(BUTTON_TIME_FORMATTER))));
-            keyboard.add(row);
-            count++;
-        }
-
-        // Фильтры
-        KeyboardRow filterRow = new KeyboardRow();
-        filterRow.add(new KeyboardButton("⏭️ Будущие"));
-        filterRow.add(new KeyboardButton("📅 Все"));
-        filterRow.add(new KeyboardButton("⏮️ Прошедшие"));
-        keyboard.add(filterRow);
-
-        // Действия деканата
-        KeyboardRow actionRow1 = new KeyboardRow();
-        actionRow1.add(new KeyboardButton("📝 Создать задачу"));
-        keyboard.add(actionRow1);
+        // Добавляем консультации 
+        addConsultationButtons(keyboard, consultations, MAX_LIST_ITEMS);
         
-        KeyboardRow actionRow2 = new KeyboardRow();
-        actionRow2.add(new KeyboardButton("📋 Задачи преподавателя"));
-        keyboard.add(actionRow2);
+        // Фильтры консультаций
+        keyboard.add(createFilterRow());
+
+        // Действия с задачами преподавателя
+        keyboard.add(createTwoButtonRow(CREATE_TASK, TEACHER_TASKS));
 
         // Навигация
-        KeyboardRow navRow = new KeyboardRow();
-        navRow.add(new KeyboardButton("🔙 К поиску"));
-        navRow.add(new KeyboardButton("◀️ Назад"));
-        keyboard.add(navRow);
+        keyboard.add(createTwoButtonRow(BACK_TO_TEACHERS, BACK));
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
@@ -131,136 +100,169 @@ public class DeaneryKeyboardBuilder {
     public ReplyKeyboardMarkup buildConsultationDetails() {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Просмотр записанных студентов
-        KeyboardRow actionRow = new KeyboardRow();
-        actionRow.add(new KeyboardButton("👥 Список студентов"));
-        keyboard.add(actionRow);
+        keyboard.add(createSingleButtonRow(STUDENT_LIST));
+        keyboard.add(createSingleButtonRow(BACK_TO_LIST));
+
+        return buildKeyboard(keyboard);
+    }
+
+    /**
+     * Клавиатура после просмотра списка студентов
+     */
+    public ReplyKeyboardMarkup buildStudentListKeyboard() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(createSingleButtonRow(BACK));
+        return buildKeyboard(keyboard);
+    }
+
+    // ========== Работа с задачами ==========
+
+    /**
+     * Клавиатура списка всех задач деканата
+     */
+    public ReplyKeyboardMarkup buildAllTasksList(List<TodoTask> tasks) {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        // Добавляем первые 5 задач как кнопки
+        addTaskButtons(keyboard, tasks, MAX_LIST_ITEMS);
+
+        // Фильтры по дедлайну (как у консультаций)
+        keyboard.add(createFilterRow());
+
+        // Фильтры по статусу выполнения
+        keyboard.add(createTaskStatusFilterRow());
+
+        // Поиск задачи
+        keyboard.add(createSingleButtonRow(SEARCH_TASK));
 
         // Навигация
-        KeyboardRow navRow = new KeyboardRow();
-        navRow.add(new KeyboardButton("◀️ Назад к списку"));
-        keyboard.add(navRow);
+        keyboard.add(createSingleButtonRow(BACK));
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
-     * Список задач преподавателя
+     * Клавиатура списка задач конкретного преподавателя
      */
-    public InlineKeyboardMarkup buildTodoListKeyboard(List<TodoTask> todos, Long teacherId) {
-        List<InlineKeyboardRow> rows = new ArrayList<>();
+    public ReplyKeyboardMarkup buildTeacherTasksList(List<TodoTask> tasks) {
+        List<KeyboardRow> keyboard = new ArrayList<>();
 
-        for (TodoTask todo : todos) {
-            String prefix = todo.getIsCompleted() ? "✅ " : "⏳ ";
-            InlineKeyboardButton button = InlineKeyboardButton.builder()
-                    .text(prefix + todo.getTitle())
-                    .callbackData("deanery_todo_" + todo.getId())
-                    .build();
-            rows.add(new InlineKeyboardRow(button));
-        }
+        // Добавляем первые 5 задач как кнопки
+        addTaskButtons(keyboard, tasks, MAX_LIST_ITEMS);
 
-        // Кнопка назад
-        rows.add(new InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                        .text("◀️ Назад")
-                        .callbackData("deanery_teacher_" + teacherId)
-                        .build()
-        ));
+        // Фильтры по дедлайну
+        keyboard.add(createFilterRow());
 
-        return InlineKeyboardMarkup.builder()
-                .keyboard(rows)
-                .build();
+        // Фильтры по статусу выполнения
+        keyboard.add(createTaskStatusFilterRow());
+
+        // Создать новую задачу
+        keyboard.add(createSingleButtonRow(CREATE_TASK));
+
+        // Навигация
+        keyboard.add(createTwoButtonRow(BACK_TO_TEACHERS, BACK));
+
+        return buildKeyboard(keyboard);
     }
 
     /**
-     * Действия с задачей
+     * Детальный просмотр задачи
      */
-    public InlineKeyboardMarkup buildTodoActionsKeyboard(TodoTask todo, Long teacherId) {
-        List<InlineKeyboardRow> rows = new ArrayList<>();
+    public ReplyKeyboardMarkup buildTaskDetails(TodoTask task) {
+        List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Отметить выполнено/не выполнено
-        if (!todo.getIsCompleted()) {
-            rows.add(new InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                            .text("✅ Отметить выполненной")
-                            .callbackData("deanery_complete_todo_" + todo.getId())
-                            .build()
-            ));
+        // Изменение статуса
+        if (task.getIsCompleted()) {
+            keyboard.add(createSingleButtonRow(MARK_PENDING));
         } else {
-            rows.add(new InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                            .text("🔄 Вернуть в активные")
-                            .callbackData("deanery_incomplete_todo_" + todo.getId())
-                            .build()
-            ));
+            keyboard.add(createSingleButtonRow(MARK_COMPLETED));
         }
 
-        // Удалить
-        rows.add(new InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                        .text("🗑️ Удалить задачу")
-                        .callbackData("deanery_delete_todo_" + todo.getId())
-                        .build()
-        ));
+        // Управление задачей
+        keyboard.add(createTwoButtonRow(EDIT_TASK, DELETE_TASK));
 
-        // Назад к списку задач
-        rows.add(new InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                        .text("◀️ Назад к задачам")
-                        .callbackData("deanery_view_todos_" + teacherId)
-                        .build()
-        ));
+        // Навигация
+        keyboard.add(createSingleButtonRow(BACK_TO_LIST));
 
-        return InlineKeyboardMarkup.builder()
-                .keyboard(rows)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
      * Подтверждение удаления задачи
      */
-    public InlineKeyboardMarkup buildDeleteConfirmationKeyboard(Long todoId, Long teacherId) {
-        List<InlineKeyboardRow> rows = new ArrayList<>();
+    public ReplyKeyboardMarkup buildDeleteTaskConfirmation() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        
+        keyboard.add(createTwoButtonRow(CONFIRM_DELETE, CANCEL));
 
-        // Да, удалить
-        rows.add(new InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                        .text("✅ Да, удалить")
-                        .callbackData("deanery_confirm_delete_" + todoId)
-                        .build()
-        ));
-
-        // Отмена
-        rows.add(new InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                        .text("❌ Отмена")
-                        .callbackData("deanery_todo_" + todoId)
-                        .build()
-        ));
-
-        return InlineKeyboardMarkup.builder()
-                .keyboard(rows)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
-     * Кнопка отмены при создании задачи
+     * Клавиатура при создании/редактировании задачи
      */
-    public InlineKeyboardMarkup buildCancelTodoCreationKeyboard() {
-        List<InlineKeyboardRow> rows = new ArrayList<>();
+    public ReplyKeyboardMarkup buildCancelKeyboard() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(createSingleButtonRow(CANCEL));
+        return buildKeyboard(keyboard);
+    }
 
-        rows.add(new InlineKeyboardRow(
-                InlineKeyboardButton.builder()
-                        .text("❌ Отменить создание")
-                        .callbackData("deanery_cancel_todo")
-                        .build()
-        ));
+    // ========== Приватные вспомогательные методы ==========
 
-        return InlineKeyboardMarkup.builder()
-                .keyboard(rows)
-                .build();
+    /**
+     * Добавить кнопки преподавателей
+     */
+    private void addTeacherButtons(List<KeyboardRow> keyboard, List<TelegramUser> teachers, int maxCount) {
+        int count = 0;
+        for (TelegramUser teacher : teachers) {
+            if (count >= maxCount) break;
+            keyboard.add(createSingleButtonRow(TeacherNameFormatter.formatFullName(teacher)));
+            count++;
+        }
+    }
+
+    /**
+     * Добавить кнопки консультаций
+     */
+    private void addConsultationButtons(List<KeyboardRow> keyboard, List<Consultation> consultations, int maxCount) {
+        int count = 0;
+        for (Consultation consultation : consultations) {
+            if (count >= maxCount) break;
+            String buttonText = String.format("%s%d - %s %s",
+                    NUMBER_PREFIX,
+                    consultation.getId(),
+                    consultation.getDate().format(BUTTON_DATE_FORMATTER),
+                    consultation.getStartTime().format(BUTTON_TIME_FORMATTER));
+            keyboard.add(createSingleButtonRow(buttonText));
+            count++;
+        }
+    }
+
+    /**
+     * Добавить кнопки задач
+     */
+    private void addTaskButtons(List<KeyboardRow> keyboard, List<TodoTask> tasks, int maxCount) {
+        int count = 0;
+        for (TodoTask task : tasks) {
+            if (count >= maxCount) break;
+            String prefix = task.getIsCompleted() ? COMPLETED_PREFIX : PENDING_PREFIX;
+            String title = task.getTitle().length() > 25 
+                    ? task.getTitle().substring(0, 25) + "..." 
+                    : task.getTitle();
+            String buttonText = String.format("%s%s%d - %s",
+                    prefix,
+                    NUMBER_PREFIX,
+                    task.getId(),
+                    title);
+            keyboard.add(createSingleButtonRow(buttonText));
+            count++;
+        }
+    }
+
+    /**
+     * Создать строку с фильтрами статуса задач
+     */
+    private KeyboardRow createTaskStatusFilterRow() {
+        return createThreeButtonRow(FILTER_TASK_INCOMPLETE, FILTER_TASK_ALL, FILTER_TASK_COMPLETED);
     }
 }

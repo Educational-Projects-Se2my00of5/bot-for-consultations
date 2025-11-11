@@ -23,7 +23,15 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
         VIEWING_CONSULTATION_DETAILS,      // Просмотр деталей конкретной консультации
         CREATING_TODO_TITLE,               // Ввод названия задачи
         CREATING_TODO_DESCRIPTION,         // Ввод описания задачи
-        CREATING_TODO_DEADLINE             // Ввод дедлайна задачи
+        CREATING_TODO_DEADLINE,            // Ввод дедлайна задачи
+        
+        // Состояния редактирования профиля для неподтвержденных пользователей
+        WAITING_APPROVAL_EDITING_FIRST_NAME,  // Ожидание ввода нового имени (неподтвержденный)
+        WAITING_APPROVAL_EDITING_LAST_NAME,   // Ожидание ввода новой фамилии (неподтвержденный)
+        
+        // Состояния редактирования профиля для подтвержденных пользователей
+        EDITING_PROFILE_FIRST_NAME,        // Ожидание ввода нового имени (подтвержденный)
+        EDITING_PROFILE_LAST_NAME          // Ожидание ввода новой фамилии (подтвержденный)
     }
 
     /**
@@ -105,4 +113,51 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
     public void clearTodoCreationData(Long chatId) {
         todoCreationDataMap.remove(chatId);
     }
+
+    // ========== Методы для работы с временными данными задачи ==========
+
+    /**
+     * Установить название задачи
+     */
+    public void setTempTitle(Long chatId, String title) {
+        getTodoCreationData(chatId).setTitle(title);
+    }
+
+    /**
+     * Установить описание задачи
+     */
+    public void setTempDescription(Long chatId, String description) {
+        getTodoCreationData(chatId).setDescription(description);
+    }
+
+    /**
+     * Получить название задачи
+     */
+    public String getTempTitle(Long chatId) {
+        return getTodoCreationData(chatId).getTitle();
+    }
+
+    /**
+     * Получить описание задачи
+     */
+    public String getTempDescription(Long chatId) {
+        return getTodoCreationData(chatId).getDescription();
+    }
+
+    /**
+     * Очистить все временные данные
+     */
+    public void clearTempData(Long chatId) {
+        clearTodoCreationData(chatId);
+    }
+
+    /**
+     * Полная очистка всех данных пользователя (при выходе в главное меню)
+     */
+    public void clearUserData(Long chatId) {
+        resetState(chatId);
+        clearCurrentTeacher(chatId);
+        clearTempData(chatId);
+    }
 }
+

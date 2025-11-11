@@ -1,11 +1,13 @@
 package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.api.bot.service.ProfileService;
+import com.example.botforconsultations.api.bot.state.DeaneryStateManager;
+import com.example.botforconsultations.api.bot.state.DeaneryStateManager.DeaneryState;
 import com.example.botforconsultations.api.bot.state.StudentStateManager;
 import com.example.botforconsultations.api.bot.state.StudentStateManager.UserState;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager.TeacherState;
-import com.example.botforconsultations.api.bot.utils.ProfileKeyboardBuilder;
+import com.example.botforconsultations.api.bot.utils.StudentKeyboardBuilder;
 import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
@@ -23,9 +25,10 @@ public class ProfileCommandHandler {
     private final BotMessenger botMessenger;
     private final TelegramUserRepository userRepository;
     private final ProfileService profileService;
-    private final ProfileKeyboardBuilder keyboardBuilder;
+    private final StudentKeyboardBuilder keyboardBuilder;
     private final StudentStateManager studentStateManager;
     private final TeacherStateManager teacherStateManager;
+    private final DeaneryStateManager deaneryStateManager;
 
     /**
      * Обработка команд профиля
@@ -86,6 +89,11 @@ public class ProfileCommandHandler {
             if (!user.isHasConfirmed()) {
                 message.append("\n⏳ Ваш аккаунт ожидает подтверждения администратором");
             }
+        } else if (role == Role.DEANERY) {
+            message.append("Роль: Сотрудник деканата\n");
+            if (!user.isHasConfirmed()) {
+                message.append("\n⏳ Ваш аккаунт ожидает подтверждения администратором");
+            }
         }
 
         message.append("\n💡 Выберите действие:");
@@ -111,6 +119,12 @@ public class ProfileCommandHandler {
             } else {
                 teacherStateManager.setState(chatId, TeacherState.WAITING_APPROVAL_EDITING_FIRST_NAME);
             }
+        } else if (role == Role.DEANERY) {
+            if (user.isHasConfirmed()) {
+                deaneryStateManager.setState(chatId, DeaneryState.EDITING_PROFILE_FIRST_NAME);
+            } else {
+                deaneryStateManager.setState(chatId, DeaneryState.WAITING_APPROVAL_EDITING_FIRST_NAME);
+            }
         }
 
         botMessenger.sendText(
@@ -132,6 +146,12 @@ public class ProfileCommandHandler {
                 teacherStateManager.setState(chatId, TeacherState.EDITING_PROFILE_LAST_NAME);
             } else {
                 teacherStateManager.setState(chatId, TeacherState.WAITING_APPROVAL_EDITING_LAST_NAME);
+            }
+        } else if (role == Role.DEANERY) {
+            if (user.isHasConfirmed()) {
+                deaneryStateManager.setState(chatId, DeaneryState.EDITING_PROFILE_LAST_NAME);
+            } else {
+                deaneryStateManager.setState(chatId, DeaneryState.WAITING_APPROVAL_EDITING_LAST_NAME);
             }
         }
 
