@@ -1,16 +1,16 @@
 package com.example.botforconsultations.api.bot.state;
 
-import lombok.Getter;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Менеджер состояний студента
+ * Менеджер состояний студента.
+ * Наследуется от BaseStateManager с общей логикой.
  */
 @Component
-public class StudentStateManager {
+public class StudentStateManager extends BaseStateManager<StudentStateManager.UserState> {
 
     public enum UserState {
         WAITING_FOR_TEACHER_NAME,
@@ -24,78 +24,51 @@ public class StudentStateManager {
         DEFAULT
     }
 
-    @Getter
-    private final Map<Long, UserState> userStates = new HashMap<>();
-    @Getter
-    private final Map<Long, Long> currentTeacherId = new HashMap<>();
-    @Getter
-    private final Map<Long, Long> currentConsultationId = new HashMap<>();
-    @Getter
-    private final Map<Long, Long> currentRequestId = new HashMap<>();  // для запросов консультаций
-    @Getter
+    // Специфичные для студента данные (композиция)
+    private final EntityIdStorage teacherIds = new EntityIdStorage();
+    private final EntityIdStorage requestIds = new EntityIdStorage();
     private final Map<Long, String> consultationFilter = new HashMap<>();
 
-    /**
-     * Получить текущее состояние пользователя
-     */
-    public UserState getState(Long chatId) {
-        return userStates.getOrDefault(chatId, UserState.DEFAULT);
+    @Override
+    protected UserState getDefaultState() {
+        return UserState.DEFAULT;
     }
 
-    /**
-     * Установить состояние пользователя
-     */
-    public void setState(Long chatId, UserState state) {
-        userStates.put(chatId, state);
+    @Override
+    protected void clearSpecificData(Long chatId) {
+        teacherIds.clear(chatId);
+        requestIds.clear(chatId);
+        consultationFilter.remove(chatId);
     }
 
-    /**
-     * Сбросить состояние к DEFAULT
-     */
-    public void resetState(Long chatId) {
-        userStates.put(chatId, UserState.DEFAULT);
-    }
+    // ========== Специфичные методы для студента ==========
 
     /**
      * Установить текущего преподавателя
      */
     public void setCurrentTeacher(Long chatId, Long teacherId) {
-        currentTeacherId.put(chatId, teacherId);
+        teacherIds.set(chatId, teacherId);
     }
 
     /**
      * Получить текущего преподавателя
      */
     public Long getCurrentTeacher(Long chatId) {
-        return currentTeacherId.get(chatId);
-    }
-
-    /**
-     * Установить текущую консультацию
-     */
-    public void setCurrentConsultation(Long chatId, Long consultationId) {
-        currentConsultationId.put(chatId, consultationId);
-    }
-
-    /**
-     * Получить текущую консультацию
-     */
-    public Long getCurrentConsultation(Long chatId) {
-        return currentConsultationId.get(chatId);
+        return teacherIds.get(chatId);
     }
 
     /**
      * Установить текущий запрос консультации
      */
     public void setCurrentRequest(Long chatId, Long requestId) {
-        currentRequestId.put(chatId, requestId);
+        requestIds.set(chatId, requestId);
     }
 
     /**
      * Получить текущий запрос консультации
      */
     public Long getCurrentRequest(Long chatId) {
-        return currentRequestId.get(chatId);
+        return requestIds.get(chatId);
     }
 
     /**
@@ -116,32 +89,14 @@ public class StudentStateManager {
      * Очистить ID текущего преподавателя
      */
     public void clearCurrentTeacher(Long chatId) {
-        currentTeacherId.remove(chatId);
+        teacherIds.clear(chatId);
         consultationFilter.remove(chatId);  // Фильтр привязан к преподавателю
-    }
-
-    /**
-     * Очистить ID текущей консультации
-     */
-    public void clearCurrentConsultation(Long chatId) {
-        currentConsultationId.remove(chatId);
     }
 
     /**
      * Очистить ID текущего запроса
      */
     public void clearCurrentRequest(Long chatId) {
-        currentRequestId.remove(chatId);
-    }
-
-    /**
-     * Очистить все данные пользователя
-     */
-    public void clearUserData(Long chatId) {
-        userStates.remove(chatId);
-        currentTeacherId.remove(chatId);
-        currentConsultationId.remove(chatId);
-        currentRequestId.remove(chatId);
-        consultationFilter.remove(chatId);
+        requestIds.clear(chatId);
     }
 }

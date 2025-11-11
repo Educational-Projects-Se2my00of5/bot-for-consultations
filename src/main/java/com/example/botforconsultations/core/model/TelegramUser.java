@@ -1,8 +1,9 @@
 package com.example.botforconsultations.core.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.*;
 
 @Entity
@@ -21,4 +22,8 @@ public class TelegramUser extends User {
     private String lastName;
     private String phone;
     private boolean hasConfirmed;
+    
+    // Настройки напоминаний для ToDo
+    @Enumerated(EnumType.STRING)
+    private ReminderTime reminderTime;
 }

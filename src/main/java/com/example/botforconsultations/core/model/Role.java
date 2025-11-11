@@ -1,5 +1,5 @@
 package com.example.botforconsultations.core.model;
 
 public enum Role {
-    STUDENT, ADMIN, TEACHER
+    STUDENT, ADMIN, TEACHER, DEANERY
 }
