@@ -107,14 +107,6 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
     }
 
     /**
-     * Клавиатура для детального просмотра консультации (для деканата с параметром)
-     */
-    public ReplyKeyboardMarkup buildConsultationDetailsForDeanery(Consultation consultation) {
-        // Деканату доступно только просмотр, регистрация не нужна
-        return buildConsultationDetails();
-    }
-
-    /**
      * Клавиатура после просмотра списка студентов
      */
     public ReplyKeyboardMarkup buildStudentListKeyboard() {

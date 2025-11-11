@@ -29,13 +29,13 @@ public class TodoTask {
     @Column(name = "deadline")
     private LocalDateTime deadline;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "teacher_id", nullable = false)
-    private User teacher;
+    private TelegramUser teacher;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "created_by_id", nullable = false)
-    private User createdBy;
+    private TelegramUser createdBy;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

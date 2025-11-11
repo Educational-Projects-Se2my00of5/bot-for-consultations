@@ -2,20 +2,24 @@ package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.api.bot.service.TeacherSearchService;
 import com.example.botforconsultations.api.bot.service.ConsultationService;
+import com.example.botforconsultations.api.bot.service.TodoTaskService;
 import com.example.botforconsultations.api.bot.state.DeaneryStateManager;
 import com.example.botforconsultations.api.bot.state.DeaneryStateManager.DeaneryState;
 import com.example.botforconsultations.api.bot.utils.DeaneryKeyboardBuilder;
 import com.example.botforconsultations.api.bot.utils.KeyboardConstants;
 import com.example.botforconsultations.api.bot.utils.TeacherNameFormatter;
 import com.example.botforconsultations.api.bot.utils.ConsultationMessageFormatter;
+import com.example.botforconsultations.api.bot.utils.TodoMessageFormatter;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.model.Consultation;
+import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -33,6 +37,7 @@ public class DeaneryCommandHandler {
     // Сервисы
     private final TeacherSearchService teacherSearchService;
     private final ConsultationService consultationService;
+    private final TodoTaskService todoTaskService;
     private final ProfileCommandHandler profileCommandHandler;
     private final BotMessenger botMessenger;
 
@@ -40,6 +45,7 @@ public class DeaneryCommandHandler {
     private final DeaneryStateManager stateManager;
     private final DeaneryKeyboardBuilder keyboardBuilder;
     private final ConsultationMessageFormatter messageFormatter;
+    private final TodoMessageFormatter todoMessageFormatter;
 
     /**
      * Главный обработчик команд деканата
@@ -56,7 +62,10 @@ public class DeaneryCommandHandler {
         // Обработка состояний ввода
         if (currentState != DeaneryState.DEFAULT 
                 && currentState != DeaneryState.VIEWING_TEACHER_CONSULTATIONS
-                && currentState != DeaneryState.VIEWING_CONSULTATION_DETAILS) {
+                && currentState != DeaneryState.VIEWING_CONSULTATION_DETAILS
+                && currentState != DeaneryState.VIEWING_TEACHER_TASKS
+                && currentState != DeaneryState.VIEWING_TASK_DETAILS
+                && currentState != DeaneryState.VIEWING_ALL_TASKS) {
             switch (currentState) {
                 case WAITING_FOR_TEACHER_NAME -> processTeacherSearch(text, chatId);
                 case CREATING_TODO_TITLE -> processTaskTitle(text, chatId);
@@ -85,7 +94,10 @@ public class DeaneryCommandHandler {
 
         // Обработка выбора консультации/задачи по номеру в режиме просмотра
         if ((currentState == DeaneryState.VIEWING_TEACHER_CONSULTATIONS ||
-                currentState == DeaneryState.VIEWING_CONSULTATION_DETAILS) &&
+                currentState == DeaneryState.VIEWING_CONSULTATION_DETAILS ||
+                currentState == DeaneryState.VIEWING_TEACHER_TASKS ||
+                currentState == DeaneryState.VIEWING_TASK_DETAILS ||
+                currentState == DeaneryState.VIEWING_ALL_TASKS) &&
                 text.startsWith(KeyboardConstants.NUMBER_PREFIX)
         ) {
             handleNumberSelection(text, chatId);
@@ -126,10 +138,15 @@ public class DeaneryCommandHandler {
             case KeyboardConstants.BACK_TO_LIST -> backToList(chatId);
             case KeyboardConstants.BACK -> handleBackButton(chatId);
 
-            // Фильтры консультаций
-            case KeyboardConstants.FILTER_PAST -> applyConsultationFilter(chatId, "past");
-            case KeyboardConstants.FILTER_ALL -> applyConsultationFilter(chatId, "all");
-            case KeyboardConstants.FILTER_FUTURE -> applyConsultationFilter(chatId, "future");
+            // Фильтры по времени (используются и для консультаций, и для задач)
+            case KeyboardConstants.FILTER_PAST -> applyTimeFilter(chatId, "past");
+            case KeyboardConstants.FILTER_ALL -> applyTimeFilter(chatId, "all");
+            case KeyboardConstants.FILTER_FUTURE -> applyTimeFilter(chatId, "future");
+
+            // Фильтры задач по статусу
+            case KeyboardConstants.FILTER_TASK_INCOMPLETE -> applyTaskStatusFilter(chatId, "incomplete");
+            case KeyboardConstants.FILTER_TASK_ALL -> applyTaskStatusFilter(chatId, "all");
+            case KeyboardConstants.FILTER_TASK_COMPLETED -> applyTaskStatusFilter(chatId, "completed");
 
             default -> botMessenger.sendText(
                     "Извините, я не понимаю эту команду. Отправьте 'Помощь' для получения списка доступных команд.",
@@ -334,6 +351,39 @@ public class DeaneryCommandHandler {
     /**
      * Применить фильтр к консультациям
      */
+    /**
+     * Применить фильтр по времени (консультации или задачи в зависимости от контекста)
+     */
+    private void applyTimeFilter(Long chatId, String filter) {
+        DeaneryState currentState = stateManager.getState(chatId);
+
+        // Определяем контекст - задачи или консультации
+        if (currentState == DeaneryState.VIEWING_ALL_TASKS) {
+            applyTaskDeadlineFilter(chatId, filter);
+        } else if (currentState == DeaneryState.VIEWING_TEACHER_TASKS) {
+            applyTaskDeadlineFilter(chatId, filter);
+        } else if (currentState == DeaneryState.VIEWING_TEACHER_CONSULTATIONS) {
+            applyConsultationFilter(chatId, filter);
+        } else {
+            botMessenger.sendText("❌ Фильтр не применим в текущем контексте.", chatId);
+        }
+    }
+
+    /**
+     * Применить фильтр по дедлайну задач
+     */
+    private void applyTaskDeadlineFilter(Long chatId, String filter) {
+        DeaneryState currentState = stateManager.getState(chatId);
+        stateManager.setTaskDeadlineFilter(chatId, filter);
+
+        // Обновляем отображение в зависимости от контекста
+        if (currentState == DeaneryState.VIEWING_ALL_TASKS) {
+            showAllTasks(chatId);
+        } else if (currentState == DeaneryState.VIEWING_TEACHER_TASKS) {
+            showTeacherTasks(chatId);
+        }
+    }
+
     private void applyConsultationFilter(Long chatId, String filter) {
         Long teacherId = stateManager.getCurrentTeacher(chatId);
         if (teacherId == null) {
@@ -367,8 +417,11 @@ public class DeaneryCommandHandler {
             if (currentState == DeaneryState.VIEWING_TEACHER_CONSULTATIONS || 
                 currentState == DeaneryState.VIEWING_CONSULTATION_DETAILS) {
                 showConsultationDetails(chatId, id);
+            } else if (currentState == DeaneryState.VIEWING_TEACHER_TASKS ||
+                       currentState == DeaneryState.VIEWING_TASK_DETAILS ||
+                       currentState == DeaneryState.VIEWING_ALL_TASKS) {
+                showTaskDetails(chatId, id);
             } else {
-                // TODO: Обработка задач будет добавлена позже
                 botMessenger.sendText(
                         "Ошибка: неверный контекст для выбора по номеру.\n" +
                         "Пожалуйста, перейдите в раздел консультаций или задач.",
@@ -415,7 +468,7 @@ public class DeaneryCommandHandler {
         botMessenger.execute(SendMessage.builder()
                 .text(messageText)
                 .chatId(chatId)
-                .replyMarkup(keyboardBuilder.buildConsultationDetailsForDeanery(consultation))
+                .replyMarkup(keyboardBuilder.buildConsultationDetails())
                 .build());
     }
 
@@ -536,9 +589,28 @@ public class DeaneryCommandHandler {
         switch (currentState) {
             case VIEWING_TEACHER_CONSULTATIONS -> sendTeachersMenu(chatId);
             case VIEWING_CONSULTATION_DETAILS -> {
-                // TODO: Вернуться к списку консультаций преподавателя
-                sendTeachersMenu(chatId);
+                // Вернуться к списку консультаций преподавателя
+                backToConsultationsList(chatId);
             }
+            case VIEWING_TEACHER_TASKS -> {
+                // Вернуться к списку консультаций преподавателя
+                backToConsultationsList(chatId);
+            }
+            case VIEWING_TASK_DETAILS -> {
+                // Вернуться к списку задач - используем тот же механизм, что и для "Назад к списку"
+                DeaneryState previousState = stateManager.getPreviousState(chatId);
+                
+                if (previousState == DeaneryState.VIEWING_ALL_TASKS) {
+                    showAllTasks(chatId);
+                } else if (previousState == DeaneryState.VIEWING_TEACHER_TASKS) {
+                    showTeacherTasks(chatId);
+                } else {
+                    sendMainMenu(chatId);
+                }
+                
+                stateManager.clearPreviousState(chatId);
+            }
+            case VIEWING_ALL_TASKS -> sendMainMenu(chatId);
             default -> sendMainMenu(chatId);
         }
     }
@@ -552,15 +624,96 @@ public class DeaneryCommandHandler {
         if (currentState == DeaneryState.VIEWING_CONSULTATION_DETAILS) {
             // Вернуться к списку консультаций преподавателя
             backToConsultationsList(chatId);
+        } else if (currentState == DeaneryState.VIEWING_TASK_DETAILS) {
+            // Вернуться к списку задач - проверяем откуда пришли
+            DeaneryState previousState = stateManager.getPreviousState(chatId);
+            
+            if (previousState == DeaneryState.VIEWING_ALL_TASKS) {
+                showAllTasks(chatId);
+            } else if (previousState == DeaneryState.VIEWING_TEACHER_TASKS) {
+                showTeacherTasks(chatId);
+            } else {
+                // На всякий случай - вернуться к задачам преподавателя
+                showTeacherTasks(chatId);
+            }
+            
+            // Очистить сохранённое предыдущее состояние
+            stateManager.clearPreviousState(chatId);
         } else {
             sendMainMenu(chatId);
         }
     }
 
-    // ========== Управление задачами (TODO: реализовать) ==========
+    // ========== Управление задачами ==========
 
+    /**
+     * Показать все задачи в системе
+     */
     private void showAllTasks(Long chatId) {
-        botMessenger.sendText("📋 Функционал просмотра всех задач будет реализован далее.", chatId);
+        // Получить фильтры из состояния
+        String statusFilter = stateManager.getTaskStatusFilter(chatId);
+        String deadlineFilter = stateManager.getTaskDeadlineFilter(chatId);
+
+        // Получить все активные задачи
+        List<TodoTask> allTasks = todoTaskService.getAllActiveTasks();
+
+        // Применить фильтры
+        List<TodoTask> filteredTasks = applyTaskFilters(allTasks, statusFilter, deadlineFilter);
+
+        String messageText = todoMessageFormatter.formatAllTasksList(filteredTasks, statusFilter, deadlineFilter);
+
+        stateManager.setState(chatId, DeaneryState.VIEWING_ALL_TASKS);
+
+        botMessenger.execute(SendMessage.builder()
+                .text(messageText)
+                .chatId(chatId)
+                .replyMarkup(keyboardBuilder.buildAllTasksList(filteredTasks))
+                .build());
+    }
+
+    /**
+     * Применить фильтр по статусу задач
+     */
+    /**
+     * Применить фильтр по статусу задач
+     */
+    private void applyTaskStatusFilter(Long chatId, String filter) {
+        DeaneryState currentState = stateManager.getState(chatId);
+        stateManager.setTaskStatusFilter(chatId, filter);
+
+        // Обновляем отображение в зависимости от контекста
+        if (currentState == DeaneryState.VIEWING_ALL_TASKS) {
+            showAllTasks(chatId);
+        } else if (currentState == DeaneryState.VIEWING_TEACHER_TASKS) {
+            showTeacherTasks(chatId);
+        }
+    }
+
+    /**
+     * Применить фильтры к списку задач
+     */
+    private List<TodoTask> applyTaskFilters(List<TodoTask> tasks, String statusFilter, String deadlineFilter) {
+        LocalDateTime now = LocalDateTime.now();
+
+        return tasks.stream()
+                .filter(task -> {
+                    // Фильтр по статусу
+                    boolean statusMatch = switch (statusFilter) {
+                        case "incomplete" -> !task.getIsCompleted();
+                        case "completed" -> task.getIsCompleted();
+                        default -> true; // "all"
+                    };
+
+                    // Фильтр по дедлайну
+                    boolean deadlineMatch = switch (deadlineFilter) {
+                        case "past" -> task.getDeadline().isBefore(now);
+                        case "future" -> task.getDeadline().isAfter(now);
+                        default -> true; // "all"
+                    };
+
+                    return statusMatch && deadlineMatch;
+                })
+                .toList();
     }
 
     private void startTaskCreation(Long chatId) {
@@ -601,30 +754,180 @@ public class DeaneryCommandHandler {
         botMessenger.sendText(
                 "✅ Описание сохранено.\n\n" +
                         "Шаг 3/3: Введите дедлайн\n" +
-                        "Формат: ДД.ММ.ГГГГ\n" +
-                        "Например: 15.12.2025",
+                        "Формат: ДД.ММ.ГГГГ ЧЧ:ММ\n" +
+                        "Например: 15.12.2025 18:00",
                 chatId
         );
     }
 
     private void processTaskDeadline(String deadlineText, Long chatId) {
-        // TODO: Реализовать парсинг даты и создание задачи
-        botMessenger.sendText("✅ Задача создана! (функционал в разработке)", chatId);
-        stateManager.resetState(chatId);
-        stateManager.clearTempData(chatId);
-        sendMainMenu(chatId);
+        if (deadlineText == null || deadlineText.trim().isEmpty()) {
+            botMessenger.sendText("Дедлайн не может быть пустым. Попробуйте ещё раз:", chatId);
+            return;
+        }
+
+        try {
+            // Парсинг даты и времени в формате ДД.ММ.ГГГГ ЧЧ:ММ
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+            java.time.LocalDateTime deadline = java.time.LocalDateTime.parse(deadlineText.trim(), formatter);
+
+            // Проверка что дата не в прошлом
+            if (deadline.isBefore(java.time.LocalDateTime.now())) {
+                botMessenger.sendText("❌ Дедлайн не может быть в прошлом. Введите другую дату:", chatId);
+                return;
+            }
+
+            // Получаем данные для создания задачи
+            Long teacherId = stateManager.getCurrentTeacher(chatId);
+            String title = stateManager.getTempTitle(chatId);
+            String description = stateManager.getTempDescription(chatId);
+
+            if (teacherId == null || title == null || description == null) {
+                botMessenger.sendText("❌ Ошибка: данные задачи потеряны. Начните заново.", chatId);
+                stateManager.resetState(chatId);
+                stateManager.clearTempData(chatId);
+                sendMainMenu(chatId);
+                return;
+            }
+
+            TelegramUser teacher = teacherSearchService.findById(teacherId);
+            if (teacher == null) {
+                botMessenger.sendText("❌ Преподаватель не найден.", chatId);
+                stateManager.resetState(chatId);
+                stateManager.clearTempData(chatId);
+                sendMainMenu(chatId);
+                return;
+            }
+
+            TelegramUser createdBy = getCurrentDeanery(chatId);
+
+            // Создаём задачу
+            TodoTask createdTask = todoTaskService.createTodoForTeacher(
+                    teacher, createdBy, title, description, deadline
+            );
+
+            botMessenger.sendText(
+                    String.format("✅ Задача успешно создана!\n\n" +
+                            "📋 Задача №%d\n" +
+                            "👨‍🏫 Преподаватель: %s %s\n" +
+                            "📌 Название: %s\n" +
+                            "⏰ Дедлайн: %s",
+                            createdTask.getId(),
+                            teacher.getFirstName(),
+                            teacher.getLastName() != null ? teacher.getLastName() : "",
+                            title,
+                            deadline.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))),
+                    chatId
+            );
+
+            stateManager.resetState(chatId);
+            stateManager.clearTempData(chatId);
+            
+            // Показываем обновлённый список задач преподавателя
+            showTeacherTasks(chatId);
+
+        } catch (java.time.format.DateTimeParseException e) {
+            botMessenger.sendText(
+                    "❌ Неверный формат даты и времени.\n\n" +
+                            "Используйте формат: ДД.ММ.ГГГГ ЧЧ:ММ\n" +
+                            "Например: 15.12.2025 18:00\n\n" +
+                            "Попробуйте ещё раз:",
+                    chatId
+            );
+        }
     }
 
+    /**
+     * Показать задачи выбранного преподавателя
+     */
     private void showTeacherTasks(Long chatId) {
-        botMessenger.sendText("📝 Функционал просмотра задач преподавателя будет реализован далее.", chatId);
+        Long teacherId = stateManager.getCurrentTeacher(chatId);
+        if (teacherId == null) {
+            botMessenger.sendText("❌ Преподаватель не выбран.", chatId);
+            sendTeachersMenu(chatId);
+            return;
+        }
+
+        TelegramUser teacher = teacherSearchService.findById(teacherId);
+        if (teacher == null) {
+            botMessenger.sendText("❌ Преподаватель не найден.", chatId);
+            sendTeachersMenu(chatId);
+            return;
+        }
+
+        // Получить фильтры из состояния
+        String statusFilter = stateManager.getTaskStatusFilter(chatId);
+        String deadlineFilter = stateManager.getTaskDeadlineFilter(chatId);
+
+        // Получить все задачи преподавателя
+        List<TodoTask> allTasks = todoTaskService.getTeacherTasks(teacher);
+
+        // Применить фильтры
+        List<TodoTask> filteredTasks = applyTaskFilters(allTasks, statusFilter, deadlineFilter);
+
+        String messageText = todoMessageFormatter.formatTeacherTasksList(teacher, filteredTasks, statusFilter, deadlineFilter);
+
+        stateManager.setState(chatId, DeaneryState.VIEWING_TEACHER_TASKS);
+
+        botMessenger.execute(SendMessage.builder()
+                .text(messageText)
+                .chatId(chatId)
+                .replyMarkup(keyboardBuilder.buildTeacherTasksList(filteredTasks))
+                .build());
+    }
+
+    /**
+     * Показать детали задачи
+     */
+    private void showTaskDetails(Long chatId, Long taskId) {
+        TodoTask task = todoTaskService.getTodoById(taskId).orElse(null);
+        if (task == null) {
+            botMessenger.sendText("❌ Задача не найдена", chatId);
+            return;
+        }
+
+        // Сохраняем предыдущее состояние (откуда пришли)
+        stateManager.savePreviousState(chatId);
+
+        // Сохраняем ID текущей задачи
+        stateManager.setCurrentTask(chatId, taskId);
+        stateManager.setState(chatId, DeaneryState.VIEWING_TASK_DETAILS);
+
+        String messageText = todoMessageFormatter.formatTaskDetails(task);
+
+        botMessenger.execute(SendMessage.builder()
+                .text(messageText)
+                .chatId(chatId)
+                .replyMarkup(keyboardBuilder.buildTaskDetails(task))
+                .build());
     }
 
     private void markTaskCompleted(Long chatId) {
-        botMessenger.sendText("✅ Функционал отметки задачи как выполненной будет реализован далее.", chatId);
+        Long taskId = stateManager.getCurrentTask(chatId);
+        if (taskId == null) {
+            botMessenger.sendText("❌ Задача не выбрана.", chatId);
+            return;
+        }
+
+        todoTaskService.markAsCompleted(taskId);
+        botMessenger.sendText("✅ Задача отмечена как выполненная!", chatId);
+        
+        // Обновляем детали задачи
+        showTaskDetails(chatId, taskId);
     }
 
     private void markTaskPending(Long chatId) {
-        botMessenger.sendText("⏳ Функционал отметки задачи как невыполненной будет реализован далее.", chatId);
+        Long taskId = stateManager.getCurrentTask(chatId);
+        if (taskId == null) {
+            botMessenger.sendText("❌ Задача не выбрана.", chatId);
+            return;
+        }
+
+        todoTaskService.markAsIncomplete(taskId);
+        botMessenger.sendText("⏳ Задача отмечена как невыполненная.", chatId);
+        
+        // Обновляем детали задачи
+        showTaskDetails(chatId, taskId);
     }
 
     private void startEditTask(Long chatId) {

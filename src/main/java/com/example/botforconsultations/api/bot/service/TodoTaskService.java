@@ -1,7 +1,7 @@
 package com.example.botforconsultations.api.bot.service;
 
 import com.example.botforconsultations.core.model.TodoTask;
-import com.example.botforconsultations.core.model.User;
+import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.TodoTaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ public class TodoTaskService {
      * Создать новую задачу для преподавателя
      */
     @Transactional
-    public TodoTask createTodoForTeacher(User teacher, User createdBy, String title,
+    public TodoTask createTodoForTeacher(TelegramUser teacher, TelegramUser createdBy, String title,
                                           String description, LocalDateTime deadline) {
         TodoTask todo = TodoTask.builder()
                 .teacher(teacher)
@@ -45,21 +45,21 @@ public class TodoTaskService {
     /**
      * Получить все задачи преподавателя
      */
-    public List<TodoTask> getTeacherTasks(User teacher) {
+    public List<TodoTask> getTeacherTasks(TelegramUser teacher) {
         return todoTaskRepository.findByTeacherOrderByDeadlineAsc(teacher);
     }
 
     /**
      * Получить активные задачи преподавателя
      */
-    public List<TodoTask> getActiveTeacherTasks(User teacher) {
+    public List<TodoTask> getActiveTeacherTasks(TelegramUser teacher) {
         return todoTaskRepository.findByTeacherAndIsCompletedFalseOrderByDeadlineAsc(teacher);
     }
 
     /**
      * Получить выполненные задачи преподавателя
      */
-    public List<TodoTask> getCompletedTeacherTasks(User teacher) {
+    public List<TodoTask> getCompletedTeacherTasks(TelegramUser teacher) {
         return todoTaskRepository.findByTeacherAndIsCompletedTrueOrderByCompletedAtDesc(teacher);
     }
 

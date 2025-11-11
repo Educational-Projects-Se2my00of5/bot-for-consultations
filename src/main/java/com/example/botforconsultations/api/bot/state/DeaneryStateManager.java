@@ -21,6 +21,9 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
         WAITING_FOR_TEACHER_NAME,          // Ожидание ввода имени преподавателя для поиска
         VIEWING_TEACHER_CONSULTATIONS,     // Просмотр консультаций преподавателя
         VIEWING_CONSULTATION_DETAILS,      // Просмотр деталей конкретной консультации
+        VIEWING_TEACHER_TASKS,             // Просмотр задач преподавателя
+        VIEWING_TASK_DETAILS,              // Просмотр деталей конкретной задачи
+        VIEWING_ALL_TASKS,                 // Просмотр всех задач
         CREATING_TODO_TITLE,               // Ввод названия задачи
         CREATING_TODO_DESCRIPTION,         // Ввод описания задачи
         CREATING_TODO_DEADLINE,            // Ввод дедлайна задачи
@@ -48,8 +51,12 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
     // Специфичные для деканата данные (композиция)
     private final EntityIdStorage teacherIds = new EntityIdStorage();
     private final EntityIdStorage consultationIds = new EntityIdStorage();
+    private final EntityIdStorage taskIds = new EntityIdStorage();
     private final Map<Long, String> consultationFilter = new HashMap<>();
+    private final Map<Long, String> taskStatusFilter = new HashMap<>();
+    private final Map<Long, String> taskDeadlineFilter = new HashMap<>();
     private final Map<Long, TodoCreationData> todoCreationDataMap = new HashMap<>();
+    private final Map<Long, DeaneryState> previousState = new HashMap<>();
 
     @Override
     protected DeaneryState getDefaultState() {
@@ -60,8 +67,12 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
     protected void clearSpecificData(Long chatId) {
         teacherIds.clear(chatId);
         consultationIds.clear(chatId);
+        taskIds.clear(chatId);
         consultationFilter.remove(chatId);
+        taskStatusFilter.remove(chatId);
+        taskDeadlineFilter.remove(chatId);
         todoCreationDataMap.remove(chatId);
+        previousState.remove(chatId);
     }
 
     // ========== Специфичные методы для деканата ==========
@@ -124,6 +135,27 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
     }
 
     /**
+     * Установить текущую задачу
+     */
+    public void setCurrentTask(Long chatId, Long taskId) {
+        taskIds.set(chatId, taskId);
+    }
+
+    /**
+     * Получить ID текущей задачи
+     */
+    public Long getCurrentTask(Long chatId) {
+        return taskIds.get(chatId);
+    }
+
+    /**
+     * Очистить ID текущей задачи
+     */
+    public void clearCurrentTask(Long chatId) {
+        taskIds.clear(chatId);
+    }
+
+    /**
      * Получить данные создания задачи (автоматически создаётся если отсутствует)
      */
     public TodoCreationData getTodoCreationData(Long chatId) {
@@ -181,6 +213,59 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
         resetState(chatId);
         clearCurrentTeacher(chatId);
         clearTempData(chatId);
+        clearPreviousState(chatId);
+    }
+
+    // ========== Методы для работы с фильтрами задач ==========
+
+    /**
+     * Установить фильтр статуса задач
+     */
+    public void setTaskStatusFilter(Long chatId, String filter) {
+        taskStatusFilter.put(chatId, filter);
+    }
+
+    /**
+     * Получить фильтр статуса задач
+     */
+    public String getTaskStatusFilter(Long chatId) {
+        return taskStatusFilter.getOrDefault(chatId, "all");
+    }
+
+    /**
+     * Установить фильтр дедлайна задач
+     */
+    public void setTaskDeadlineFilter(Long chatId, String filter) {
+        taskDeadlineFilter.put(chatId, filter);
+    }
+
+    /**
+     * Получить фильтр дедлайна задач
+     */
+    public String getTaskDeadlineFilter(Long chatId) {
+        return taskDeadlineFilter.getOrDefault(chatId, "all");
+    }
+
+    /**
+     * Сохранить предыдущее состояние перед переходом к новому
+     */
+    public void savePreviousState(Long chatId) {
+        DeaneryState current = getState(chatId);
+        previousState.put(chatId, current);
+    }
+
+    /**
+     * Получить предыдущее состояние
+     */
+    public DeaneryState getPreviousState(Long chatId) {
+        return previousState.get(chatId);
+    }
+
+    /**
+     * Очистить предыдущее состояние
+     */
+    public void clearPreviousState(Long chatId) {
+        previousState.remove(chatId);
     }
 }
 
