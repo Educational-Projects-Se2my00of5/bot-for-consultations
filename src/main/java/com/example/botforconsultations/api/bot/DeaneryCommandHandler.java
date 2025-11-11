@@ -1,12 +1,15 @@
 package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.api.bot.service.TeacherSearchService;
+import com.example.botforconsultations.api.bot.service.ConsultationService;
 import com.example.botforconsultations.api.bot.state.DeaneryStateManager;
 import com.example.botforconsultations.api.bot.state.DeaneryStateManager.DeaneryState;
 import com.example.botforconsultations.api.bot.utils.DeaneryKeyboardBuilder;
 import com.example.botforconsultations.api.bot.utils.KeyboardConstants;
 import com.example.botforconsultations.api.bot.utils.TeacherNameFormatter;
+import com.example.botforconsultations.api.bot.utils.ConsultationMessageFormatter;
 import com.example.botforconsultations.core.model.TelegramUser;
+import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +32,14 @@ public class DeaneryCommandHandler {
 
     // Сервисы
     private final TeacherSearchService teacherSearchService;
+    private final ConsultationService consultationService;
     private final ProfileCommandHandler profileCommandHandler;
     private final BotMessenger botMessenger;
 
     // Утилиты
     private final DeaneryStateManager stateManager;
     private final DeaneryKeyboardBuilder keyboardBuilder;
+    private final ConsultationMessageFormatter messageFormatter;
 
     /**
      * Главный обработчик команд деканата
@@ -106,6 +111,9 @@ public class DeaneryCommandHandler {
             case KeyboardConstants.CREATE_TASK -> startTaskCreation(chatId);
             case KeyboardConstants.TEACHER_TASKS -> showTeacherTasks(chatId);
             
+            // Просмотр консультации
+            case KeyboardConstants.STUDENT_LIST -> showStudentList(chatId);
+            
             // TODO: Управление задачей
             case KeyboardConstants.MARK_COMPLETED -> markTaskCompleted(chatId);
             case KeyboardConstants.MARK_PENDING -> markTaskPending(chatId);
@@ -117,6 +125,11 @@ public class DeaneryCommandHandler {
             case KeyboardConstants.BACK_TO_TEACHERS -> sendTeachersMenu(chatId);
             case KeyboardConstants.BACK_TO_LIST -> backToList(chatId);
             case KeyboardConstants.BACK -> handleBackButton(chatId);
+
+            // Фильтры консультаций
+            case KeyboardConstants.FILTER_PAST -> applyConsultationFilter(chatId, "past");
+            case KeyboardConstants.FILTER_ALL -> applyConsultationFilter(chatId, "all");
+            case KeyboardConstants.FILTER_FUTURE -> applyConsultationFilter(chatId, "future");
 
             default -> botMessenger.sendText(
                     "Извините, я не понимаю эту команду. Отправьте 'Помощь' для получения списка доступных команд.",
@@ -293,31 +306,213 @@ public class DeaneryCommandHandler {
         // Сохраняем выбранного преподавателя
         stateManager.setCurrentTeacher(chatId, teacher.getId());
         stateManager.setState(chatId, DeaneryState.VIEWING_TEACHER_CONSULTATIONS);
+        stateManager.setFilter(chatId, "future");
 
-        // TODO: Показать консультации преподавателя
-        botMessenger.sendText(
-                "Функционал просмотра консультаций и задач преподавателя будет реализован далее.\n\n" +
-                "Выбран преподаватель: " + TeacherNameFormatter.formatFullName(teacher),
-                chatId
-        );
+        showTeacherConsultations(chatId, teacher);
+    }
+
+    /**
+     * Показать консультации выбранного преподавателя
+     */
+    private void showTeacherConsultations(Long chatId, TelegramUser teacher) {
+        String filter = stateManager.getFilter(chatId);
+        List<Consultation> consultations = consultationService.getTeacherConsultations(teacher, filter);
+
+        String messageText = messageFormatter.formatConsultationsList(teacher, consultations, filter);
+
+        // Просмотр списка консультаций: очищаем ID конкретной консультации
+        stateManager.clearCurrentConsultation(chatId);
+        stateManager.setState(chatId, DeaneryState.VIEWING_TEACHER_CONSULTATIONS);
+
+        botMessenger.execute(SendMessage.builder()
+                .text(messageText)
+                .chatId(chatId)
+                .replyMarkup(keyboardBuilder.buildTeacherConsultations(consultations))
+                .build());
+    }
+
+    /**
+     * Применить фильтр к консультациям
+     */
+    private void applyConsultationFilter(Long chatId, String filter) {
+        Long teacherId = stateManager.getCurrentTeacher(chatId);
+        if (teacherId == null) {
+            botMessenger.sendText("❌ Преподаватель не выбран. Вернитесь к списку преподавателей.", chatId);
+            sendTeachersMenu(chatId);
+            return;
+        }
+
+        TelegramUser teacher = teacherSearchService.findById(teacherId);
+        
+        if (teacher == null) {
+            botMessenger.sendText("❌ Преподаватель не найден.", chatId);
+            sendTeachersMenu(chatId);
+            return;
+        }
+
+        stateManager.setFilter(chatId, filter);
+        showTeacherConsultations(chatId, teacher);
     }
 
     /**
      * Обработать выбор по номеру (консультация или задача)
      */
     private void handleNumberSelection(String text, Long chatId) {
-        try {
-            long id = Long.parseLong(text.substring(1).split(" ")[0]);
+        DeaneryState currentState = stateManager.getState(chatId);
 
-            // TODO: Реализовать обработку в зависимости от состояния
+        try {
+            Long id = extractId(text);
+
+            // Определяем тип по состоянию
+            if (currentState == DeaneryState.VIEWING_TEACHER_CONSULTATIONS || 
+                currentState == DeaneryState.VIEWING_CONSULTATION_DETAILS) {
+                showConsultationDetails(chatId, id);
+            } else {
+                // TODO: Обработка задач будет добавлена позже
+                botMessenger.sendText(
+                        "Ошибка: неверный контекст для выбора по номеру.\n" +
+                        "Пожалуйста, перейдите в раздел консультаций или задач.",
+                        chatId
+                );
+            }
+        } catch (Exception e) {
+            log.error("Error parsing ID from '{}': {}", text, e.getMessage());
             botMessenger.sendText(
-                    "Функционал выбора по номеру будет реализован далее. ID: " + id,
+                    "Неверный формат номера.\nИспользуйте формат: №123",
                     chatId
             );
-
-        } catch (NumberFormatException e) {
-            botMessenger.sendText("Неверный формат номера.", chatId);
         }
+    }
+
+    /**
+     * Извлечь ID из текста кнопки
+     */
+    private Long extractId(String text) {
+        // Формат: "№123" или "№123 - 15.10 14:00" или "№123 - Название"
+        String idStr = text.contains(" ")
+                ? text.substring(1, text.indexOf(" "))
+                : text.substring(1);
+        return Long.parseLong(idStr);
+    }
+
+    /**
+     * Показать детали консультации
+     */
+    private void showConsultationDetails(Long chatId, Long consultationId) {
+        Consultation consultation = consultationService.findById(consultationId);
+        if (consultation == null) {
+            botMessenger.sendText("❌ Консультация не найдена", chatId);
+            return;
+        }
+
+        // Просмотр конкретной консультации: устанавливаем ID и состояние
+        stateManager.setCurrentConsultation(chatId, consultationId);
+        stateManager.setState(chatId, DeaneryState.VIEWING_CONSULTATION_DETAILS);
+
+        long registeredCount = getRegisteredCount(consultation);
+        String messageText = messageFormatter.formatConsultationDetails(consultation, registeredCount, null);
+
+        botMessenger.execute(SendMessage.builder()
+                .text(messageText)
+                .chatId(chatId)
+                .replyMarkup(keyboardBuilder.buildConsultationDetailsForDeanery(consultation))
+                .build());
+    }
+
+    /**
+     * Получить количество зарегистрированных студентов на консультацию
+     */
+    private long getRegisteredCount(Consultation consultation) {
+        return consultation.getRegUsers() != null
+                ? consultation.getRegUsers().size()
+                : 0;
+    }
+
+    /**
+     * Показать список студентов, записанных на консультацию
+     */
+    private void showStudentList(Long chatId) {
+        Long consultationId = stateManager.getCurrentConsultation(chatId);
+        if (consultationId == null) {
+            botMessenger.sendText("❌ Консультация не выбрана.", chatId);
+            return;
+        }
+
+        Consultation consultation = consultationService.findById(consultationId);
+        if (consultation == null) {
+            botMessenger.sendText("❌ Консультация не найдена.", chatId);
+            return;
+        }
+
+        String studentListText = formatStudentListForDeanery(consultation);
+        botMessenger.execute(SendMessage.builder()
+                .text(studentListText)
+                .chatId(chatId)
+                .replyMarkup(keyboardBuilder.buildStudentListKeyboard())
+                .build());
+    }
+
+    /**
+     * Форматировать список студентов для деканата
+     */
+    private String formatStudentListForDeanery(Consultation consultation) {
+        StringBuilder message = new StringBuilder();
+        message.append("👥 Список студентов\n\n");
+        message.append(String.format("📋 Консультация №%d\n", consultation.getId()));
+        message.append(String.format("📅 %s в %s\n\n",
+                consultation.getDate().format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")),
+                consultation.getStartTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))));
+
+        var regUsers = consultation.getRegUsers();
+        if (regUsers == null || regUsers.isEmpty()) {
+            message.append("❌ Нет записавшихся студентов");
+        } else {
+            Integer capacity = consultation.getCapacity();
+            if (capacity != null) {
+                message.append(String.format("Записано: %d/%d\n\n", regUsers.size(), capacity));
+            } else {
+                message.append(String.format("Записано: %d\n\n", regUsers.size()));
+            }
+            
+            int counter = 1;
+            for (var registration : regUsers) {
+                TelegramUser student = registration.getStudent();
+                message.append(String.format("%d. %s %s",
+                        counter++,
+                        student.getFirstName(),
+                        student.getLastName() != null ? student.getLastName() : ""));
+                
+                if (registration.getMessage() != null && !registration.getMessage().isEmpty()) {
+                    message.append(String.format("\n   💬 %s", registration.getMessage()));
+                }
+                message.append("\n\n");
+            }
+        }
+
+        return message.toString();
+    }
+
+    /**
+     * Вернуться к списку консультаций
+     */
+    private void backToConsultationsList(Long chatId) {
+        Long teacherId = stateManager.getCurrentTeacher(chatId);
+        if (teacherId == null) {
+            botMessenger.sendText("❌ Преподаватель не выбран.", chatId);
+            sendTeachersMenu(chatId);
+            return;
+        }
+
+        TelegramUser teacher = teacherSearchService.findById(teacherId);
+        if (teacher == null) {
+            botMessenger.sendText("❌ Преподаватель не найден.", chatId);
+            sendTeachersMenu(chatId);
+            return;
+        }
+
+        // Очищаем ID консультации, но сохраняем преподавателя
+        stateManager.clearCurrentConsultation(chatId);
+        showTeacherConsultations(chatId, teacher);
     }
 
     // ========== Вспомогательные методы ==========
@@ -355,15 +550,8 @@ public class DeaneryCommandHandler {
         DeaneryState currentState = stateManager.getState(chatId);
         
         if (currentState == DeaneryState.VIEWING_CONSULTATION_DETAILS) {
-            // TODO: Вернуться к списку консультаций преподавателя
-            Long teacherId = stateManager.getCurrentTeacher(chatId);
-            if (teacherId != null) {
-                stateManager.setState(chatId, DeaneryState.VIEWING_TEACHER_CONSULTATIONS);
-                // showTeacherConsultations(chatId);
-                botMessenger.sendText("Возврат к списку консультаций...", chatId);
-            } else {
-                sendMainMenu(chatId);
-            }
+            // Вернуться к списку консультаций преподавателя
+            backToConsultationsList(chatId);
         } else {
             sendMainMenu(chatId);
         }
@@ -425,10 +613,6 @@ public class DeaneryCommandHandler {
         stateManager.resetState(chatId);
         stateManager.clearTempData(chatId);
         sendMainMenu(chatId);
-    }
-
-    private void showTeacherConsultations(Long chatId) {
-        botMessenger.sendText("📅 Функционал просмотра консультаций преподавателя будет реализован далее.", chatId);
     }
 
     private void showTeacherTasks(Long chatId) {

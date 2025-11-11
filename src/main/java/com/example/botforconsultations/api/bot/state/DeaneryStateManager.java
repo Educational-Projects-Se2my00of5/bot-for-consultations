@@ -47,6 +47,7 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
 
     // Специфичные для деканата данные (композиция)
     private final EntityIdStorage teacherIds = new EntityIdStorage();
+    private final EntityIdStorage consultationIds = new EntityIdStorage();
     private final Map<Long, String> consultationFilter = new HashMap<>();
     private final Map<Long, TodoCreationData> todoCreationDataMap = new HashMap<>();
 
@@ -58,6 +59,7 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
     @Override
     protected void clearSpecificData(Long chatId) {
         teacherIds.clear(chatId);
+        consultationIds.clear(chatId);
         consultationFilter.remove(chatId);
         todoCreationDataMap.remove(chatId);
     }
@@ -98,6 +100,27 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
     public void clearCurrentTeacher(Long chatId) {
         teacherIds.clear(chatId);
         consultationFilter.remove(chatId);
+    }
+
+    /**
+     * Установить текущую консультацию
+     */
+    public void setCurrentConsultation(Long chatId, Long consultationId) {
+        consultationIds.set(chatId, consultationId);
+    }
+
+    /**
+     * Получить ID текущей консультации
+     */
+    public Long getCurrentConsultation(Long chatId) {
+        return consultationIds.get(chatId);
+    }
+
+    /**
+     * Очистить ID текущей консультации
+     */
+    public void clearCurrentConsultation(Long chatId) {
+        consultationIds.clear(chatId);
     }
 
     /**
