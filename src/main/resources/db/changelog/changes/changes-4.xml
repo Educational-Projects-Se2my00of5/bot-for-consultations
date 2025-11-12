@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+
+    <changeSet id="1762926898196-1" author="Se2my00of5">
+        <createTable tableName="google_calendar_tokens">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_google_calendar_tokens"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="access_token" type="VARCHAR(2048)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="refresh_token" type="VARCHAR(512)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="DATETIME"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="1762926898196-2" author="Se2my00of5">
+        <addUniqueConstraint columnNames="user_id" constraintName="uc_google_calendar_tokens_user"
+                             tableName="google_calendar_tokens"/>
+    </changeSet>
+    <changeSet id="1762926898196-3" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="google_calendar_tokens"
+                                 constraintName="FK_GOOGLE_CALENDAR_TOKENS_ON_USER" referencedColumnNames="id"
+                                 referencedTableName="telegram_users"/>
+    </changeSet>
+</databaseChangeLog>

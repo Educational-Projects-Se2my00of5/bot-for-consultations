@@ -4,6 +4,7 @@ import com.example.botforconsultations.api.bot.BotMessenger;
 import com.example.botforconsultations.core.model.ReminderTime;
 import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.repository.TodoTaskRepository;
+import com.example.botforconsultations.core.service.GoogleOAuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,6 +23,7 @@ public class TaskReminderService {
 
     private final TodoTaskRepository todoTaskRepository;
     private final BotMessenger botMessenger;
+    private final GoogleOAuthService googleOAuthService;
 
     /**
      * Проверка и отправка напоминаний каждые 5 минут
@@ -40,6 +42,14 @@ public class TaskReminderService {
                 continue;
             }
 
+            // Пропускаем преподавателей, у которых подключен Google Calendar
+            // (напоминания для них приходят через Google Calendar)
+            if (googleOAuthService.isConnected(task.getTeacher())) {
+                log.debug("Skipping reminder for task #{} - teacher #{} has Google Calendar connected", 
+                        task.getId(), task.getTeacher().getId());
+                continue;
+            }
+
             ReminderTime reminderTime = task.getTeacher().getReminderTime();
             int minutesBeforeDeadline = reminderTime.getMinutesBeforeDeadline();
 
@@ -55,7 +65,8 @@ public class TaskReminderService {
     }
 
     /**
-     * Отправить напоминание о задаче
+     * Отправить напоминание о задаче в Telegram
+     * Используется только для преподавателей без подключенного Google Calendar
      */
     private void sendReminder(TodoTask task) {
         try {

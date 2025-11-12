@@ -3,6 +3,8 @@ package com.example.botforconsultations.api.bot.service;
 import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.TodoTaskRepository;
+import com.example.botforconsultations.core.service.GoogleCalendarService;
+import com.example.botforconsultations.core.service.GoogleOAuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ import java.util.Optional;
 public class TodoTaskService {
 
     private final TodoTaskRepository todoTaskRepository;
+    private final GoogleOAuthService googleOAuthService;
+    private final GoogleCalendarService googleCalendarService;
 
     /**
      * Создать новую задачу для преподавателя
@@ -38,6 +42,21 @@ public class TodoTaskService {
         TodoTask saved = todoTaskRepository.save(todo);
         log.info("Created todo task {} for teacher {} by user {}",
                 saved.getId(), teacher.getId(), createdBy.getId());
+        
+        // Проверяем, подключен ли у преподавателя Google Calendar
+        if (googleOAuthService.isConnected(teacher)) {
+            try {
+                Optional<String> eventIdOpt = googleCalendarService.createTaskEvent(teacher, saved);
+                if (eventIdOpt.isPresent()) {
+                    saved.setGoogleCalendarEventId(eventIdOpt.get());
+                    saved = todoTaskRepository.save(saved);
+                    log.info("Created Google Calendar event {} for task {}", eventIdOpt.get(), saved.getId());
+                }
+            } catch (Exception e) {
+                log.error("Failed to create Google Calendar event for task {}: {}", 
+                        saved.getId(), e.getMessage());
+            }
+        }
         
         return saved;
     }
@@ -89,6 +108,20 @@ public class TodoTaskService {
             todo.setCompletedAt(LocalDateTime.now());
             todoTaskRepository.save(todo);
             log.info("Todo task {} marked as completed", todoId);
+            
+            // Обновляем событие в Google Calendar (меняем цвет на зеленый)
+            if (todo.getGoogleCalendarEventId() != null) {
+                try {
+                    googleCalendarService.markEventAsCompleted(
+                            todo.getTeacher(), 
+                            todo.getGoogleCalendarEventId());
+                    log.info("Marked Google Calendar event {} as completed", 
+                            todo.getGoogleCalendarEventId());
+                } catch (Exception e) {
+                    log.error("Failed to mark Google Calendar event as completed: {}", 
+                            e.getMessage());
+                }
+            }
         }
     }
 
@@ -104,6 +137,20 @@ public class TodoTaskService {
             todo.setCompletedAt(null);
             todoTaskRepository.save(todo);
             log.info("Todo task {} marked as incomplete", todoId);
+            
+            // Обновляем событие в Google Calendar (возвращаем красный цвет)
+            if (todo.getGoogleCalendarEventId() != null) {
+                try {
+                    googleCalendarService.updateTaskEvent(
+                            todo.getTeacher(), 
+                            todo,
+                            todo.getGoogleCalendarEventId());
+                    log.info("Updated Google Calendar event {} (unmarked as completed)", 
+                            todo.getGoogleCalendarEventId());
+                } catch (Exception e) {
+                    log.error("Failed to update Google Calendar event: {}", e.getMessage());
+                }
+            }
         }
     }
 
@@ -112,8 +159,28 @@ public class TodoTaskService {
      */
     @Transactional
     public void deleteTodo(Long todoId) {
-        todoTaskRepository.deleteById(todoId);
-        log.info("Todo task {} deleted", todoId);
+        Optional<TodoTask> todoOpt = todoTaskRepository.findById(todoId);
+        if (todoOpt.isPresent()) {
+            TodoTask todo = todoOpt.get();
+            
+            // Удаляем событие из Google Calendar
+            if (todo.getGoogleCalendarEventId() != null) {
+                try {
+                    googleCalendarService.deleteTaskEvent(
+                            todo.getTeacher(), 
+                            todo.getGoogleCalendarEventId());
+                    log.info("Deleted Google Calendar event {}", todo.getGoogleCalendarEventId());
+                } catch (Exception e) {
+                    log.error("Failed to delete Google Calendar event: {}", e.getMessage());
+                }
+            }
+            
+            todoTaskRepository.deleteById(todoId);
+            log.info("Todo task {} deleted", todoId);
+        } else {
+            todoTaskRepository.deleteById(todoId);
+            log.info("Todo task {} deleted (no calendar event)", todoId);
+        }
     }
 
     /**
@@ -213,5 +280,27 @@ public class TodoTaskService {
         todo.setReminderSent(false);
         todoTaskRepository.save(todo);
         log.info("Updated deadline for todo task {} to {}", todoId, newDeadline);
+        
+        // Обновляем событие в Google Calendar
+        if (todo.getGoogleCalendarEventId() != null) {
+            try {
+                googleCalendarService.updateTaskEvent(
+                        todo.getTeacher(), 
+                        todo,
+                        todo.getGoogleCalendarEventId());
+                log.info("Updated Google Calendar event {} with new deadline", 
+                        todo.getGoogleCalendarEventId());
+            } catch (Exception e) {
+                log.error("Failed to update Google Calendar event: {}", e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Сохранить задачу (вспомогательный метод)
+     */
+    @Transactional
+    public TodoTask saveTask(TodoTask task) {
+        return todoTaskRepository.save(task);
     }
 }

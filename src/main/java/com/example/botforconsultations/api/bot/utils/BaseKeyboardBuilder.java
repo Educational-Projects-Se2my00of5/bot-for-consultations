@@ -75,7 +75,7 @@ public abstract class BaseKeyboardBuilder {
      * Клавиатура для редактирования профиля (общая для всех ролей)
      */
     public ReplyKeyboardMarkup buildProfileKeyboard() {
-        return buildProfileKeyboard(false);
+        return buildProfileKeyboard(false, false, false);
     }
 
     /**
@@ -83,12 +83,32 @@ public abstract class BaseKeyboardBuilder {
      * @param showReminderButton показывать ли кнопку настройки напоминаний (только для зарегистрированных)
      */
     public ReplyKeyboardMarkup buildProfileKeyboard(boolean showReminderButton) {
+        return buildProfileKeyboard(showReminderButton, false, false);
+    }
+    
+    /**
+     * Клавиатура для редактирования профиля с расширенными опциями
+     * @param showReminderButton показывать ли кнопку настройки напоминаний
+     * @param showConnectCalendar показывать ли кнопку подключения Google Calendar
+     * @param showDisconnectCalendar показывать ли кнопку отключения Google Calendar
+     */
+    public ReplyKeyboardMarkup buildProfileKeyboard(boolean showReminderButton, 
+                                                     boolean showConnectCalendar, 
+                                                     boolean showDisconnectCalendar) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createTwoButtonRow(KeyboardConstants.EDIT_FIRST_NAME, KeyboardConstants.EDIT_LAST_NAME));
         
         if (showReminderButton) {
             keyboard.add(createSingleButtonRow(KeyboardConstants.EDIT_REMINDER_TIME));
+        }
+        
+        if (showConnectCalendar) {
+            keyboard.add(createSingleButtonRow(KeyboardConstants.CONNECT_GOOGLE_CALENDAR));
+        }
+        
+        if (showDisconnectCalendar) {
+            keyboard.add(createSingleButtonRow(KeyboardConstants.DISCONNECT_GOOGLE_CALENDAR));
         }
         
         keyboard.add(createSingleButtonRow(KeyboardConstants.BACK));

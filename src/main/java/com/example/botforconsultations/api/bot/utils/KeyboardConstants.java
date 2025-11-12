@@ -87,6 +87,8 @@ public final class KeyboardConstants {
     public static final String EDIT_FIRST_NAME = "✏️ Изменить имя";
     public static final String EDIT_LAST_NAME = "✏️ Изменить фамилию";
     public static final String EDIT_REMINDER_TIME = "⏰ Время напоминаний";
+    public static final String CONNECT_GOOGLE_CALENDAR = "🔗 Подключить Google Calendar";
+    public static final String DISCONNECT_GOOGLE_CALENDAR = "🔓 Отключить Google Calendar";
 
     // ========== Общие действия ==========
     public static final String CONFIRM_DELETE = "✅ Да, удалить";
