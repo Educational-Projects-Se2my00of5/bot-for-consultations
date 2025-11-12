@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import UsersPage from './pages/UsersPage';
+import DeaneryPage from './pages/DeaneryPage';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +50,14 @@ function App() {
           element={
             <ProtectedRoute>
               <UsersPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/deanery" 
+          element={
+            <ProtectedRoute>
+              <DeaneryPage />
             </ProtectedRoute>
           } 
         />

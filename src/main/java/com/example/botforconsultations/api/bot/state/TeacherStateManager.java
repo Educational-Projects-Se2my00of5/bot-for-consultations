@@ -27,6 +27,7 @@ public class TeacherStateManager extends BaseStateManager<TeacherStateManager.Te
         WAITING_FOR_CONSULTATION_AUTOCLOSE,   // Ожидание ответа об автозакрытии
         VIEWING_CONSULTATION_DETAILS,         // Просмотр списка консультаций (+ деталей, если задан currentConsultationId)
         VIEWING_REQUEST_DETAILS,              // Просмотр списка запросов (+ деталей, если задан currentRequestId)
+        VIEWING_TASK_DETAILS,                 // Просмотр списка задач (+ деталей, если задан currentTaskId)
         ACCEPTING_REQUEST_DATETIME,           // Ввод даты/времени при принятии запроса
         ACCEPTING_REQUEST_CAPACITY,           // Ввод вместимости при принятии запроса
         ACCEPTING_REQUEST_AUTOCLOSE,          // Ввод автозакрытия при принятии запроса
@@ -36,6 +37,7 @@ public class TeacherStateManager extends BaseStateManager<TeacherStateManager.Te
         EDITING_AUTOCLOSE,                    // Редактирование автозакрытия
         EDITING_PROFILE_FIRST_NAME,           // Редактирование имени (для активированных)
         EDITING_PROFILE_LAST_NAME,            // Редактирование фамилии (для активированных)
+        EDITING_REMINDER_TIME,                // Редактирование времени напоминаний (для активированных)
         WAITING_APPROVAL_EDITING_FIRST_NAME,  // Редактирование имени (для неактивированных)
         WAITING_APPROVAL_EDITING_LAST_NAME    // Редактирование фамилии (для неактивированных)
     }
@@ -56,7 +58,10 @@ public class TeacherStateManager extends BaseStateManager<TeacherStateManager.Te
 
     // Специфичные для преподавателя данные (композиция)
     private final EntityIdStorage requestIds = new EntityIdStorage();
+    private final EntityIdStorage taskIds = new EntityIdStorage();
     private final Map<Long, ConsultationCreationData> creationDataMap = new HashMap<>();
+    private final Map<Long, String> taskStatusFilters = new HashMap<>();
+    private final Map<Long, String> taskDeadlineFilters = new HashMap<>();
 
     @Override
     protected TeacherState getDefaultState() {
@@ -66,12 +71,10 @@ public class TeacherStateManager extends BaseStateManager<TeacherStateManager.Te
     @Override
     protected void clearSpecificData(Long chatId) {
         requestIds.clear(chatId);
+        taskIds.clear(chatId);
         creationDataMap.remove(chatId);
-    }
-
-    @Override
-    public void clearUserData(Long chatId) {
-        super.clearUserData(chatId);
+        taskStatusFilters.remove(chatId);
+        taskDeadlineFilters.remove(chatId);
     }
 
     // ========== Специфичные методы для преподавателя ==========
@@ -103,6 +106,28 @@ public class TeacherStateManager extends BaseStateManager<TeacherStateManager.Te
     public void clearCurrentRequest(Long chatId) {
         requestIds.clear(chatId);
         log.debug("Teacher {} current request cleared", chatId);
+    }
+
+    /**
+     * Установить текущую задачу
+     */
+    public void setCurrentTask(Long chatId, Long taskId) {
+        taskIds.set(chatId, taskId);
+    }
+
+    /**
+     * Получить ID текущей задачи
+     */
+    public Long getCurrentTask(Long chatId) {
+        return taskIds.get(chatId);
+    }
+
+    /**
+     * Очистить текущую задачу
+     */
+    public void clearCurrentTask(Long chatId) {
+        taskIds.clear(chatId);
+        log.debug("Teacher {} current task cleared", chatId);
     }
 
     // ========== Временные данные для создания консультации ==========
@@ -193,4 +218,35 @@ public class TeacherStateManager extends BaseStateManager<TeacherStateManager.Te
     public Integer getTempCapacity(Long chatId) {
         return getCreationData(chatId).getCapacity();
     }
+
+    // ========== Фильтры задач ==========
+
+    /**
+     * Установить фильтр статуса задач
+     */
+    public void setTaskStatusFilter(Long chatId, String filter) {
+        taskStatusFilters.put(chatId, filter);
+    }
+
+    /**
+     * Получить фильтр статуса задач
+     */
+    public String getTaskStatusFilter(Long chatId) {
+        return taskStatusFilters.getOrDefault(chatId, "all");
+    }
+
+    /**
+     * Установить фильтр дедлайна задач
+     */
+    public void setTaskDeadlineFilter(Long chatId, String filter) {
+        taskDeadlineFilters.put(chatId, filter);
+    }
+
+    /**
+     * Получить фильтр дедлайна задач
+     */
+    public String getTaskDeadlineFilter(Long chatId) {
+        return taskDeadlineFilters.getOrDefault(chatId, "all");
+    }
 }
+

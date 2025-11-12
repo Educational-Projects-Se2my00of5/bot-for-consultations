@@ -16,6 +16,9 @@ public interface TodoTaskRepository extends JpaRepository<TodoTask, Long> {
     // Все задачи конкретного преподавателя
     List<TodoTask> findByTeacherOrderByDeadlineAsc(User teacher);
 
+    // Все задачи преподавателя по ID
+    List<TodoTask> findByTeacher_IdOrderByDeadlineAsc(Long teacherId);
+
     // Активные (не выполненные) задачи преподавателя
     List<TodoTask> findByTeacherAndIsCompletedFalseOrderByDeadlineAsc(User teacher);
 
@@ -38,4 +41,7 @@ public interface TodoTaskRepository extends JpaRepository<TodoTask, Long> {
 
     // Все активные задачи (для деканата)
     List<TodoTask> findByIsCompletedFalseOrderByDeadlineAsc();
+
+    // Активные задачи с дедлайном после указанного времени (для напоминаний)
+    List<TodoTask> findByIsCompletedFalseAndDeadlineAfter(LocalDateTime deadline);
 }

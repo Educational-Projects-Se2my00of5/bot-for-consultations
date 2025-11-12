@@ -75,10 +75,36 @@ public abstract class BaseKeyboardBuilder {
      * Клавиатура для редактирования профиля (общая для всех ролей)
      */
     public ReplyKeyboardMarkup buildProfileKeyboard() {
+        return buildProfileKeyboard(false);
+    }
+
+    /**
+     * Клавиатура для редактирования профиля с опциональной кнопкой напоминаний
+     * @param showReminderButton показывать ли кнопку настройки напоминаний (только для зарегистрированных)
+     */
+    public ReplyKeyboardMarkup buildProfileKeyboard(boolean showReminderButton) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createTwoButtonRow(KeyboardConstants.EDIT_FIRST_NAME, KeyboardConstants.EDIT_LAST_NAME));
+        
+        if (showReminderButton) {
+            keyboard.add(createSingleButtonRow(KeyboardConstants.EDIT_REMINDER_TIME));
+        }
+        
         keyboard.add(createSingleButtonRow(KeyboardConstants.BACK));
+
+        return buildKeyboard(keyboard);
+    }
+
+    /**
+     * Клавиатура для выбора времени напоминаний
+     */
+    public ReplyKeyboardMarkup buildReminderTimeKeyboard() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        keyboard.add(createTwoButtonRow("⏱️ 15 минут", "⏱️ 30 минут"));
+        keyboard.add(createTwoButtonRow("⏱️ 1 час", "⏱️ 1 день"));
+        keyboard.add(createSingleButtonRow(KeyboardConstants.CANCEL));
 
         return buildKeyboard(keyboard);
     }

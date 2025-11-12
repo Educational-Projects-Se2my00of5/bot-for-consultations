@@ -43,6 +43,7 @@ public final class KeyboardConstants {
     // ========== Действия преподавателя ==========
     public static final String CREATE_CONSULTATION = "➕ Создать консультацию";
     public static final String MY_CONSULTATIONS = "📅 Мои консультации";
+    public static final String MY_TASKS = "📋 Мои задачи";
     public static final String CONSULTATION_REQUESTS = "📋 Запросы на консультации";
     public static final String ACCEPT_REQUEST = "✅ Принять запрос";
     public static final String VIEW_STUDENTS = "👥 Просмотреть студентов";
@@ -66,6 +67,13 @@ public final class KeyboardConstants {
     public static final String DELETE_TASK = "🗑️ Удалить";
     public static final String MARK_COMPLETED = "✅ Отметить выполненной";
     public static final String MARK_PENDING = "⏳ Отметить невыполненной";
+    public static final String EDIT_TASK_TITLE = "📋 Изменить название";
+    public static final String EDIT_TASK_DESCRIPTION = "📝 Изменить описание";
+    public static final String EDIT_TASK_DEADLINE = "⏰ Изменить дедлайн";
+
+    // ========== Действия преподавателя с задачами ==========
+    public static final String MARK_TASK_COMPLETED = "✅ Отметить выполненной";
+    public static final String MARK_TASK_PENDING = "⏳ Отметить невыполненной";
     
     // ========== Фильтры задач ==========
     public static final String FILTER_TASK_INCOMPLETE = "❌ Невыполненные";
@@ -78,6 +86,7 @@ public final class KeyboardConstants {
     public static final String HELP = "Помощь";
     public static final String EDIT_FIRST_NAME = "✏️ Изменить имя";
     public static final String EDIT_LAST_NAME = "✏️ Изменить фамилию";
+    public static final String EDIT_REMINDER_TIME = "⏰ Время напоминаний";
 
     // ========== Общие действия ==========
     public static final String CONFIRM_DELETE = "✅ Да, удалить";

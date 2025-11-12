@@ -88,7 +88,8 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         keyboard.add(createTwoButtonRow(CREATE_TASK, TEACHER_TASKS));
 
         // Навигация
-        keyboard.add(createTwoButtonRow(BACK_TO_TEACHERS, BACK));
+        keyboard.add(createTwoButtonRow(BACK_TO_TEACHERS, MAIN_MENU));
+        keyboard.add(createSingleButtonRow(BACK));
 
         return buildKeyboard(keyboard);
     }
@@ -132,9 +133,6 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         // Фильтры по статусу выполнения
         keyboard.add(createTaskStatusFilterRow());
 
-        // Поиск задачи
-        keyboard.add(createSingleButtonRow(SEARCH_TASK));
-
         // Навигация
         keyboard.add(createSingleButtonRow(BACK));
 
@@ -160,7 +158,8 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         keyboard.add(createSingleButtonRow(CREATE_TASK));
 
         // Навигация
-        keyboard.add(createTwoButtonRow(BACK_TO_TEACHERS, BACK));
+        keyboard.add(createTwoButtonRow(BACK_TO_TEACHERS, MAIN_MENU));
+        keyboard.add(createSingleButtonRow(BACK));
 
         return buildKeyboard(keyboard);
     }
@@ -194,6 +193,20 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         List<KeyboardRow> keyboard = new ArrayList<>();
         
         keyboard.add(createTwoButtonRow(CONFIRM_DELETE, CANCEL));
+
+        return buildKeyboard(keyboard);
+    }
+
+    /**
+     * Меню редактирования задачи
+     */
+    public ReplyKeyboardMarkup buildEditTaskMenu() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        
+        keyboard.add(createSingleButtonRow(EDIT_TASK_TITLE));
+        keyboard.add(createSingleButtonRow(EDIT_TASK_DESCRIPTION));
+        keyboard.add(createSingleButtonRow(EDIT_TASK_DEADLINE));
+        keyboard.add(createSingleButtonRow(BACK));
 
         return buildKeyboard(keyboard);
     }
@@ -245,12 +258,10 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         int count = 0;
         for (TodoTask task : tasks) {
             if (count >= maxCount) break;
-            String prefix = task.getIsCompleted() ? COMPLETED_PREFIX : PENDING_PREFIX;
             String title = task.getTitle().length() > 25 
                     ? task.getTitle().substring(0, 25) + "..." 
                     : task.getTitle();
-            String buttonText = String.format("%s%s%d - %s",
-                    prefix,
+            String buttonText = String.format("%s%d - %s",
                     NUMBER_PREFIX,
                     task.getId(),
                     title);

@@ -2,6 +2,7 @@ package com.example.botforconsultations.api.bot.utils;
 
 import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.ConsultationStatus;
+import com.example.botforconsultations.core.model.TodoTask;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
@@ -34,7 +35,7 @@ public class TeacherKeyboardBuilder extends BaseKeyboardBuilder {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createTwoButtonRow(MY_CONSULTATIONS, CREATE_CONSULTATION));
-        keyboard.add(createSingleButtonRow(CONSULTATION_REQUESTS));
+        keyboard.add(createTwoButtonRow(MY_TASKS, CONSULTATION_REQUESTS));
         keyboard.add(createTwoButtonRow(PROFILE, HELP));
 
         return buildKeyboard(keyboard);
@@ -192,5 +193,56 @@ public class TeacherKeyboardBuilder extends BaseKeyboardBuilder {
             keyboard.add(createTwoButtonRow(EDIT_CONSULTATION, CANCEL_CONSULTATION));
         }
         // Для CANCELLED статуса не добавляем кнопки управления
+    }
+
+    // ========== Клавиатуры для задач ==========
+
+    /**
+     * Клавиатура со списком задач преподавателя
+     */
+    public ReplyKeyboardMarkup buildTasksList(List<TodoTask> tasks) {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        // Добавляем задачи (максимум 5)
+        int count = 0;
+        for (TodoTask task : tasks) {
+            if (count >= MAX_LIST_ITEMS) break;
+            String statusIcon = task.getIsCompleted() ? "✅" : "⏳";
+            String buttonText = String.format("%s%d - %s %s",
+                    NUMBER_PREFIX,
+                    task.getId(),
+                    statusIcon,
+                    task.getTitle());
+            keyboard.add(createSingleButtonRow(buttonText));
+            count++;
+        }
+
+        // Фильтры
+        if (!tasks.isEmpty()) {
+            keyboard.add(createTwoButtonRow(FILTER_TASK_INCOMPLETE, FILTER_TASK_COMPLETED));
+            keyboard.add(createSingleButtonRow(FILTER_TASK_ALL));
+        }
+
+        keyboard.add(createSingleButtonRow(BACK));
+
+        return buildKeyboard(keyboard);
+    }
+
+    /**
+     * Клавиатура для детального просмотра задачи
+     */
+    public ReplyKeyboardMarkup buildTaskDetails(TodoTask task) {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        // Кнопка изменения статуса
+        if (task.getIsCompleted()) {
+            keyboard.add(createSingleButtonRow(MARK_TASK_PENDING));
+        } else {
+            keyboard.add(createSingleButtonRow(MARK_TASK_COMPLETED));
+        }
+
+        keyboard.add(createSingleButtonRow(BACK_TO_LIST));
+
+        return buildKeyboard(keyboard);
     }
 }

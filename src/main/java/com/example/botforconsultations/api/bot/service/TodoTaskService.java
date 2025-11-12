@@ -50,6 +50,20 @@ public class TodoTaskService {
     }
 
     /**
+     * Получить все задачи преподавателя по ID
+     */
+    public List<TodoTask> getTasksByTeacherId(Long teacherId) {
+        return todoTaskRepository.findByTeacher_IdOrderByDeadlineAsc(teacherId);
+    }
+
+    /**
+     * Получить задачу по ID
+     */
+    public Optional<TodoTask> getTaskById(Long taskId) {
+        return todoTaskRepository.findById(taskId);
+    }
+
+    /**
      * Получить активные задачи преподавателя
      */
     public List<TodoTask> getActiveTeacherTasks(TelegramUser teacher) {
@@ -158,5 +172,46 @@ public class TodoTaskService {
      */
     public List<TodoTask> getAllActiveTasks() {
         return todoTaskRepository.findByIsCompletedFalseOrderByDeadlineAsc();
+    }
+
+    /**
+     * Обновить название задачи
+     */
+    @Transactional
+    public void updateTitle(Long todoId, String newTitle) {
+        TodoTask todo = todoTaskRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("Todo task not found: " + todoId));
+        
+        todo.setTitle(newTitle);
+        todoTaskRepository.save(todo);
+        log.info("Updated title for todo task {}", todoId);
+    }
+
+    /**
+     * Обновить описание задачи
+     */
+    @Transactional
+    public void updateDescription(Long todoId, String newDescription) {
+        TodoTask todo = todoTaskRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("Todo task not found: " + todoId));
+        
+        todo.setDescription(newDescription);
+        todoTaskRepository.save(todo);
+        log.info("Updated description for todo task {}", todoId);
+    }
+
+    /**
+     * Обновить дедлайн задачи
+     */
+    @Transactional
+    public void updateDeadline(Long todoId, LocalDateTime newDeadline) {
+        TodoTask todo = todoTaskRepository.findById(todoId)
+                .orElseThrow(() -> new IllegalArgumentException("Todo task not found: " + todoId));
+        
+        todo.setDeadline(newDeadline);
+        // Сбрасываем флаг напоминания, если дедлайн изменён
+        todo.setReminderSent(false);
+        todoTaskRepository.save(todo);
+        log.info("Updated deadline for todo task {} to {}", todoId, newDeadline);
     }
 }

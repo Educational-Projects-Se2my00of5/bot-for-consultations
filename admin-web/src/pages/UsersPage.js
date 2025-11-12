@@ -53,21 +53,24 @@ const UsersPage = () => {
     };
 
     const activateUser = async (userId) => {
+        const token = localStorage.getItem('adminToken');
         try {
             const response = await fetch(`/api/admin/activate-account/${userId}`, {
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
-            if (!response.ok) {
-                throw new Error('Ошибка при активации пользователя');
+            if (response.ok) {
+                alert('Аккаунт преподавателя успешно активирован!');
+                setIsModalOpen(false);
+                fetchUsers();
+            } else {
+                alert('Ошибка при активации аккаунта');
             }
-
-            setIsModalOpen(false);
-            await fetchUsers(); // Обновляем список пользователей
-        } catch (err) {
-            setError(err.message);
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Ошибка при активации аккаунта');
         }
     };
 
@@ -77,60 +80,99 @@ const UsersPage = () => {
 
     if (loading) {
         return (
-            <div className="page">
-                <Header/>
-                <main className="main">
-                    <div className="loading">Загрузка...</div>
-                </main>
+            <div className="users-page">
+                <Header />
+                <div className="loading">Загрузка...</div>
             </div>
         );
     }
 
     return (
-        <div className="page">
-            <Header/>
-            <main className="main">
-                {error && <div className="error">{error}</div>}
-
-                <div className="users-container">
+        <div className="users-page">
+            <Header />
+            <div className="users-container">
+                <div className="users-header">
                     <h2>Список неактивных преподавателей</h2>
-                    {users.length === 0 ? (
-                        <p>Нет неактивных преподавателей</p>
-                    ) : (
-                        <div className="users-grid">
-                            {users.map(user => (
-                                <div key={user.id} className="user-card" onClick={() => getUserDetails(user.id)}>
-                                    <h3>{(user.firstName + " " + ((user.lastName != null) ? user.lastName : "")) || 'Без имени'}</h3>
-                                    <p>Телефон: {user.phone || 'Не указан'}</p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <div className="header-actions">
+                        <button 
+                            className="nav-button"
+                            onClick={() => window.location.href = '/deanery'}
+                        >
+                            Деканат
+                        </button>
+                    </div>
                 </div>
+                
+                {error && <div className="error">{error}</div>}
+                
+                {users.length === 0 ? (
+                    <div className="empty-state">
+                        <p>Нет неактивных преподавателей</p>
+                    </div>
+                ) : (
+                    <div className="users-grid">
+                        {users.map(user => (
+                            <div 
+                                key={user.id} 
+                                className="user-card" 
+                                onClick={() => getUserDetails(user.id)}
+                            >
+                                <h3>{(user.firstName + " " + ((user.lastName != null) ? user.lastName : "")) || 'Без имени'}</h3>
+                                <p>Телефон: {user.phone || 'Не указан'}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
 
-                <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-                    {selectedUser && (
-                        <div className="user-details">
-                            <div className="modal-header">
-                                <h2>Информация о пользователе</h2>
-                                <button className="modal-close" onClick={() => setIsModalOpen(false)}>&times;</button>
-                            </div>
-                            <div className="user-info">
-                                <p><strong>Имя:</strong> {selectedUser.firstName || 'Не указано'}</p>
-                                <p><strong>Фамилия:</strong> {selectedUser.lastName || 'Не указана'}</p>
-                                <p><strong>Телефон:</strong> {selectedUser.phone || 'Не указан'}</p>
-                                <p><strong>ID:</strong> {selectedUser.id}</p>
-                            </div>
-                            <button
+            <Modal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)}
+            >
+                {selectedUser && (
+                    <div className="user-details">
+                        <h2>Информация о преподавателе</h2>
+                        <div className="detail-row">
+                            <strong>Имя:</strong>
+                            <span>{selectedUser.firstName || 'Не указано'}</span>
+                        </div>
+                        <div className="detail-row">
+                            <strong>Фамилия:</strong>
+                            <span>{selectedUser.lastName || 'Не указана'}</span>
+                        </div>
+                        <div className="detail-row">
+                            <strong>Отчество:</strong>
+                            <span>{selectedUser.patronymic || 'Не указано'}</span>
+                        </div>
+                        <div className="detail-row">
+                            <strong>Телефон:</strong>
+                            <span>{selectedUser.phone || 'Не указан'}</span>
+                        </div>
+                        <div className="detail-row">
+                            <strong>Email:</strong>
+                            <span>{selectedUser.email || 'Не указан'}</span>
+                        </div>
+                        <div className="detail-row">
+                            <strong>Telegram ID:</strong>
+                            <span>{selectedUser.telegramId}</span>
+                        </div>
+                        <div className="modal-actions">
+                            <button 
                                 className="activate-button"
                                 onClick={() => activateUser(selectedUser.id)}
                             >
                                 Активировать
                             </button>
+                            <button 
+                                className="cancel-button"
+                                onClick={() => setIsModalOpen(false)}
+                            >
+                                Отмена
+                            </button>
                         </div>
-                    )}
-                </Modal>
-            </main>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 };

@@ -217,11 +217,12 @@ public class TodoMessageFormatter {
     /**
      * Получить текст фильтра дедлайна
      */
+    /**
+     * Получить текст фильтра дедлайна
+     */
     private String getDeadlineFilterText(String filter) {
         return switch (filter) {
-            case "overdue" -> "Просроченные";
-            case "today" -> "Сегодня";
-            case "week" -> "На неделю";
+            case "past" -> "Просроченные";
             case "future" -> "Будущие";
             default -> "Все";
         };

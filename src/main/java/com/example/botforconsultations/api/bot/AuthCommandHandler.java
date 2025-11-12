@@ -1,6 +1,7 @@
 package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.api.bot.utils.TeacherKeyboardBuilder;
+import com.example.botforconsultations.core.model.ReminderTime;
 import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
@@ -87,7 +88,10 @@ public class AuthCommandHandler {
             user.setRole(role);
             switch (role) {
                 case STUDENT -> user.setHasConfirmed(true);
-                case TEACHER -> user.setHasConfirmed(false); // Преподаватели должны быть подтверждены администратором
+                case TEACHER -> {
+                    user.setHasConfirmed(false); // Преподаватели должны быть подтверждены администратором
+                    user.setReminderTime(ReminderTime.MIN_30); // Время напоминаний по умолчанию: 30 минут
+                }
                 case DEANERY -> user.setHasConfirmed(false); // Деканат должен быть подтвержден администратором
                 case ADMIN -> user.setHasConfirmed(false); // Администраторы должны быть подтверждены
             }

@@ -27,6 +27,10 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
         CREATING_TODO_TITLE,               // Ввод названия задачи
         CREATING_TODO_DESCRIPTION,         // Ввод описания задачи
         CREATING_TODO_DEADLINE,            // Ввод дедлайна задачи
+        CONFIRMING_DELETE_TASK,            // Подтверждение удаления задачи
+        EDITING_TODO_TITLE,                // Редактирование названия задачи
+        EDITING_TODO_DESCRIPTION,          // Редактирование описания задачи
+        EDITING_TODO_DEADLINE,             // Редактирование дедлайна задачи
         
         // Состояния редактирования профиля для неподтвержденных пользователей
         WAITING_APPROVAL_EDITING_FIRST_NAME,  // Ожидание ввода нового имени (неподтвержденный)
@@ -204,16 +208,6 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
      */
     public void clearTempData(Long chatId) {
         clearTodoCreationData(chatId);
-    }
-
-    /**
-     * Полная очистка всех данных пользователя (при выходе в главное меню)
-     */
-    public void clearUserData(Long chatId) {
-        resetState(chatId);
-        clearCurrentTeacher(chatId);
-        clearTempData(chatId);
-        clearPreviousState(chatId);
     }
 
     // ========== Методы для работы с фильтрами задач ==========
