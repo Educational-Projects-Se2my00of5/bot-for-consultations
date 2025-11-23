@@ -1,0 +1,29 @@
+name: Manual Rollback
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rollback:
+    runs-on: self-hosted
+    steps:
+      - name: Rollback to previous version
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            APP="/home/myapp"
+            BACKUP="${APP}_backup"
+            if [ -d "$BACKUP" ]; then
+              cd $APP && docker-compose down
+              rm -rf $APP
+              mv $BACKUP $APP
+              cd $APP
+              docker-compose up -d
+              echo "Rollback complete"
+              docker-compose ps
+            else
+              echo "No backup found!"
+              exit 1
