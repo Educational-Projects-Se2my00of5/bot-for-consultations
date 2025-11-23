@@ -34,7 +34,7 @@ jobs:
 
             # Бэкап
             if [ -d "$APP" ]; then
-              cd $APP && docker-compose down
+              cd $APP && docker compose down
               rm -rf $BACKUP
               mv $APP $BACKUP
             fi
@@ -47,19 +47,19 @@ jobs:
             # Запуск
             cd $APP
 
-            docker-compose up -d --build
+            docker compose up -d --build
 
             # Ожидание запуска контейнеров (до 60 сек)
             ATTEMPTS=0
             MAX_ATTEMPTS=12
             ROLLBACK=0
             while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-              if docker-compose ps | grep -q "Exit"; then
+              if docker compose ps | grep -q "Exit"; then
                 echo "Container crashed! Starting rollback..."
                 ROLLBACK=1
                 break
               fi
-              if docker-compose ps | grep -q "Up"; then
+              if docker compose ps | grep -q "Up"; then
                 echo "All containers are up!"
                 break
               fi
@@ -73,11 +73,11 @@ jobs:
             fi
 
             if [ $ROLLBACK -eq 1 ]; then
-              docker-compose down
+              docker compose down
               rm -rf $APP
               mv $BACKUP $APP
               cd $APP
-              docker-compose up -d --build
+              docker compose up -d --build
               echo "Rollback complete"
             fi
-            docker-compose ps
+            docker compose ps
