@@ -49,7 +49,7 @@ jobs:
 
             docker compose up -d --build
 
-            # Ожидание запуска контейнеров (до 300 сек)
+            # Ожидание запуска контейнеров (до 15 минут)
             ATTEMPTS=0
             MAX_ATTEMPTS=15
             ROLLBACK=0
@@ -63,7 +63,7 @@ jobs:
                 echo "All containers are up!"
                 break
               fi
-              sleep 20
+              sleep 60
               ATTEMPTS=$((ATTEMPTS+1))
             done
 

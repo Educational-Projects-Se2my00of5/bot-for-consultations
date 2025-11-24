@@ -1,10 +1,10 @@
-FROM node:21-alpine
+FROM node:21-slim
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm install --omit=dev && npm cache clean --force
 
 COPY . .
 

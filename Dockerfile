@@ -11,7 +11,7 @@ COPY src src
 RUN mvn clean package -DskipTests
 
 
-FROM eclipse-temurin:17-alpine
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 COPY --from=builder /app/target/bot-for-consultations-0.0.1-SNAPSHOT.jar app.jar
