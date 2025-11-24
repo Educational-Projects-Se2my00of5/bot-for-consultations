@@ -31,7 +31,7 @@ jobs:
             DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             APP="${DEPLOY_PATH}/bot"
 
-            mv /tmp/deploy $APP_new
+            mv /tmp/deploy ${APP}_new
 
             # BACKUP="${APP}_backup"
 
