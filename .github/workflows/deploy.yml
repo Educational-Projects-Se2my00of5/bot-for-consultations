@@ -30,54 +30,59 @@ jobs:
           script: |
             DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
             APP="${DEPLOY_PATH}/bot"
-            BACKUP="${APP}_backup"
 
-            # Бэкап
-            if [ -d "$APP" ]; then
-              cd $APP && docker compose down
-              rm -rf $BACKUP
-              mv $APP $BACKUP
-            fi
+            mv /tmp/deploy $APP_new
+
+            # BACKUP="${APP}_backup"
+
+            # # Бэкап
+            # if [ -d "$APP" ]; then
+            #   cd $APP
+            #   docker compose stop  # Останавливаем контейнеры, не удаляя тома
+            #   rm -rf $BACKUP
+            #   mv $APP $BACKUP
+            # fi
             
-            # Новая версия
-            mv /tmp/deploy $APP
-            cd $DEPLOY_PATH
-            cp $DEPLOY_PATH/.env $APP/.env
+            # # Новая версия
+            # mv /tmp/deploy $APP
+            # cd $DEPLOY_PATH
+            # cp $DEPLOY_PATH/.env $APP/.env
 
-            # Запуск
-            cd $APP
+            # # Запуск
+            # cd $APP
+            # docker compose build --no-cache  # Сборка с очисткой кэша
+            # docker compose up -d
 
-            docker compose up -d --build
+            # # Ожидание запуска контейнеров (до 15 минут)
+            # ATTEMPTS=0
+            # MAX_ATTEMPTS=15
+            # ROLLBACK=0
+            # while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
+            #   if docker compose ps | grep -q "Exit"; then
+            #     echo "Container crashed! Starting rollback..."
+            #     ROLLBACK=1
+            #     break
+            #   fi
+            #   if docker compose ps | grep -q "Up"; then
+            #     echo "All containers are up!"
+            #     break
+            #   fi
+            #   sleep 60
+            #   ATTEMPTS=$((ATTEMPTS+1))
+            # done
 
-            # Ожидание запуска контейнеров (до 15 минут)
-            ATTEMPTS=0
-            MAX_ATTEMPTS=15
-            ROLLBACK=0
-            while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-              if docker compose ps | grep -q "Exit"; then
-                echo "Container crashed! Starting rollback..."
-                ROLLBACK=1
-                break
-              fi
-              if docker compose ps | grep -q "Up"; then
-                echo "All containers are up!"
-                break
-              fi
-              sleep 60
-              ATTEMPTS=$((ATTEMPTS+1))
-            done
+            # if [ $ATTEMPTS -eq $MAX_ATTEMPTS ]; then
+            #   echo "Timeout waiting for containers to start! Starting rollback..."
+            #   ROLLBACK=1
+            # fi
 
-            if [ $ATTEMPTS -eq $MAX_ATTEMPTS ]; then
-              echo "Timeout waiting for containers to start! Starting rollback..."
-              ROLLBACK=1
-            fi
-
-            if [ $ROLLBACK -eq 1 ]; then
-              docker compose down
-              rm -rf $APP
-              mv $BACKUP $APP
-              cd $APP
-              docker compose up -d --build
-              echo "Rollback complete"
-            fi
-            docker compose ps
+            # if [ $ROLLBACK -eq 1 ]; then
+            #   docker compose stop
+            #   rm -rf $APP
+            #   mv $BACKUP $APP
+            #   cd $APP
+            #   docker compose build --no-cache
+            #   docker compose up -d
+            #   echo "Rollback complete"
+            # fi
+            # docker compose ps

@@ -17,13 +17,15 @@ jobs:
             APP="/home/myapp"
             BACKUP="${APP}_backup"
             if [ -d "$BACKUP" ]; then
-              cd $APP && docker-compose down
+              cd $APP 
+              docker compose stop
               rm -rf $APP
               mv $BACKUP $APP
               cd $APP
-              docker-compose up -d
+              docker compose build --no-cache
+              docker compose up -d
               echo "Rollback complete"
-              docker-compose ps
+              docker compose ps
             else
               echo "No backup found!"
               exit 1
