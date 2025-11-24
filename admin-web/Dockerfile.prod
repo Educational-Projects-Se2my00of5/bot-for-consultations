@@ -12,7 +12,6 @@ COPY . .
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
-RUN chmod -R +x node_modules/.bin
 RUN npm install -g serve
 # Собираем production build
 RUN npm run build
