@@ -3,6 +3,7 @@ services:
     build:
       context: ./admin-web
       dockerfile: Dockerfile.prod
+      no_cache: true
       args:
         REACT_APP_API_URL: https://bot.se2botconsult.tech
     ports:
@@ -15,6 +16,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      no_cache: true
     container_name: bot-for-consultations
     restart: unless-stopped
     ports:

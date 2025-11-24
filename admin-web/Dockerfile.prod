@@ -2,11 +2,9 @@ FROM node:25-slim
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY . .
 
 RUN npm install --omit=dev && npm cache clean --force
-
-COPY . .
 
 # Получаем переменную из docker-compose
 ARG REACT_APP_API_URL
