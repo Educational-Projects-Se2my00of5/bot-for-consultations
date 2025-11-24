@@ -31,7 +31,7 @@ services:
 
   postgres_db:
     image: postgres:15-alpine
-    container_name: postgres15    docker rm $(docker ps -aq)
+    container_name: postgres15
     restart: unless-stopped
     environment:
       - POSTGRES_DB=bot-for-consultations
