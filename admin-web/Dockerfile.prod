@@ -4,7 +4,8 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm config set fetch-retries 5 && \
+RUN npm config set registry https://registry.npmmirror.com && \ 
+    npm config set fetch-retries 5 && \
     npm config set fetch-retry-mintimeout 20000 && \
     npm config set fetch-retry-maxtimeout 120000 && \
     npm install --omit=dev && npm cache clean --force
@@ -16,11 +17,9 @@ ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 RUN chmod -R +x node_modules/.bin
+RUN npm install -g serve
 # Собираем production build
 RUN npm run build
-
-# Устанавливаем serve для production
-RUN npm install -g serve
 
 # Запускаем HTTP сервер для раздачи статики
 CMD ["serve", "-s", "build", "-l", "3000"]
