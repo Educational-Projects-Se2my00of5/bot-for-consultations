@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import UsersPage from './pages/UsersPage';
+import DeaneryPage from './pages/DeaneryPage';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -51,6 +52,14 @@ function App() {
           element={
             <ProtectedRoute>
               <UsersPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/deanery" 
+          element={
+            <ProtectedRoute>
+              <DeaneryPage />
             </ProtectedRoute>
           } 
         />

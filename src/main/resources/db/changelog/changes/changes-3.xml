@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Здесь будут изменения -->
+
+
+    <changeSet id="1762855908982-1" author="Se2my00of5">
+        <createTable tableName="todo_tasks">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_todo_tasks"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="deadline" type="DATETIME"/>
+            <column name="teacher_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_completed" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="completed_at" type="DATETIME"/>
+            <column name="reminder_sent" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="google_calendar_event_id" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="1762855908982-2" author="Se2my00of5">
+        <addColumn tableName="telegram_users">
+            <column name="reminder_time" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet id="1762855908982-3" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="created_by_id" baseTableName="todo_tasks"
+                                 constraintName="FK_TODO_TASKS_ON_CREATED_BY" referencedColumnNames="id"
+                                 referencedTableName="users"/>
+    </changeSet>
+    <changeSet id="1762855908982-4" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="teacher_id" baseTableName="todo_tasks"
+                                 constraintName="FK_TODO_TASKS_ON_TEACHER" referencedColumnNames="id"
+                                 referencedTableName="users"/>
+    </changeSet>
+    <changeSet id="1762874410848-3" author="Se2my00of5">
+        <dropForeignKeyConstraint baseTableName="todo_tasks" constraintName="fk_todo_tasks_on_created_by"/>
+    </changeSet>
+    <changeSet id="1762874410848-4" author="Se2my00of5">
+        <dropForeignKeyConstraint baseTableName="todo_tasks" constraintName="fk_todo_tasks_on_teacher"/>
+    </changeSet>
+    <changeSet id="1762874410848-1" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="created_by_id" baseTableName="todo_tasks"
+                                 constraintName="FK_TODO_TASKS_ON_CREATED_BY" referencedColumnNames="id"
+                                 referencedTableName="telegram_users"/>
+    </changeSet>
+    <changeSet id="1762874410848-2" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="teacher_id" baseTableName="todo_tasks"
+                                 constraintName="FK_TODO_TASKS_ON_TEACHER" referencedColumnNames="id"
+                                 referencedTableName="telegram_users"/>
+    </changeSet>
+</databaseChangeLog>

@@ -1,5 +1,6 @@
 package com.example.botforconsultations.api.bot.service;
 
+import com.example.botforconsultations.core.model.ReminderTime;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +52,21 @@ public class ProfileService {
         telegramUserRepository.save(user);
 
         return ProfileUpdateResult.success("Фамилия успешно обновлена");
+    }
+
+    /**
+     * Обновить время напоминаний
+     */
+    @Transactional
+    public ProfileUpdateResult updateReminderTime(TelegramUser user, ReminderTime reminderTime) {
+        if (reminderTime == null) {
+            return ProfileUpdateResult.failure("Некорректное время напоминания");
+        }
+
+        user.setReminderTime(reminderTime);
+        telegramUserRepository.save(user);
+
+        return ProfileUpdateResult.success("⏰ Время напоминаний обновлено: " + reminderTime.getDisplayName() + " до дедлайна");
     }
 
     /**

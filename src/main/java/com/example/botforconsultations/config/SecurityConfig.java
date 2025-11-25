@@ -75,6 +75,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // сваггер
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // OAuth Google Calendar
+                        .requestMatchers("/api/oauth/google/**").permitAll()
+                        .requestMatchers("/oauth-success.html", "/oauth-error.html").permitAll()
                         // поинты admin
                         .requestMatchers("/api/admin/login", "/api/admin/check-token").permitAll()
                         .requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())

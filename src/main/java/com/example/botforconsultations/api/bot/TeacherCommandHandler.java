@@ -4,6 +4,7 @@ import com.example.botforconsultations.api.bot.service.ConsultationRequestServic
 import com.example.botforconsultations.api.bot.service.NotificationService;
 import com.example.botforconsultations.api.bot.service.ProfileService;
 import com.example.botforconsultations.api.bot.service.TeacherConsultationService;
+import com.example.botforconsultations.api.bot.service.TodoTaskService;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager.TeacherState;
 import com.example.botforconsultations.api.bot.utils.TeacherKeyboardBuilder;
@@ -12,6 +13,7 @@ import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.ConsultationStatus;
 import com.example.botforconsultations.core.model.StudentConsultation;
 import com.example.botforconsultations.core.model.TelegramUser;
+import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.repository.ConsultationRepository;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -42,6 +45,7 @@ public class TeacherCommandHandler {
     private final ConsultationRequestService requestService;
     private final NotificationService notificationService;
     private final ProfileService profileService;
+    private final TodoTaskService todoTaskService;
     private final BotMessenger botMessenger;
 
     // Утилиты
@@ -73,7 +77,8 @@ public class TeacherCommandHandler {
         // Обработка состояний ввода
         if (currentState != TeacherState.DEFAULT
                 && currentState != TeacherState.VIEWING_CONSULTATION_DETAILS
-                && currentState != TeacherState.VIEWING_REQUEST_DETAILS) {
+                && currentState != TeacherState.VIEWING_REQUEST_DETAILS
+                && currentState != TeacherState.VIEWING_TASK_DETAILS) {
             switch (currentState) {
                 case WAITING_FOR_CONSULTATION_TITLE -> processConsultationTitle(text, chatId);
                 case WAITING_FOR_CONSULTATION_DATETIME -> processConsultationDateTime(text, chatId);
@@ -94,15 +99,22 @@ public class TeacherCommandHandler {
                     profileCommandHandler.processLastNameUpdate(text, chatId, getCurrentTeacher(chatId));
                     stateManager.resetState(chatId);
                 }
+                case EDITING_REMINDER_TIME -> {
+                    // Обработка выбора времени напоминаний через profileCommandHandler
+                    if (profileCommandHandler.handleProfileCommand(text, chatId)) {
+                        stateManager.resetState(chatId);
+                    }
+                }
                 default -> {
                 } // Никогда не должно произойти из-за условия if
             }
             return;
         }
 
-        // Обработка выбора консультации/запроса по номеру в режиме просмотра
+        // Обработка выбора консультации/запроса/задачи по номеру в режиме просмотра
         if ((currentState == TeacherState.VIEWING_REQUEST_DETAILS ||
-                currentState == TeacherState.VIEWING_CONSULTATION_DETAILS) &&
+                currentState == TeacherState.VIEWING_CONSULTATION_DETAILS ||
+                currentState == TeacherState.VIEWING_TASK_DETAILS) &&
                 text.startsWith("№")
         ) {
             handleNumberSelection(text, chatId);
@@ -118,6 +130,7 @@ public class TeacherCommandHandler {
             case "Помощь" -> sendHelp(chatId);
             case "📅 Мои консультации" -> showMyConsultations(chatId);
             case "➕ Создать консультацию" -> startConsultationCreation(chatId);
+            case "📋 Мои задачи" -> showMyTasks(chatId);
             case "📋 Просмотреть запросы" -> showStudentRequests(chatId);
 
             // Управление консультацией
@@ -135,6 +148,15 @@ public class TeacherCommandHandler {
 
             // Работа с запросами
             case "✅ Принять запрос" -> startAcceptRequest(chatId);
+
+            // Управление задачами
+            case "✅ Отметить выполненной" -> markTaskAsCompleted(chatId);
+            case "⏳ Отметить невыполненной" -> markTaskAsPending(chatId);
+
+            // Фильтры задач
+            case "❌ Невыполненные" -> filterTasksByStatus(chatId, "incomplete");
+            case "✅ Выполненные" -> filterTasksByStatus(chatId, "completed");
+            case "📋 Все" -> filterTasksByStatus(chatId, "all");
 
             // Навигация
             case "◀️ Назад к списку" -> backToList(chatId);
@@ -201,6 +223,7 @@ public class TeacherCommandHandler {
         stateManager.resetState(chatId);
         stateManager.clearCurrentConsultation(chatId);
         stateManager.clearCurrentRequest(chatId);
+        stateManager.clearCurrentTask(chatId);
         botMessenger.execute(SendMessage.builder()
                 .text("Добро пожаловать, преподаватель! Выберите действие:")
                 .chatId(chatId)
@@ -425,6 +448,9 @@ public class TeacherCommandHandler {
                         },
                         () -> botMessenger.sendText("Консультация №" + id + " не найдена", chatId)
                 );
+            } else if (currentState == TeacherState.VIEWING_TASK_DETAILS) {
+                // Просмотр задачи
+                showTaskDetails(chatId, id);
             } else {
                 botMessenger.sendText("Ошибка: неверное состояние для просмотра", chatId);
             }
@@ -1093,6 +1119,8 @@ public class TeacherCommandHandler {
 
         if (currentState == TeacherState.VIEWING_REQUEST_DETAILS) {
             showStudentRequests(chatId);
+        } else if (currentState == TeacherState.VIEWING_TASK_DETAILS) {
+            showMyTasks(chatId);
         } else {
             showMyConsultations(chatId);
         }
@@ -1180,6 +1208,15 @@ public class TeacherCommandHandler {
             } else {
                 sendMainMenu(chatId);
             }
+
+        } else if (currentState == TeacherState.EDITING_REMINDER_TIME) {
+            // 4) Редактирование времени напоминаний - возврат к профилю
+            stateManager.resetState(chatId);
+            
+            botMessenger.sendText("❌ Изменение времени напоминаний отменено", chatId);
+            
+            // Показываем профиль через profileCommandHandler
+            profileCommandHandler.handleProfileCommand("👤 Профиль", chatId);
 
         } else {
             // Неожиданное состояние - возврат в главное меню
@@ -1323,6 +1360,140 @@ public class TeacherCommandHandler {
         }
 
         return true;
+    }
+
+    // ========== Управление задачами ==========
+
+    /**
+     * Показать список задач преподавателя
+     */
+    private void showMyTasks(Long chatId) {
+        log.info("Показываем задачи преподавателя, chatId: {}", chatId);
+
+        TelegramUser teacher = getCurrentTeacher(chatId);
+
+        // Получить фильтры
+        String statusFilter = stateManager.getTaskStatusFilter(chatId);
+        String deadlineFilter = stateManager.getTaskDeadlineFilter(chatId);
+
+        // Получить все задачи
+        List<TodoTask> allTasks = todoTaskService.getTasksByTeacherId(teacher.getId());
+
+        // Применить фильтры
+        List<TodoTask> filteredTasks = applyTaskFilters(allTasks, statusFilter, deadlineFilter);
+
+        // Очищаем текущую задачу при просмотре списка
+        stateManager.clearCurrentTask(chatId);
+        stateManager.setState(chatId, TeacherState.VIEWING_TASK_DETAILS);
+
+        String messageText = messageFormatter.formatMyTasksList(filteredTasks, statusFilter, deadlineFilter);
+
+        botMessenger.execute(
+                SendMessage.builder()
+                        .chatId(chatId)
+                        .text(messageText)
+                        .replyMarkup(keyboardBuilder.buildTasksList(filteredTasks))
+                        .build()
+        );
+    }
+
+    /**
+     * Применить фильтры к списку задач
+     */
+    private List<TodoTask> applyTaskFilters(List<TodoTask> tasks, String statusFilter, String deadlineFilter) {
+        LocalDateTime now = LocalDateTime.now();
+
+        return tasks.stream()
+                .filter(task -> {
+                    // Фильтр по статусу
+                    boolean statusMatch = switch (statusFilter) {
+                        case "completed" -> task.getIsCompleted();
+                        case "incomplete" -> !task.getIsCompleted();
+                        default -> true; // "all"
+                    };
+
+                    // Фильтр по дедлайну
+                    boolean deadlineMatch = switch (deadlineFilter) {
+                        case "past" -> task.getDeadline().isBefore(now) && !task.getIsCompleted();
+                        case "future" -> task.getDeadline().isAfter(now);
+                        default -> true; // "all"
+                    };
+
+                    return statusMatch && deadlineMatch;
+                })
+                .toList();
+    }
+
+    /**
+     * Фильтровать задачи по статусу
+     */
+    private void filterTasksByStatus(Long chatId, String filter) {
+        stateManager.setTaskStatusFilter(chatId, filter);
+        showMyTasks(chatId);
+    }
+
+    /**
+     * Показать детали задачи
+     */
+    private void showTaskDetails(Long chatId, Long taskId) {
+        log.info("Показываем детали задачи {}, chatId: {}", taskId, chatId);
+
+        TodoTask task = todoTaskService.getTaskById(taskId)
+                .orElse(null);
+
+        if (task == null) {
+            botMessenger.sendText("❌ Задача не найдена", chatId);
+            backToList(chatId);
+            return;
+        }
+
+        stateManager.setState(chatId, TeacherState.VIEWING_TASK_DETAILS);
+        stateManager.setCurrentTask(chatId, taskId);
+
+        String message = TeacherMessageFormatter.formatTaskDetails(task);
+
+        botMessenger.execute(
+                SendMessage.builder()
+                        .chatId(chatId)
+                        .text(message)
+                        .parseMode("Markdown")
+                        .replyMarkup(keyboardBuilder.buildTaskDetails(task))
+                        .build()
+        );
+    }
+
+    /**
+     * Отметить задачу как выполненную
+     */
+    private void markTaskAsCompleted(Long chatId) {
+        Long taskId = stateManager.getCurrentTask(chatId);
+        if (taskId == null) {
+            botMessenger.sendText("❌ Задача не найдена", chatId);
+            return;
+        }
+
+        todoTaskService.markAsCompleted(taskId);
+        botMessenger.sendText("✅ Задача отмечена как выполненная", chatId);
+
+        // Обновить отображение задачи
+        showTaskDetails(chatId, taskId);
+    }
+
+    /**
+     * Отметить задачу как невыполненную
+     */
+    private void markTaskAsPending(Long chatId) {
+        Long taskId = stateManager.getCurrentTask(chatId);
+        if (taskId == null) {
+            botMessenger.sendText("❌ Задача не найдена", chatId);
+            return;
+        }
+
+        todoTaskService.markAsIncomplete(taskId);
+        botMessenger.sendText("⏳ Задача отмечена как невыполненная", chatId);
+
+        // Обновить отображение задачи
+        showTaskDetails(chatId, taskId);
     }
 
     // ========== Record для парсинга ==========

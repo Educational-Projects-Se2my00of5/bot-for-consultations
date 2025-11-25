@@ -84,4 +84,42 @@ public class AdminService {
             throw new BadRequestException("Пользователь не преподаватель");
         }
     }
+
+    // Методы для работы с деканатом
+    public List<TelegramUser> getUnactiveDeaneryAccounts() {
+        return telegramUserRepository.findByRoleAndHasConfirmed(Role.DEANERY, false);
+    }
+
+    public void activateDeaneryAccount(Long id) {
+        User user = getModelOrThrow.getUserById(id);
+
+        if (user.getRole() == Role.DEANERY && user instanceof TelegramUser telegramUser) {
+            telegramUser.setHasConfirmed(true);
+            userRepository.save(telegramUser);
+            notificationService.notifyDeaneryAccountApproved(telegramUser.getTelegramId());
+        } else {
+            throw new BadRequestException("Пользователь не деканат");
+        }
+    }
+
+    public void deactivateDeaneryAccount(Long id) {
+        User user = getModelOrThrow.getUserById(id);
+
+        if (user.getRole() == Role.DEANERY && user instanceof TelegramUser telegramUser) {
+            telegramUser.setHasConfirmed(false);
+            userRepository.save(telegramUser);
+        } else {
+            throw new BadRequestException("Пользователь не деканат");
+        }
+    }
+
+    public TelegramUser getDeaneryUserInfo(Long id) {
+        User user = getModelOrThrow.getUserById(id);
+
+        if (user.getRole() == Role.DEANERY && user instanceof TelegramUser telegramUser) {
+            return telegramUser;
+        } else {
+            throw new BadRequestException("Пользователь не деканат");
+        }
+    }
 }

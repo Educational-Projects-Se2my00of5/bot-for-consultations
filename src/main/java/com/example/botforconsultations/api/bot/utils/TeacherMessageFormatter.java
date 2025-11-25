@@ -3,8 +3,10 @@ package com.example.botforconsultations.api.bot.utils;
 import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.ConsultationStatus;
 import com.example.botforconsultations.core.model.StudentConsultation;
+import com.example.botforconsultations.core.model.TodoTask;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -335,4 +337,187 @@ public class TeacherMessageFormatter {
             return "студентов";
         }
     }
+
+    // ========== Форматирование задач ==========
+
+    /**
+     * Форматировать список задач преподавателя
+     */
+    public String formatMyTasksList(List<TodoTask> tasks, String statusFilter, String deadlineFilter) {
+        StringBuilder message = new StringBuilder();
+        message.append("📋 Мои задачи\n\n");
+
+        if (tasks.isEmpty()) {
+            message.append("❌ У вас пока нет задач");
+            return message.toString();
+        }
+
+        // Фильтры
+        String filterText = getTaskFilterText(statusFilter, deadlineFilter);
+        if (!filterText.isEmpty()) {
+            message.append(filterText).append("\n\n");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        for (TodoTask task : tasks) {
+            message.append(formatTaskShort(task, now));
+        }
+
+        message.append(String.format("\nВсего задач: %d", tasks.size()));
+        message.append("\n\n💡 Введите №... для просмотра деталей задачи");
+
+        return message.toString();
+    }
+
+    /**
+     * Форматировать краткую информацию о задаче для списка
+     */
+    private String formatTaskShort(TodoTask task, LocalDateTime now) {
+        StringBuilder message = new StringBuilder();
+
+        // Номер и статус
+        String statusEmoji = task.getIsCompleted() ? "✅" : "⏳";
+        message.append(String.format("%s №%d - ", statusEmoji, task.getId()));
+
+        // Заголовок (обрезаем если длинный)
+        String title = task.getTitle();
+        if (title.length() > 40) {
+            title = title.substring(0, 40) + "...";
+        }
+        message.append(title).append("\n");
+
+        // Дедлайн
+        LocalDateTime deadline = task.getDeadline();
+        message.append(String.format("   ⏰ %s",
+                deadline.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))));
+
+        // Индикатор просрочки
+        if (!task.getIsCompleted() && deadline.isBefore(now)) {
+            message.append(" ⚠️ ПРОСРОЧЕНО");
+        } else if (!task.getIsCompleted() && deadline.isBefore(now.plusDays(1))) {
+            message.append(" 🔥 Срочно");
+        }
+
+        message.append("\n\n");
+
+        return message.toString();
+    }
+
+    /**
+     * Детальная информация о задаче для преподавателя
+     */
+    public static String formatTaskDetails(TodoTask task) {
+        StringBuilder message = new StringBuilder();
+        LocalDateTime now = LocalDateTime.now();
+
+        message.append(String.format("📋 Задача №%d\n\n", task.getId()));
+
+        // Название
+        message.append(String.format("📝 *%s*\n\n", task.getTitle()));
+
+        // Описание
+        if (task.getDescription() != null && !task.getDescription().isEmpty()) {
+            message.append(String.format("📄 Описание:\n%s\n\n", task.getDescription()));
+        }
+
+        // Дедлайн
+        if (task.getDeadline() != null) {
+            message.append(String.format("⏰ Дедлайн: %s\n",
+                    task.getDeadline().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))));
+
+            // Статус просрочки/времени
+            if (!task.getIsCompleted() && task.getDeadline().isBefore(now)) {
+                long daysOverdue = java.time.Duration.between(task.getDeadline(), now).toDays();
+                message.append(String.format("⚠️ Просрочено на %d %s\n",
+                        daysOverdue, getDaysWord(daysOverdue)));
+            } else if (!task.getIsCompleted()) {
+                long daysLeft = java.time.Duration.between(now, task.getDeadline()).toDays();
+                if (daysLeft == 0) {
+                    message.append("⏳ Дедлайн сегодня!\n");
+                } else {
+                    message.append(String.format("⏳ Осталось %d %s\n",
+                            daysLeft, getDaysWord(daysLeft)));
+                }
+            }
+            message.append("\n");
+        }
+
+        // Статус
+        String statusIcon = task.getIsCompleted() ? "✅" : "⏳";
+        String statusText = task.getIsCompleted() ? "Выполнена" : "В работе";
+        message.append(String.format("Статус: %s %s\n", statusIcon, statusText));
+
+        // Дата выполнения
+        if (task.getIsCompleted() && task.getCompletedAt() != null) {
+            message.append(String.format("Выполнена: %s\n",
+                    task.getCompletedAt().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))));
+        }
+
+        // Кто создал
+        if (task.getCreatedBy() != null) {
+            message.append(String.format("\n👤 Создано: %s\n",
+                    TeacherNameFormatter.formatFullName(task.getCreatedBy())));
+        }
+
+        message.append("\n💡 Выберите действие:");
+        return message.toString();
+    }
+
+    /**
+     * Получить текст фильтров для задач
+     */
+    private String getTaskFilterText(String statusFilter, String deadlineFilter) {
+        StringBuilder text = new StringBuilder("🔍 Фильтры: ");
+        boolean hasFilters = false;
+
+        if (statusFilter != null && !statusFilter.equals("all")) {
+            text.append(getStatusFilterText(statusFilter));
+            hasFilters = true;
+        }
+
+        if (deadlineFilter != null && !deadlineFilter.equals("all")) {
+            if (hasFilters) text.append(", ");
+            text.append(getDeadlineFilterText(deadlineFilter));
+            hasFilters = true;
+        }
+
+        return hasFilters ? text.toString() : "";
+    }
+
+    /**
+     * Получить текст фильтра статуса
+     */
+    private String getStatusFilterText(String filter) {
+        return switch (filter) {
+            case "completed" -> "Выполненные";
+            case "incomplete" -> "Невыполненные";
+            default -> "Все";
+        };
+    }
+
+    /**
+     * Получить текст фильтра дедлайна
+     */
+    private String getDeadlineFilterText(String filter) {
+        return switch (filter) {
+            case "past" -> "Просроченные";
+            case "future" -> "Будущие";
+            default -> "Все";
+        };
+    }
+
+    /**
+     * Склонение слова "день"
+     */
+    private static String getDaysWord(long days) {
+        if (days % 10 == 1 && days % 100 != 11) {
+            return "день";
+        } else if (days % 10 >= 2 && days % 10 <= 4 && (days % 100 < 10 || days % 100 >= 20)) {
+            return "дня";
+        } else {
+            return "дней";
+        }
+    }
 }
+

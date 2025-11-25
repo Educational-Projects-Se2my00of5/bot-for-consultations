@@ -21,6 +21,7 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
     private final TelegramUserRepository telegramUserRepository;
     private final StudentCommandHandler studentCommands;
     private final TeacherCommandHandler teacherCommands;
+    private final DeaneryCommandHandler deaneryCommands;
     private final AuthCommandHandler authCommandHandler;
 
 
@@ -101,6 +102,9 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
         } else if (text.equals("Я преподаватель")) {
             authCommandHandler.handleRoleSelection(chatId, Role.TEACHER);
             return;
+        } else if (text.equals("Я сотрудник деканата")) {
+            authCommandHandler.handleRoleSelection(chatId, Role.DEANERY);
+            return;
         }
 
 
@@ -124,6 +128,14 @@ public class UpdateConsumer implements LongPollingSingleThreadUpdateConsumer {
             } else {
                 // Подтвержденные преподаватели используют полный функционал
                 teacherCommands.handleTeacherCommand(text, chatId);
+            }
+        } else if (user.getRole() == Role.DEANERY) {
+            if (!user.isHasConfirmed()) {
+                // Неподтвержденные сотрудники деканата используют специальный обработчик
+                deaneryCommands.handleUnconfirmedDeaneryCommand(text, chatId);
+            } else {
+                // Подтвержденные сотрудники деканата используют полный функционал
+                deaneryCommands.handleDeaneryCommand(text, chatId);
             }
         }
     }

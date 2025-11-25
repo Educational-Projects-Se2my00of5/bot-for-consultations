@@ -5,49 +5,32 @@ import com.example.botforconsultations.core.model.ConsultationStatus;
 import com.example.botforconsultations.core.model.TelegramUser;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.*;
+
 /**
- * Утилита для построения клавиатур студента
+ * Утилита для построения клавиатур студента.
+ * Наследуется от BaseKeyboardBuilder с общими методами.
  */
 @Component
-public class StudentKeyboardBuilder {
-
-    private static final DateTimeFormatter BUTTON_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM");
-    private static final DateTimeFormatter BUTTON_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+public class StudentKeyboardBuilder extends BaseKeyboardBuilder {
 
     /**
      * Главное меню студента
      */
     public ReplyKeyboardMarkup buildMainMenu() {
         List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow row1 = new KeyboardRow();
-        KeyboardRow row2 = new KeyboardRow();
-        KeyboardRow row3 = new KeyboardRow();
-        KeyboardRow row4 = new KeyboardRow();
+        
+        keyboard.add(createSingleButtonRow(TEACHERS_MENU));
+        keyboard.add(createTwoButtonRow(SUBSCRIPTIONS, MY_REGISTRATIONS));
+        keyboard.add(createTwoButtonRow(REQUEST_CONSULTATION, VIEW_REQUESTS));
+        keyboard.add(createTwoButtonRow(PROFILE, HELP));
 
-        row1.add(new KeyboardButton("🔍 Преподаватели"));
-        row2.add(new KeyboardButton("🔔 Подписки на обновления"));
-        row2.add(new KeyboardButton("📝 Мои записи"));
-        row3.add(new KeyboardButton("❓ Запросить консультацию"));
-        row3.add(new KeyboardButton("📋 Просмотреть запросы"));
-        row4.add(new KeyboardButton("👤 Профиль"));
-        row4.add(new KeyboardButton("Помощь"));
-
-        keyboard.add(row1);
-        keyboard.add(row2);
-        keyboard.add(row3);
-        keyboard.add(row4);
-
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
@@ -56,19 +39,10 @@ public class StudentKeyboardBuilder {
     public ReplyKeyboardMarkup buildTeachersMenu() {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(new KeyboardButton("👥 Все преподаватели"));
-        row1.add(new KeyboardButton("🔍 Поиск преподавателя"));
-        keyboard.add(row1);
+        keyboard.add(createTwoButtonRow(ALL_TEACHERS, SEARCH_TEACHER));
+        keyboard.add(createSingleButtonRow(BACK));
 
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад"));
-        keyboard.add(backRow);
-
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
@@ -78,30 +52,12 @@ public class StudentKeyboardBuilder {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         // Добавляем первых 5 преподавателей как кнопки
-        int count = 0;
-        for (TelegramUser teacher : teachers) {
-            if (count >= 5) break;
+        addTeacherButtons(keyboard, teachers, MAX_LIST_ITEMS);
+        
+        keyboard.add(createSingleButtonRow(SEARCH_TEACHER));
+        keyboard.add(createSingleButtonRow(BACK_TO_TEACHERS));
 
-            KeyboardRow row = new KeyboardRow();
-            row.add(new KeyboardButton(TeacherNameFormatter.formatFullName(teacher)));
-            keyboard.add(row);
-            count++;
-        }
-
-        // Кнопка поиска
-        KeyboardRow searchRow = new KeyboardRow();
-        searchRow.add(new KeyboardButton("🔍 Поиск преподавателя"));
-        keyboard.add(searchRow);
-
-        // Кнопка "Назад"
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("🔙 К преподавателям"));
-        keyboard.add(backRow);
-
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
@@ -113,83 +69,33 @@ public class StudentKeyboardBuilder {
 
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Добавляем консультации как кнопки (максимум 5 последних)
-        int count = 0;
-        for (Consultation consultation : consultations) {
-            if (count >= 5) break;
-            KeyboardRow row = new KeyboardRow();
-            row.add(new KeyboardButton(String.format("№%d - %s %s",
-                    consultation.getId(),
-                    consultation.getDate().format(BUTTON_DATE_FORMATTER),
-                    consultation.getStartTime().format(BUTTON_TIME_FORMATTER))));
-            keyboard.add(row);
-            count++;
-        }
-
+        // Добавляем консультации (максимум 5)
+        addConsultationButtons(keyboard, consultations, MAX_LIST_ITEMS);
+        
         // Фильтры
-        KeyboardRow filterRow = new KeyboardRow();
-        filterRow.add(new KeyboardButton("⏭️ Будущие"));
-        filterRow.add(new KeyboardButton("📅 Все"));
-        filterRow.add(new KeyboardButton("⏮️ Прошедшие"));
-        keyboard.add(filterRow);
+        keyboard.add(createFilterRow());
 
         // Подписка/отписка
-        KeyboardRow actionRow = new KeyboardRow();
-        if (isSubscribed) {
-            actionRow.add(new KeyboardButton("🔕 Отписаться"));
-        } else {
-            actionRow.add(new KeyboardButton("🔔 Подписаться"));
-        }
-        keyboard.add(actionRow);
+        keyboard.add(createSubscriptionRow(isSubscribed));
 
         // Навигация
-        KeyboardRow navRow = new KeyboardRow();
-        navRow.add(new KeyboardButton("🔙 К преподавателям"));
-        navRow.add(new KeyboardButton("◀️ Назад"));
-        keyboard.add(navRow);
+        keyboard.add(createTwoButtonRow(BACK_TO_TEACHERS, BACK));
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
      * Клавиатура для детального просмотра консультации
-     *
-     * @param consultation консультация для проверки статуса
-     * @param isRegistered записан ли студент
      */
     public ReplyKeyboardMarkup buildConsultationDetails(Consultation consultation, boolean isRegistered) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Показываем кнопку записи/отмены только если консультация Open
-        if (consultation.getStatus().equals(ConsultationStatus.OPEN)) {
-            KeyboardRow actionRow = new KeyboardRow();
-            if (isRegistered) {
-                actionRow.add(new KeyboardButton("❌ Отменить запись"));
-            } else {
-                actionRow.add(new KeyboardButton("✅ Записаться"));
-            }
-            keyboard.add(actionRow);
-        }
-        // Показываем кнопку записи/отмены только если консультация не Closed
-        if (consultation.getStatus().equals(ConsultationStatus.CLOSED)) {
-            KeyboardRow actionRow = new KeyboardRow();
-            if (isRegistered) {
-                actionRow.add(new KeyboardButton("❌ Отменить запись"));
-                keyboard.add(actionRow);
-            }
-        }
+        // Кнопка записи/отмены зависит от статуса консультации
+        addRegistrationButtons(keyboard, consultation, isRegistered);
+        
+        keyboard.add(createSingleButtonRow(BACK_TO_LIST));
 
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад к списку"));
-        keyboard.add(backRow);
-
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
@@ -198,70 +104,94 @@ public class StudentKeyboardBuilder {
     public ReplyKeyboardMarkup buildRequestsList(List<Consultation> requests) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        // Добавляем запросы как кнопки (максимум 10)
-        int count = 0;
-        for (Consultation request : requests) {
-            if (count >= 10) break;
-            KeyboardRow row = new KeyboardRow();
-            row.add(new KeyboardButton(String.format("№%d - %s",
-                    request.getId(),
-                    request.getTitle().length() > 30
-                            ? request.getTitle().substring(0, 30) + "..."
-                            : request.getTitle())));
-            keyboard.add(row);
-            count++;
-        }
+        // Добавляем запросы (максимум 10)
+        addConsultationButtons(keyboard, requests, MAX_REQUESTS_ITEMS);
+        
+        keyboard.add(createSingleButtonRow(BACK));
 
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад"));
-        keyboard.add(backRow);
-
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
      * Клавиатура для детального просмотра запроса
-     *
-     * @param isRegistered записан ли студент на этот запрос
      */
     public ReplyKeyboardMarkup buildRequestDetails(boolean isRegistered) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        KeyboardRow actionRow = new KeyboardRow();
-        if (isRegistered) {
-            actionRow.add(new KeyboardButton("❌ Отписаться от запроса"));
-        } else {
-            actionRow.add(new KeyboardButton("✅ Записаться на запрос"));
-        }
-        keyboard.add(actionRow);
+        keyboard.add(createRequestActionRow(isRegistered));
+        keyboard.add(createSingleButtonRow(BACK_TO_LIST));
 
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад к списку"));
-        keyboard.add(backRow);
-
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(keyboard);
     }
 
     /**
      * Простая клавиатура с кнопкой "Назад"
-     * Используется для отмены операций (например, создание запроса)
      */
     public ReplyKeyboardMarkup buildBackKeyboard() {
         List<KeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(createSingleButtonRow(BACK));
+        return buildKeyboard(keyboard);
+    }
 
-        KeyboardRow backRow = new KeyboardRow();
-        backRow.add(new KeyboardButton("◀️ Назад"));
-        keyboard.add(backRow);
+    // ========== Приватные вспомогательные методы ==========
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(keyboard)
-                .resizeKeyboard(true)
-                .build();
+    /**
+     * Добавить кнопки преподавателей
+     */
+    private void addTeacherButtons(List<KeyboardRow> keyboard, List<TelegramUser> teachers, int maxCount) {
+        int count = 0;
+        for (TelegramUser teacher : teachers) {
+            if (count >= maxCount) break;
+            keyboard.add(createSingleButtonRow(TeacherNameFormatter.formatFullName(teacher)));
+            count++;
+        }
+    }
+
+    /**
+     * Добавить кнопки консультаций
+     */
+    private void addConsultationButtons(List<KeyboardRow> keyboard, List<Consultation> consultations, int maxCount) {
+        int count = 0;
+        for (Consultation consultation : consultations) {
+            if (count >= maxCount) break;
+            String buttonText = String.format("%s%d - %s %s",
+                    NUMBER_PREFIX,
+                    consultation.getId(),
+                    consultation.getDate().format(BUTTON_DATE_FORMATTER),
+                    consultation.getStartTime().format(BUTTON_TIME_FORMATTER));
+            keyboard.add(createSingleButtonRow(buttonText));
+            count++;
+        }
+    }
+
+    /**
+     * Создать строку с кнопкой подписки/отписки
+     */
+    private KeyboardRow createSubscriptionRow(boolean isSubscribed) {
+        return createSingleButtonRow(isSubscribed ? UNSUBSCRIBE : SUBSCRIBE);
+    }
+
+    /**
+     * Создать строку с кнопкой действия для запроса
+     */
+    private KeyboardRow createRequestActionRow(boolean isRegistered) {
+        return createSingleButtonRow(isRegistered ? UNREGISTER_FROM_REQUEST : REGISTER_FOR_REQUEST);
+    }
+
+    /**
+     * Добавить кнопки записи/отмены в зависимости от статуса консультации
+     */
+    private void addRegistrationButtons(List<KeyboardRow> keyboard, Consultation consultation, boolean isRegistered) {
+        ConsultationStatus status = consultation.getStatus();
+        
+        // Для открытых консультаций - полный функционал
+        if (status == ConsultationStatus.OPEN) {
+            String buttonText = isRegistered ? CANCEL_REGISTRATION : REGISTER;
+            keyboard.add(createSingleButtonRow(buttonText));
+        }
+        // Для закрытых консультаций - только отмена записи, если записан
+        else if (status == ConsultationStatus.CLOSED && isRegistered) {
+            keyboard.add(createSingleButtonRow(CANCEL_REGISTRATION));
+        }
     }
 }

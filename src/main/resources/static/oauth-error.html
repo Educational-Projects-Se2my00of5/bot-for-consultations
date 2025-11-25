@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка подключения</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        
+        .error-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #ef4444;
+            margin-bottom: 20px;
+        }
+        
+        p {
+            color: #6b7280;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .error-message {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fee2e2;
+            border-radius: 10px;
+            color: #991b1b;
+            font-size: 14px;
+            word-break: break-word;
+        }
+        
+        .retry-info {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 10px;
+            color: #4b5563;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="error-icon">❌</div>
+        <h1>Ошибка подключения</h1>
+        <p>
+            К сожалению, не удалось подключить Google Calendar.
+        </p>
+        <p>
+            Пожалуйста, попробуйте снова или обратитесь к администратору, если проблема повторяется.
+        </p>
+        <div class="error-message" id="errorMessage">
+            <script>
+                // Получаем сообщение об ошибке из URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const message = urlParams.get('message');
+                document.getElementById('errorMessage').textContent = 
+                    message ? decodeURIComponent(message) : 'Неизвестная ошибка';
+            </script>
+        </div>
+        <div class="retry-info">
+            🔄 Вернитесь в Telegram и попробуйте подключить календарь снова через профиль
+        </div>
+    </div>
+</body>
+</html>

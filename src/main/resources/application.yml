@@ -19,5 +19,11 @@ jwt:
 bot:
   name: consultations1_bot
   token: ${BOT_TOKEN}
-server:
-  port: 8080
+
+google:
+  calendar:
+    client-id: ${GOOGLE_CLIENT_ID}
+    client-secret: ${GOOGLE_CLIENT_SECRET}
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/api/oauth/google/callback}
+    application-name: Bot for Consultations
+    

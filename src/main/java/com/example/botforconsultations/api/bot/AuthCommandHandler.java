@@ -1,6 +1,7 @@
 package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.api.bot.utils.TeacherKeyboardBuilder;
+import com.example.botforconsultations.core.model.ReminderTime;
 import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
@@ -25,6 +26,7 @@ public class AuthCommandHandler {
     private final TelegramUserRepository telegramUserRepository;
     private final StudentCommandHandler studentCommands;
     private final TeacherCommandHandler teacherCommands;
+    private final DeaneryCommandHandler deaneryCommands;
     private final TeacherKeyboardBuilder teacherKeyboardBuilder;
 
     public void handleStart(Long chatId) {
@@ -86,7 +88,12 @@ public class AuthCommandHandler {
             user.setRole(role);
             switch (role) {
                 case STUDENT -> user.setHasConfirmed(true);
-                case TEACHER -> user.setHasConfirmed(false); // Преподаватели должны быть подтверждены администратором
+                case TEACHER -> {
+                    user.setHasConfirmed(false); // Преподаватели должны быть подтверждены администратором
+                    user.setReminderTime(ReminderTime.MIN_30); // Время напоминаний по умолчанию: 30 минут
+                }
+                case DEANERY -> user.setHasConfirmed(false); // Деканат должен быть подтвержден администратором
+                case ADMIN -> user.setHasConfirmed(false); // Администраторы должны быть подтверждены
             }
             telegramUserRepository.save(user);
 
@@ -103,6 +110,9 @@ public class AuthCommandHandler {
                                     "Вы можете отредактировать свой профиль в ожидании подтверждения.")
                             .replyMarkup(teacherKeyboardBuilder.buildWaitingForApprovalMenu())
                             .build());
+                }
+                case DEANERY -> {
+                    deaneryCommands.sendWaitingApprovalMenu(chatId);
                 }
                 case ADMIN -> {
                     botMessenger.sendText("Регистрация администраторов через бот недоступна.", chatId);
@@ -124,17 +134,29 @@ public class AuthCommandHandler {
             } else {
                 teacherCommands.sendWaitingApprovalMenu(chatId);
             }
+        } else if (telegramUser.getRole().equals(Role.DEANERY)) {
+            if (telegramUser.isHasConfirmed()) {
+                deaneryCommands.sendMainMenu(chatId);
+            } else {
+                botMessenger.sendText(
+                        "⏳ Ваш аккаунт ожидает подтверждения администратором.\n\n" +
+                                "После подтверждения вы сможете управлять консультациями и задачами.",
+                        chatId
+                );
+            }
         }
-
     }
 
     private void sendRoleSelectionMenu(Long chatId) {
-        KeyboardRow row = new KeyboardRow();
-        row.add(new KeyboardButton("Я студент"));
-        row.add(new KeyboardButton("Я преподаватель"));
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(new KeyboardButton("Я студент"));
+        row1.add(new KeyboardButton("Я преподаватель"));
+        
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(new KeyboardButton("Я сотрудник деканата"));
 
         ReplyKeyboardMarkup keyboardMarkup = ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row))
+                .keyboard(List.of(row1, row2))
                 .resizeKeyboard(true)
                 .oneTimeKeyboard(true)
                 .build();

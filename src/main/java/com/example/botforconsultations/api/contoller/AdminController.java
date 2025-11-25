@@ -70,4 +70,34 @@ public class AdminController {
     ) {
         return userMapper.toTelegramUserInfo(adminService.getUserInfo(id));
     }
+
+    // Эндпоинты для работы с деканатом
+    @GetMapping("unactive-deanery-accounts")
+    @Operation(summary = "Получение списка неактивных аккаунтов деканата", security = @SecurityRequirement(name = "bearerAuth"))
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserDto.TelegramUserInfo> getUnactiveDeaneryAccounts() {
+        return userMapper.toTelegramUserInfo(adminService.getUnactiveDeaneryAccounts());
+    }
+
+    @GetMapping("activate-deanery-account/{id}")
+    @Operation(summary = "Активация аккаунта деканата", security = @SecurityRequirement(name = "bearerAuth"))
+    @ResponseStatus(HttpStatus.OK)
+    public void activateDeaneryAccount(@PathVariable Long id) {
+        adminService.activateDeaneryAccount(id);
+    }
+
+    @GetMapping("deactivate-deanery-account/{id}")
+    @Operation(summary = "Деактивация аккаунта деканата", security = @SecurityRequirement(name = "bearerAuth"))
+    @ResponseStatus(HttpStatus.OK)
+    public void deactivateDeaneryAccount(@PathVariable Long id) {
+        adminService.deactivateDeaneryAccount(id);
+    }
+
+    @GetMapping("deanery-user-info/{id}")
+    @Operation(summary = "Получение информации о пользователе деканата", security = @SecurityRequirement(name = "bearerAuth"))
+    @ResponseStatus(HttpStatus.OK)
+    public UserDto.TelegramUserInfo getDeaneryUserInfo(@PathVariable Long id) {
+        return userMapper.toTelegramUserInfo(adminService.getDeaneryUserInfo(id));
+    }
 }
+

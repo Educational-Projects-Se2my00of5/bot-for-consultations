@@ -258,4 +258,30 @@ public class NotificationService {
                     chatId, e.getMessage());
         }
     }
+
+    /**
+     * Уведомление деканата об одобрении аккаунта
+     */
+    public void notifyDeaneryAccountApproved(Long chatId) {
+        String message = """
+                ✅ Ваш аккаунт работника деканата подтверждён!
+                
+                Теперь вы можете:
+                📝 Создавать задачи для преподавателей
+                📋 Просматривать все задачи
+                ✏️ Редактировать задачи
+                ❌ Удалять задачи
+                
+                Используйте команду /start для начала работы.
+                """;
+
+        try {
+            botMessenger.sendText(message, chatId);
+            log.info("Sent account approval notification to deanery with chatId #{}", chatId);
+        } catch (Exception e) {
+            log.error("Failed to send account approval notification to deanery #{}: {}",
+                    chatId, e.getMessage());
+        }
+    }
 }
+
