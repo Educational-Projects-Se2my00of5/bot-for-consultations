@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY . .
 
+RUN chmod -R +x node_modules/.bin
+
 RUN npm install --omit=dev && npm cache clean --force
 
 # Получаем переменную из docker-compose
