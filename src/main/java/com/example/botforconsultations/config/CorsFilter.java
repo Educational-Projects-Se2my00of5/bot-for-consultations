@@ -1,6 +1,11 @@
 package com.example.botforconsultations.config;
 
-import jakarta.servlet.*;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.Ordered;
@@ -25,21 +30,21 @@ public class CorsFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) req;
 
         String origin = request.getHeader("Origin");
-        
+
         // Разрешённые origins
         if (origin != null && (
                 origin.equals("https://admin.consult.kupriyanov.space") ||
-                origin.equals("http://admin.consult.kupriyanov.space") ||
-                origin.startsWith("http://localhost:") ||
-                origin.startsWith("http://127.0.0.1:")
+                        origin.equals("http://admin.consult.kupriyanov.space") ||
+                        origin.startsWith("http://localhost:") ||
+                        origin.startsWith("http://127.0.0.1:")
         )) {
             response.setHeader("Access-Control-Allow-Origin", origin);
             response.setHeader("Access-Control-Allow-Credentials", "true");
             response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
             response.setHeader("Access-Control-Max-Age", "3600");
-            response.setHeader("Access-Control-Allow-Headers", 
-                "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-            
+            response.setHeader("Access-Control-Allow-Headers",
+                    "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+
             // Если это OPTIONS запрос - сразу возвращаем 200 OK
             if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
                 response.setStatus(HttpServletResponse.SC_OK);

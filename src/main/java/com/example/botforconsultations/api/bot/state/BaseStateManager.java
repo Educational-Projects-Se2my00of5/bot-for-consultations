@@ -6,14 +6,14 @@ import java.util.Map;
 /**
  * Базовый менеджер состояний с общей логикой для всех ролей.
  * Использует дженерики для типизации состояний.
- * 
+ *
  * @param <S> тип enum состояния (UserState, TeacherState, DeaneryState)
  */
 public abstract class BaseStateManager<S extends Enum<S>> {
 
     // Хранилище состояний пользователей
     protected final Map<Long, S> userStates = new HashMap<>();
-    
+
     // Общее для всех: текущая просматриваемая консультация
     protected final Map<Long, Long> currentConsultationId = new HashMap<>();
 

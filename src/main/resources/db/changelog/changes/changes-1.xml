@@ -8,7 +8,6 @@
     <!-- Здесь будут изменения -->
 
 
-
     <changeSet id="1759296139031-1" author="Se2my00of5">
         <createTable tableName="admin_users">
             <column name="id" type="BIGINT">

@@ -74,12 +74,11 @@ public final class KeyboardConstants {
     // ========== Действия преподавателя с задачами ==========
     public static final String MARK_TASK_COMPLETED = "✅ Отметить выполненной";
     public static final String MARK_TASK_PENDING = "⏳ Отметить невыполненной";
-    
+
     // ========== Фильтры задач ==========
     public static final String FILTER_TASK_INCOMPLETE = "❌ Невыполненные";
     public static final String FILTER_TASK_ALL = "📋 Все";
     public static final String FILTER_TASK_COMPLETED = "✅ Выполненные";
-    public static final String SEARCH_TASK = "🔍 Найти задачу";
 
     // ========== Профиль ==========
     public static final String PROFILE = "👤 Профиль";

@@ -2,29 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import UsersPage from './pages/UsersPage';
-import DeaneryPage from './pages/DeaneryPage';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+import InactiveUsersPage from './pages/InactiveUsersPage';
+import ActiveUsersPage from './pages/ActiveUsersPage';
+import { checkToken } from './api/adminApi';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkToken = async () => {
+    const validateToken = async () => {
       const token = localStorage.getItem('adminToken');
       
       if (token) {
         try {
-          const response = await fetch(`${API_URL}/api/admin/check-token`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token }),
-          });
-
-          if (!response.ok) {
+          const isValid = await checkToken(token);
+          if (!isValid) {
             localStorage.removeItem('adminToken');
           }
         } catch (error) {
@@ -35,7 +27,7 @@ function App() {
       setIsLoading(false);
     };
 
-    checkToken();
+    validateToken();
   }, []);
 
   if (isLoading) {
@@ -45,21 +37,21 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/users" replace />} />
+        <Route path="/" element={<Navigate to="/inactive" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route 
-          path="/users" 
+          path="/inactive" 
           element={
             <ProtectedRoute>
-              <UsersPage />
+              <InactiveUsersPage />
             </ProtectedRoute>
           } 
         />
         <Route 
-          path="/deanery" 
+          path="/active" 
           element={
             <ProtectedRoute>
-              <DeaneryPage />
+              <ActiveUsersPage />
             </ProtectedRoute>
           } 
         />

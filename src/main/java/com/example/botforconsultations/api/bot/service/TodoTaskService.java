@@ -1,7 +1,7 @@
 package com.example.botforconsultations.api.bot.service;
 
-import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.model.TelegramUser;
+import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.repository.TodoTaskRepository;
 import com.example.botforconsultations.core.service.GoogleCalendarService;
 import com.example.botforconsultations.core.service.GoogleOAuthService;
@@ -28,7 +28,7 @@ public class TodoTaskService {
      */
     @Transactional
     public TodoTask createTodoForTeacher(TelegramUser teacher, TelegramUser createdBy, String title,
-                                          String description, LocalDateTime deadline) {
+                                         String description, LocalDateTime deadline) {
         TodoTask todo = TodoTask.builder()
                 .teacher(teacher)
                 .createdBy(createdBy)
@@ -42,7 +42,7 @@ public class TodoTaskService {
         TodoTask saved = todoTaskRepository.save(todo);
         log.info("Created todo task {} for teacher {} by user {}",
                 saved.getId(), teacher.getId(), createdBy.getId());
-        
+
         // Проверяем, подключен ли у преподавателя Google Calendar
         if (googleOAuthService.isConnected(teacher)) {
             try {
@@ -53,11 +53,11 @@ public class TodoTaskService {
                     log.info("Created Google Calendar event {} for task {}", eventIdOpt.get(), saved.getId());
                 }
             } catch (Exception e) {
-                log.error("Failed to create Google Calendar event for task {}: {}", 
+                log.error("Failed to create Google Calendar event for task {}: {}",
                         saved.getId(), e.getMessage());
             }
         }
-        
+
         return saved;
     }
 
@@ -108,17 +108,17 @@ public class TodoTaskService {
             todo.setCompletedAt(LocalDateTime.now());
             todoTaskRepository.save(todo);
             log.info("Todo task {} marked as completed", todoId);
-            
+
             // Обновляем событие в Google Calendar (меняем цвет на зеленый)
             if (todo.getGoogleCalendarEventId() != null) {
                 try {
                     googleCalendarService.markEventAsCompleted(
-                            todo.getTeacher(), 
+                            todo.getTeacher(),
                             todo.getGoogleCalendarEventId());
-                    log.info("Marked Google Calendar event {} as completed", 
+                    log.info("Marked Google Calendar event {} as completed",
                             todo.getGoogleCalendarEventId());
                 } catch (Exception e) {
-                    log.error("Failed to mark Google Calendar event as completed: {}", 
+                    log.error("Failed to mark Google Calendar event as completed: {}",
                             e.getMessage());
                 }
             }
@@ -137,15 +137,15 @@ public class TodoTaskService {
             todo.setCompletedAt(null);
             todoTaskRepository.save(todo);
             log.info("Todo task {} marked as incomplete", todoId);
-            
+
             // Обновляем событие в Google Calendar (возвращаем красный цвет)
             if (todo.getGoogleCalendarEventId() != null) {
                 try {
                     googleCalendarService.updateTaskEvent(
-                            todo.getTeacher(), 
+                            todo.getTeacher(),
                             todo,
                             todo.getGoogleCalendarEventId());
-                    log.info("Updated Google Calendar event {} (unmarked as completed)", 
+                    log.info("Updated Google Calendar event {} (unmarked as completed)",
                             todo.getGoogleCalendarEventId());
                 } catch (Exception e) {
                     log.error("Failed to update Google Calendar event: {}", e.getMessage());
@@ -162,19 +162,19 @@ public class TodoTaskService {
         Optional<TodoTask> todoOpt = todoTaskRepository.findById(todoId);
         if (todoOpt.isPresent()) {
             TodoTask todo = todoOpt.get();
-            
+
             // Удаляем событие из Google Calendar
             if (todo.getGoogleCalendarEventId() != null) {
                 try {
                     googleCalendarService.deleteTaskEvent(
-                            todo.getTeacher(), 
+                            todo.getTeacher(),
                             todo.getGoogleCalendarEventId());
                     log.info("Deleted Google Calendar event {}", todo.getGoogleCalendarEventId());
                 } catch (Exception e) {
                     log.error("Failed to delete Google Calendar event: {}", e.getMessage());
                 }
             }
-            
+
             todoTaskRepository.deleteById(todoId);
             log.info("Todo task {} deleted", todoId);
         } else {
@@ -194,15 +194,15 @@ public class TodoTaskService {
      * Обновить задачу
      */
     @Transactional
-    public TodoTask updateTodo(Long todoId, String title, String description, 
+    public TodoTask updateTodo(Long todoId, String title, String description,
                                LocalDateTime deadline) {
         TodoTask todo = todoTaskRepository.findById(todoId)
                 .orElseThrow(() -> new RuntimeException("Todo not found"));
-        
+
         todo.setTitle(title);
         todo.setDescription(description);
         todo.setDeadline(deadline);
-        
+
         return todoTaskRepository.save(todo);
     }
 
@@ -248,7 +248,7 @@ public class TodoTaskService {
     public void updateTitle(Long todoId, String newTitle) {
         TodoTask todo = todoTaskRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("Todo task not found: " + todoId));
-        
+
         todo.setTitle(newTitle);
         todoTaskRepository.save(todo);
         log.info("Updated title for todo task {}", todoId);
@@ -261,7 +261,7 @@ public class TodoTaskService {
     public void updateDescription(Long todoId, String newDescription) {
         TodoTask todo = todoTaskRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("Todo task not found: " + todoId));
-        
+
         todo.setDescription(newDescription);
         todoTaskRepository.save(todo);
         log.info("Updated description for todo task {}", todoId);
@@ -274,28 +274,28 @@ public class TodoTaskService {
     public void updateDeadline(Long todoId, LocalDateTime newDeadline) {
         TodoTask todo = todoTaskRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("Todo task not found: " + todoId));
-        
+
         todo.setDeadline(newDeadline);
         // Сбрасываем флаг напоминания, если дедлайн изменён
         todo.setReminderSent(false);
         todoTaskRepository.save(todo);
         log.info("Updated deadline for todo task {} to {}", todoId, newDeadline);
-        
+
         // Обновляем событие в Google Calendar
         if (todo.getGoogleCalendarEventId() != null) {
             try {
                 googleCalendarService.updateTaskEvent(
-                        todo.getTeacher(), 
+                        todo.getTeacher(),
                         todo,
                         todo.getGoogleCalendarEventId());
-                log.info("Updated Google Calendar event {} with new deadline", 
+                log.info("Updated Google Calendar event {} with new deadline",
                         todo.getGoogleCalendarEventId());
             } catch (Exception e) {
                 log.error("Failed to update Google Calendar event: {}", e.getMessage());
             }
         }
     }
-    
+
     /**
      * Сохранить задачу (вспомогательный метод)
      */

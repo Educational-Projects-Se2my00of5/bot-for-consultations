@@ -27,16 +27,16 @@ public interface TodoTaskRepository extends JpaRepository<TodoTask, Long> {
 
     // Задачи с истекающим дедлайном (для напоминаний)
     @Query("SELECT t FROM TodoTask t WHERE t.isCompleted = false " +
-           "AND t.deadline IS NOT NULL " +
-           "AND t.reminderSent = false " +
-           "AND t.deadline BETWEEN :now AND :reminderTime")
+            "AND t.deadline IS NOT NULL " +
+            "AND t.reminderSent = false " +
+            "AND t.deadline BETWEEN :now AND :reminderTime")
     List<TodoTask> findTasksNeedingReminder(@Param("now") LocalDateTime now,
-                                             @Param("reminderTime") LocalDateTime reminderTime);
+                                            @Param("reminderTime") LocalDateTime reminderTime);
 
     // Просроченные задачи
     @Query("SELECT t FROM TodoTask t WHERE t.isCompleted = false " +
-           "AND t.deadline IS NOT NULL " +
-           "AND t.deadline < :now")
+            "AND t.deadline IS NOT NULL " +
+            "AND t.deadline < :now")
     List<TodoTask> findOverdueTasks(@Param("now") LocalDateTime now);
 
     // Все активные задачи (для деканата)

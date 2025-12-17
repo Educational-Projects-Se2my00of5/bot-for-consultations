@@ -4,7 +4,6 @@ import com.example.botforconsultations.config.GoogleCalendarConfig;
 import com.example.botforconsultations.core.model.GoogleCalendarToken;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.repository.GoogleCalendarTokenRepository;
-import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.Credential;
@@ -43,7 +42,7 @@ public class GoogleOAuthService {
     public String getAuthorizationUrl(Long userId) {
         try {
             GoogleAuthorizationCodeFlow flow = createFlow();
-            
+
             return flow.newAuthorizationUrl()
                     .setRedirectUri(config.getRedirectUri())
                     .setState(String.valueOf(userId)) // Передаем userId через state
@@ -61,10 +60,10 @@ public class GoogleOAuthService {
     public void handleCallback(String code, TelegramUser user) {
         try {
             log.info("Handling OAuth callback for user #{}", user.getId());
-            
+
             GoogleAuthorizationCodeFlow flow = createFlow();
             log.debug("Created GoogleAuthorizationCodeFlow");
-            
+
             GoogleTokenResponse tokenResponse = flow.newTokenRequest(code)
                     .setRedirectUri(config.getRedirectUri())
                     .execute();
@@ -108,9 +107,10 @@ public class GoogleOAuthService {
      * Получение валидного Credential для пользователя
      * (автоматически обновляет токен если истёк)
      */
+    @Transactional
     public Optional<Credential> getCredential(TelegramUser user) {
         Optional<GoogleCalendarToken> tokenOpt = tokenRepository.findByUser(user);
-        
+
         if (tokenOpt.isEmpty()) {
             return Optional.empty();
         }

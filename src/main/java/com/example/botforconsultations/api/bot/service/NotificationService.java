@@ -215,7 +215,7 @@ public class NotificationService {
         String message = messageFormatter.formatNewConsultationNotification(consultation);
         String header = "✅ Ваш запрос принят преподавателем!\n\n";
         message = header + message;
-        
+
         InlineKeyboardMarkup keyboard = buildConsultationButton(consultationId);
 
         int sent = 0;

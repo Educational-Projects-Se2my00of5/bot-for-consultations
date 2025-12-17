@@ -1,6 +1,11 @@
 package com.example.botforconsultations.api.bot;
 
-import com.example.botforconsultations.api.bot.service.*;
+import com.example.botforconsultations.api.bot.service.ConsultationRequestService;
+import com.example.botforconsultations.api.bot.service.ConsultationService;
+import com.example.botforconsultations.api.bot.service.NotificationService;
+import com.example.botforconsultations.api.bot.service.StudentServiceBot;
+import com.example.botforconsultations.api.bot.service.TeacherConsultationService;
+import com.example.botforconsultations.api.bot.service.TeacherSearchService;
 import com.example.botforconsultations.api.bot.state.StudentStateManager;
 import com.example.botforconsultations.api.bot.state.StudentStateManager.UserState;
 import com.example.botforconsultations.api.bot.utils.ConsultationMessageFormatter;
@@ -389,7 +394,7 @@ public class StudentCommandHandler {
                 // Неизвестное состояние - сообщаем об ошибке
                 botMessenger.sendText(
                         "Ошибка: неверный контекст для выбора по номеру.\n" +
-                        "Пожалуйста, перейдите в раздел консультаций или запросов.",
+                                "Пожалуйста, перейдите в раздел консультаций или запросов.",
                         chatId
                 );
             }
@@ -425,7 +430,7 @@ public class StudentCommandHandler {
         stateManager.clearUserData(chatId);
         stateManager.setCurrentTeacher(chatId, consultation.getTeacher().getId());
         stateManager.setFilter(chatId, "future");
-        
+
         // Показываем детали консультации
         showConsultationDetails(chatId, consultationId);
     }
@@ -514,8 +519,10 @@ public class StudentCommandHandler {
         // Запрашиваем тему/вопрос от студента
         stateManager.setState(chatId, UserState.WAITING_FOR_CONSULTATION_MESSAGE);
         botMessenger.sendText(
-                "Пожалуйста, укажите тему или вопрос, который хотите обсудить на консультации:\n\n" +
-                        "Например: \"Разбор темы 'Рекурсия'\" или \"Помощь с курсовой работой\"",
+                """
+                        Пожалуйста, укажите тему или вопрос, который хотите обсудить на консультации:
+                        
+                        Например: "Разбор темы 'Рекурсия'" или "Помощь с курсовой работой\"""",
                 chatId
         );
     }
@@ -584,7 +591,7 @@ public class StudentCommandHandler {
         TelegramUser student = getCurrentStudent(chatId);
         List<StudentConsultation> registrations = studentServiceBot.getStudentRegistrations(student);
         String message = messageFormatter.formatStudentRegistrations(registrations);
-        
+
         if (registrations.isEmpty()) {
             // Нет записей - просто показываем сообщение
             botMessenger.sendText(message, chatId);
@@ -665,10 +672,13 @@ public class StudentCommandHandler {
         stateManager.setState(chatId, UserState.WAITING_FOR_REQUEST_TITLE);
         botMessenger.execute(SendMessage.builder()
                 .chatId(chatId)
-                .text("❓ Создание запроса консультации\n\n" +
-                        "Введите тему консультации, которая вам нужна.\n" +
-                        "Например: \"Помощь с курсовой работой по Java\" или \"Разбор темы Многопоточность\"\n\n" +
-                        "Ваш запрос увидят все преподаватели, и кто-то из них сможет его принять.")
+                .text("""
+                        ❓ Создание запроса консультации
+                        
+                        Введите тему консультации, которая вам нужна.
+                        Например: "Помощь с курсовой работой по Java" или "Разбор темы Многопоточность"
+                        
+                        Ваш запрос увидят все преподаватели, и кто-то из них сможет его принять.""")
                 .replyMarkup(keyboardBuilder.buildBackKeyboard())
                 .build());
     }
@@ -738,7 +748,7 @@ public class StudentCommandHandler {
                     // Просмотр конкретного запроса: устанавливаем ID и состояние
                     stateManager.setCurrentRequest(chatId, requestId);
                     stateManager.setState(chatId, UserState.VIEWING_REQUEST_DETAILS);
-                    
+
                     TelegramUser student = getCurrentStudent(chatId);
                     boolean isRegistered = consultationRequestService.isRegisteredOnRequest(student, request);
 
@@ -765,8 +775,10 @@ public class StudentCommandHandler {
 
         stateManager.setState(chatId, UserState.WAITING_FOR_REQUEST_MESSAGE);
         botMessenger.sendText(
-                "Пожалуйста, укажите тему или вопрос, который хотите обсудить:\n\n" +
-                        "Например: \"Интересует эта тема\" или \"Тоже нужна помощь\"",
+                """
+                        Пожалуйста, укажите тему или вопрос, который хотите обсудить:
+                        
+                        Например: "Интересует эта тема" или "Тоже нужна помощь\"""",
                 chatId
         );
     }
@@ -794,9 +806,11 @@ public class StudentCommandHandler {
                         botMessenger.sendText(result.message(), chatId);
                     } else {
                         botMessenger.sendText(
-                                "✅ Вы успешно записались на запрос!\n\n" +
-                                        "Когда преподаватель примет этот запрос и создаст консультацию, " +
-                                        "вы автоматически будете записаны на неё.",
+                                """
+                                        ✅ Вы успешно записались на запрос!
+                                        
+                                        Когда преподаватель примет этот запрос и создаст консультацию, \
+                                        вы автоматически будете записаны на неё.""",
                                 chatId
                         );
                     }

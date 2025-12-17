@@ -1,7 +1,7 @@
 package com.example.botforconsultations.api.bot.utils;
 
-import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.model.TelegramUser;
+import com.example.botforconsultations.core.model.TodoTask;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -38,7 +38,7 @@ public class TodoMessageFormatter {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        
+
         for (TodoTask task : tasks) {
             message.append(formatTaskShort(task, now));
         }
@@ -68,7 +68,7 @@ public class TodoMessageFormatter {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        
+
         for (TodoTask task : tasks) {
             message.append(formatTaskShort(task, now));
         }
@@ -84,36 +84,36 @@ public class TodoMessageFormatter {
      */
     private String formatTaskShort(TodoTask task, LocalDateTime now) {
         StringBuilder message = new StringBuilder();
-        
+
         // Номер и статус
         String statusEmoji = task.getIsCompleted() ? "✅" : "❌";
         message.append(String.format("%s №%d - ", statusEmoji, task.getId()));
-        
+
         // Заголовок (обрезаем если длинный)
         String title = task.getTitle();
         if (title.length() > 30) {
             title = title.substring(0, 30) + "...";
         }
         message.append(title).append("\n");
-        
+
         // Преподаватель
         TelegramUser teacher = task.getTeacher();
         message.append(String.format("   👨‍🏫 %s %s\n",
                 teacher.getFirstName(),
                 teacher.getLastName() != null ? teacher.getLastName() : ""));
-        
+
         // Дедлайн
         LocalDateTime deadline = task.getDeadline();
         message.append(String.format("   ⏰ %s",
                 deadline.format(DATETIME_FORMATTER)));
-        
+
         // Индикатор просрочки
         if (!task.getIsCompleted() && deadline.isBefore(now)) {
             message.append(" ⚠️ ПРОСРОЧЕНО");
         }
-        
+
         message.append("\n\n");
-        
+
         return message.toString();
     }
 
@@ -123,28 +123,28 @@ public class TodoMessageFormatter {
     public String formatTaskDetails(TodoTask task) {
         StringBuilder message = new StringBuilder();
         LocalDateTime now = LocalDateTime.now();
-        
+
         message.append("📋 Детали задачи\n\n");
-        
+
         // Номер и статус
         String statusEmoji = task.getIsCompleted() ? "✅" : "❌";
         String statusText = task.getIsCompleted() ? "Выполнена" : "Не выполнена";
         message.append(String.format("№%d %s %s\n\n", task.getId(), statusEmoji, statusText));
-        
+
         // Заголовок
         message.append(String.format("📌 Заголовок:\n%s\n\n", task.getTitle()));
-        
+
         // Описание
         if (task.getDescription() != null && !task.getDescription().isEmpty()) {
             message.append(String.format("📝 Описание:\n%s\n\n", task.getDescription()));
         }
-        
+
         // Преподаватель
         TelegramUser teacher = task.getTeacher();
         message.append(String.format("👨‍🏫 Преподаватель: %s %s\n",
                 teacher.getFirstName(),
                 teacher.getLastName() != null ? teacher.getLastName() : ""));
-        
+
         // Создатель
         TelegramUser createdBy = task.getCreatedBy();
         if (createdBy != null) {
@@ -152,12 +152,12 @@ public class TodoMessageFormatter {
                     createdBy.getFirstName(),
                     createdBy.getLastName() != null ? createdBy.getLastName() : ""));
         }
-        
+
         // Дедлайн
         LocalDateTime deadline = task.getDeadline();
         message.append(String.format("⏰ Дедлайн: %s\n",
                 deadline.format(DATETIME_FORMATTER)));
-        
+
         // Статус просрочки
         if (!task.getIsCompleted() && deadline.isBefore(now)) {
             long daysOverdue = java.time.Duration.between(deadline, now).toDays();
@@ -172,13 +172,13 @@ public class TodoMessageFormatter {
                         daysLeft, getDaysWord(daysLeft)));
             }
         }
-        
+
         // Дата выполнения
         if (task.getIsCompleted() && task.getCompletedAt() != null) {
             message.append(String.format("✓ Выполнено: %s\n",
                     task.getCompletedAt().format(DATETIME_FORMATTER)));
         }
-        
+
         return message.toString();
     }
 
@@ -188,18 +188,18 @@ public class TodoMessageFormatter {
     private String getFilterText(String statusFilter, String deadlineFilter) {
         StringBuilder text = new StringBuilder("🔍 Фильтры: ");
         boolean hasFilters = false;
-        
+
         if (statusFilter != null && !statusFilter.equals("all")) {
             text.append(getStatusFilterText(statusFilter));
             hasFilters = true;
         }
-        
+
         if (deadlineFilter != null && !deadlineFilter.equals("all")) {
             if (hasFilters) text.append(", ");
             text.append(getDeadlineFilterText(deadlineFilter));
             hasFilters = true;
         }
-        
+
         return hasFilters ? text.toString() : "";
     }
 
@@ -214,9 +214,6 @@ public class TodoMessageFormatter {
         };
     }
 
-    /**
-     * Получить текст фильтра дедлайна
-     */
     /**
      * Получить текст фильтра дедлайна
      */

@@ -8,7 +8,7 @@ import java.util.Map;
  * Переиспользуемый компонент для хранения Long ID.
  */
 public class EntityIdStorage {
-    
+
     private final Map<Long, Long> storage = new HashMap<>();
 
     /**

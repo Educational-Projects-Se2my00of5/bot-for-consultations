@@ -10,7 +10,32 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.*;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.ALL_TASKS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.ALL_TEACHERS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK_TO_LIST;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK_TO_TEACHERS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CANCEL;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CONFIRM_DELETE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CREATE_TASK;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.DELETE_TASK;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_TASK;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_TASK_DEADLINE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_TASK_DESCRIPTION;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_TASK_TITLE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.FILTER_TASK_ALL;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.FILTER_TASK_COMPLETED;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.FILTER_TASK_INCOMPLETE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.HELP;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.MAIN_MENU;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.MARK_COMPLETED;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.MARK_PENDING;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.NUMBER_PREFIX;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.PROFILE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.SEARCH_TEACHER;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.STUDENT_LIST;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.TEACHERS_MENU;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.TEACHER_TASKS;
 
 /**
  * Утилита для построения клавиатур деканата.
@@ -24,7 +49,7 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
      */
     public ReplyKeyboardMarkup buildMainMenu() {
         List<KeyboardRow> keyboard = new ArrayList<>();
-        
+
         keyboard.add(createTwoButtonRow(TEACHERS_MENU, ALL_TASKS));
         keyboard.add(createTwoButtonRow(PROFILE, HELP));
 
@@ -36,7 +61,7 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
      */
     public ReplyKeyboardMarkup buildWaitingForApprovalMenu() {
         List<KeyboardRow> keyboard = new ArrayList<>();
-        
+
         keyboard.add(createSingleButtonRow(PROFILE));
 
         return buildKeyboard(keyboard);
@@ -64,7 +89,7 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
 
         // Добавляем первых 5 преподавателей
         addTeacherButtons(keyboard, teachers, MAX_LIST_ITEMS);
-        
+
         keyboard.add(createSingleButtonRow(SEARCH_TEACHER));
         keyboard.add(createSingleButtonRow(BACK_TO_TEACHERS));
 
@@ -80,7 +105,7 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
 
         // Добавляем консультации 
         addConsultationButtons(keyboard, consultations, MAX_LIST_ITEMS);
-        
+
         // Фильтры консультаций
         keyboard.add(createFilterRow());
 
@@ -191,7 +216,7 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
      */
     public ReplyKeyboardMarkup buildDeleteTaskConfirmation() {
         List<KeyboardRow> keyboard = new ArrayList<>();
-        
+
         keyboard.add(createTwoButtonRow(CONFIRM_DELETE, CANCEL));
 
         return buildKeyboard(keyboard);
@@ -202,7 +227,7 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
      */
     public ReplyKeyboardMarkup buildEditTaskMenu() {
         List<KeyboardRow> keyboard = new ArrayList<>();
-        
+
         keyboard.add(createSingleButtonRow(EDIT_TASK_TITLE));
         keyboard.add(createSingleButtonRow(EDIT_TASK_DESCRIPTION));
         keyboard.add(createSingleButtonRow(EDIT_TASK_DEADLINE));
@@ -258,8 +283,8 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         int count = 0;
         for (TodoTask task : tasks) {
             if (count >= maxCount) break;
-            String title = task.getTitle().length() > 25 
-                    ? task.getTitle().substring(0, 25) + "..." 
+            String title = task.getTitle().length() > 25
+                    ? task.getTitle().substring(0, 25) + "..."
                     : task.getTitle();
             String buttonText = String.format("%s%d - %s",
                     NUMBER_PREFIX,

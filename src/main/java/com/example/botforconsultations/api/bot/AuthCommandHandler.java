@@ -102,21 +102,18 @@ public class AuthCommandHandler {
                     botMessenger.sendText("Вы успешно зарегистрированы как студент!", chatId);
                     studentCommands.sendMainMenu(chatId);
                 }
-                case TEACHER -> {
-                    botMessenger.execute(SendMessage.builder()
-                            .chatId(chatId)
-                            .text("Вы зарегистрированы как преподаватель.\n\n" +
-                                    "⏳ Ваш аккаунт ожидает подтверждения администратором.\n\n" +
-                                    "Вы можете отредактировать свой профиль в ожидании подтверждения.")
-                            .replyMarkup(teacherKeyboardBuilder.buildWaitingForApprovalMenu())
-                            .build());
-                }
-                case DEANERY -> {
-                    deaneryCommands.sendWaitingApprovalMenu(chatId);
-                }
-                case ADMIN -> {
-                    botMessenger.sendText("Регистрация администраторов через бот недоступна.", chatId);
-                }
+                case TEACHER -> botMessenger.execute(SendMessage.builder()
+                        .chatId(chatId)
+                        .text("""
+                                Вы зарегистрированы как преподаватель.
+                                
+                                ⏳ Ваш аккаунт ожидает подтверждения администратором.
+                                
+                                Вы можете отредактировать свой профиль в ожидании подтверждения.""")
+                        .replyMarkup(teacherKeyboardBuilder.buildWaitingForApprovalMenu())
+                        .build());
+                case DEANERY -> deaneryCommands.sendWaitingApprovalMenu(chatId);
+                case ADMIN -> botMessenger.sendText("Регистрация администраторов через бот недоступна.", chatId);
             }
         } else {
             botMessenger.sendText(
@@ -139,8 +136,10 @@ public class AuthCommandHandler {
                 deaneryCommands.sendMainMenu(chatId);
             } else {
                 botMessenger.sendText(
-                        "⏳ Ваш аккаунт ожидает подтверждения администратором.\n\n" +
-                                "После подтверждения вы сможете управлять консультациями и задачами.",
+                        """
+                                ⏳ Ваш аккаунт ожидает подтверждения администратором.
+                                
+                                После подтверждения вы сможете управлять консультациями и задачами.""",
                         chatId
                 );
             }
@@ -151,7 +150,7 @@ public class AuthCommandHandler {
         KeyboardRow row1 = new KeyboardRow();
         row1.add(new KeyboardButton("Я студент"));
         row1.add(new KeyboardButton("Я преподаватель"));
-        
+
         KeyboardRow row2 = new KeyboardRow();
         row2.add(new KeyboardButton("Я сотрудник деканата"));
 

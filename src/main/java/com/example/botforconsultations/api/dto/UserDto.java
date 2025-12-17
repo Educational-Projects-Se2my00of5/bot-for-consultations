@@ -5,7 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 public class UserDto {
     public record TelegramUserInfo(
             Long id, String firstName, String lastName,
-            String phone
+            String phone, String telegramId,
+            String role, boolean isActive
     ) {
     }
 
@@ -16,6 +17,12 @@ public class UserDto {
 
     public record Token(
             @NotBlank String token
+    ) {
+    }
+
+    public record UpdateUser(
+            String firstName,
+            String lastName
     ) {
     }
 }

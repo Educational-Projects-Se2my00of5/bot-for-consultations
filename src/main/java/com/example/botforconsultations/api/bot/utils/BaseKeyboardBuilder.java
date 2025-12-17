@@ -26,9 +26,9 @@ public abstract class BaseKeyboardBuilder {
      * Создать строку с фильтрами консультаций (Прошедшие, Все, Будущие)
      */
     protected KeyboardRow createFilterRow() {
-        return createThreeButtonRow(KeyboardConstants.FILTER_PAST, 
-                                   KeyboardConstants.FILTER_ALL, 
-                                   KeyboardConstants.FILTER_FUTURE);
+        return createThreeButtonRow(KeyboardConstants.FILTER_PAST,
+                KeyboardConstants.FILTER_ALL,
+                KeyboardConstants.FILTER_FUTURE);
     }
 
     /**
@@ -80,37 +80,39 @@ public abstract class BaseKeyboardBuilder {
 
     /**
      * Клавиатура для редактирования профиля с опциональной кнопкой напоминаний
+     *
      * @param showReminderButton показывать ли кнопку настройки напоминаний (только для зарегистрированных)
      */
     public ReplyKeyboardMarkup buildProfileKeyboard(boolean showReminderButton) {
         return buildProfileKeyboard(showReminderButton, false, false);
     }
-    
+
     /**
      * Клавиатура для редактирования профиля с расширенными опциями
-     * @param showReminderButton показывать ли кнопку настройки напоминаний
-     * @param showConnectCalendar показывать ли кнопку подключения Google Calendar
+     *
+     * @param showReminderButton     показывать ли кнопку настройки напоминаний
+     * @param showConnectCalendar    показывать ли кнопку подключения Google Calendar
      * @param showDisconnectCalendar показывать ли кнопку отключения Google Calendar
      */
-    public ReplyKeyboardMarkup buildProfileKeyboard(boolean showReminderButton, 
-                                                     boolean showConnectCalendar, 
-                                                     boolean showDisconnectCalendar) {
+    public ReplyKeyboardMarkup buildProfileKeyboard(boolean showReminderButton,
+                                                    boolean showConnectCalendar,
+                                                    boolean showDisconnectCalendar) {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createTwoButtonRow(KeyboardConstants.EDIT_FIRST_NAME, KeyboardConstants.EDIT_LAST_NAME));
-        
+
         if (showReminderButton) {
             keyboard.add(createSingleButtonRow(KeyboardConstants.EDIT_REMINDER_TIME));
         }
-        
+
         if (showConnectCalendar) {
             keyboard.add(createSingleButtonRow(KeyboardConstants.CONNECT_GOOGLE_CALENDAR));
         }
-        
+
         if (showDisconnectCalendar) {
             keyboard.add(createSingleButtonRow(KeyboardConstants.DISCONNECT_GOOGLE_CALENDAR));
         }
-        
+
         keyboard.add(createSingleButtonRow(KeyboardConstants.BACK));
 
         return buildKeyboard(keyboard);

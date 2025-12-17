@@ -21,14 +21,14 @@ public class TeacherNameFormatter {
     /**
      * Извлекает ID преподавателя из текста кнопки
      * Формат кнопки: "👨‍🏫 №123 Имя Фамилия"
-     * 
+     *
      * @return ID преподавателя или null если не удалось извлечь
      */
     public static Long extractTeacherId(String teacherButton) {
         try {
             // Убираем эмодзи и извлекаем ID
             String cleaned = teacherButton.replaceFirst("👨‍🏫\\s*", "").trim();
-            
+
             // Ищем ID в формате "№123 "
             if (cleaned.startsWith("№")) {
                 // Находим первый пробел после номера
@@ -38,7 +38,7 @@ public class TeacherNameFormatter {
                     return Long.parseLong(idPart);
                 }
             }
-            
+
             return null;
         } catch (Exception e) {
             return null;

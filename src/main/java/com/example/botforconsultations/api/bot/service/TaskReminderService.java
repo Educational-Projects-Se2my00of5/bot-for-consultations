@@ -45,7 +45,7 @@ public class TaskReminderService {
             // Пропускаем преподавателей, у которых подключен Google Calendar
             // (напоминания для них приходят через Google Calendar)
             if (googleOAuthService.isConnected(task.getTeacher())) {
-                log.debug("Skipping reminder for task #{} - teacher #{} has Google Calendar connected", 
+                log.debug("Skipping reminder for task #{} - teacher #{} has Google Calendar connected",
                         task.getId(), task.getTeacher().getId());
                 continue;
             }
@@ -71,18 +71,18 @@ public class TaskReminderService {
     private void sendReminder(TodoTask task) {
         try {
             Long chatId = task.getTeacher().getTelegramId();
-            
+
             String message = String.format("""
-                    ⏰ Напоминание о дедлайне задачи!
-                    
-                    📋 Задача: %s
-                    📝 Описание: %s
-                    ⏱️ Дедлайн: %s
-                    
-                    ⚠️ До дедлайна осталось: %s
-                    
-                    💡 Используйте "📋 Мои задачи" для просмотра деталей.
-                    """,
+                            ⏰ Напоминание о дедлайне задачи!
+                            
+                            📋 Задача: %s
+                            📝 Описание: %s
+                            ⏱️ Дедлайн: %s
+                            
+                            ⚠️ До дедлайна осталось: %s
+                            
+                            💡 Используйте "📋 Мои задачи" для просмотра деталей.
+                            """,
                     task.getTitle(),
                     task.getDescription() != null ? task.getDescription() : "Не указано",
                     formatDeadline(task.getDeadline()),
@@ -91,7 +91,7 @@ public class TaskReminderService {
 
             botMessenger.sendText(message, chatId);
             log.info("Sent reminder for task #{} to teacher #{}", task.getId(), task.getTeacher().getId());
-            
+
         } catch (Exception e) {
             log.error("Failed to send reminder for task #{}: {}", task.getId(), e.getMessage());
         }

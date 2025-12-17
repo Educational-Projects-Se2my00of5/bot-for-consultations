@@ -11,27 +11,27 @@ import java.util.Optional;
 
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
-    
+
     /**
      * Проверяет, подписан ли студент на преподавателя
      */
     boolean existsByStudentAndTeacher(TelegramUser student, TelegramUser teacher);
-    
+
     /**
      * Находит подписку студента на преподавателя
      */
     Optional<Subscription> findByStudentAndTeacher(TelegramUser student, TelegramUser teacher);
-    
+
     /**
      * Находит все подписки студента
      */
     List<Subscription> findByStudent(TelegramUser student);
-    
+
     /**
      * Находит всех подписчиков преподавателя
      */
     List<Subscription> findByTeacher(TelegramUser teacher);
-    
+
     /**
      * Удаляет подписку студента на преподавателя
      */

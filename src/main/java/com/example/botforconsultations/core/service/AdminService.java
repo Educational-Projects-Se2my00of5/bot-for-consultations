@@ -30,31 +30,75 @@ public class AdminService {
 
     private final GetModelOrThrow getModelOrThrow;
 
-    public void activateAcc(Long id) {
+    // Универсальные методы для работы с пользователями
+
+    /**
+     * Получить всех неактивных пользователей (преподавателей и деканата)
+     */
+    public List<TelegramUser> getAllInactiveUsers() {
+        return telegramUserRepository.findByHasConfirmed(false);
+    }
+
+    /**
+     * Получить всех активных пользователей
+     */
+    public List<TelegramUser> getAllActiveUsers() {
+        return telegramUserRepository.findByHasConfirmed(true);
+    }
+
+    /**
+     * Активировать/деактивировать пользователя (универсальный метод)
+     */
+    public void toggleUserActivation(Long id, boolean activate) {
         User user = getModelOrThrow.getUserById(id);
 
-        if (user.getRole() == Role.TEACHER && user instanceof TelegramUser telegramUser) {
-            telegramUser.setHasConfirmed(true);
+        if (user instanceof TelegramUser telegramUser) {
+            // Студентов нельзя деактивировать
+            if (user.getRole() == Role.STUDENT) {
+                throw new BadRequestException("Студентов нельзя деактивировать");
+            }
+
+            telegramUser.setHasConfirmed(activate);
             userRepository.save(telegramUser);
-            notificationService.notifyTeacherAccountApproved(telegramUser.getTelegramId());
+
+            if (activate) {
+                if (telegramUser.getRole() == Role.TEACHER) {
+                    notificationService.notifyTeacherAccountApproved(telegramUser.getTelegramId());
+                } else if (telegramUser.getRole() == Role.DEANERY) {
+                    notificationService.notifyDeaneryAccountApproved(telegramUser.getTelegramId());
+                }
+            }
         } else {
-            throw new BadRequestException("Пользователь не преподаватель");
+            throw new BadRequestException("Пользователь не найден");
         }
     }
 
-    public void deactivateAcc(Long id) {
+    /**
+     * Удалить пользователя
+     */
+    public void deleteUser(Long id) {
         User user = getModelOrThrow.getUserById(id);
-
-        if (user.getRole() == Role.TEACHER && user instanceof TelegramUser telegramUser) {
-            telegramUser.setHasConfirmed(false);
-            userRepository.save(telegramUser);
-        } else {
-            throw new BadRequestException("Пользователь не преподаватель");
-        }
+        userRepository.delete(user);
     }
 
-    public List<TelegramUser> getUnactiveAccounts() {
-        return telegramUserRepository.findByRoleAndHasConfirmed(Role.TEACHER, false);
+    /**
+     * Обновить информацию о пользователе
+     */
+    public void updateUser(Long id, UserDto.UpdateUser updateDto) {
+        User user = getModelOrThrow.getUserById(id);
+
+        if (user instanceof TelegramUser telegramUser) {
+            if (updateDto.firstName() != null) {
+                telegramUser.setFirstName(updateDto.firstName());
+            }
+            if (updateDto.lastName() != null) {
+                telegramUser.setLastName(updateDto.lastName());
+            }
+
+            userRepository.save(telegramUser);
+        } else {
+            throw new BadRequestException("Пользователь не найден");
+        }
     }
 
     public String login(UserDto.Login request) {
@@ -63,9 +107,7 @@ public class AdminService {
 
         // сравниваем сырой и хэшированный пароль
         if (passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            final String token = jwtProvider.generateToken(user);
-
-            return token;
+            return jwtProvider.generateToken(user);
         } else {
             throw new AuthenticationException("Неправильный пароль");
         }
@@ -78,48 +120,10 @@ public class AdminService {
     public TelegramUser getUserInfo(Long id) {
         User user = getModelOrThrow.getUserById(id);
 
-        if (user.getRole() == Role.TEACHER && user instanceof TelegramUser telegramUser) {
+        if (user instanceof TelegramUser telegramUser) {
             return telegramUser;
         } else {
-            throw new BadRequestException("Пользователь не преподаватель");
-        }
-    }
-
-    // Методы для работы с деканатом
-    public List<TelegramUser> getUnactiveDeaneryAccounts() {
-        return telegramUserRepository.findByRoleAndHasConfirmed(Role.DEANERY, false);
-    }
-
-    public void activateDeaneryAccount(Long id) {
-        User user = getModelOrThrow.getUserById(id);
-
-        if (user.getRole() == Role.DEANERY && user instanceof TelegramUser telegramUser) {
-            telegramUser.setHasConfirmed(true);
-            userRepository.save(telegramUser);
-            notificationService.notifyDeaneryAccountApproved(telegramUser.getTelegramId());
-        } else {
-            throw new BadRequestException("Пользователь не деканат");
-        }
-    }
-
-    public void deactivateDeaneryAccount(Long id) {
-        User user = getModelOrThrow.getUserById(id);
-
-        if (user.getRole() == Role.DEANERY && user instanceof TelegramUser telegramUser) {
-            telegramUser.setHasConfirmed(false);
-            userRepository.save(telegramUser);
-        } else {
-            throw new BadRequestException("Пользователь не деканат");
-        }
-    }
-
-    public TelegramUser getDeaneryUserInfo(Long id) {
-        User user = getModelOrThrow.getUserById(id);
-
-        if (user.getRole() == Role.DEANERY && user instanceof TelegramUser telegramUser) {
-            return telegramUser;
-        } else {
-            throw new BadRequestException("Пользователь не деканат");
+            throw new BadRequestException("Пользователь не найден");
         }
     }
 }

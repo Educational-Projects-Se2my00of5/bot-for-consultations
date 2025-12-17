@@ -10,7 +10,25 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.*;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.ALL_TEACHERS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK_TO_LIST;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK_TO_TEACHERS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CANCEL_REGISTRATION;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.HELP;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.MY_REGISTRATIONS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.NUMBER_PREFIX;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.PROFILE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.REGISTER;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.REGISTER_FOR_REQUEST;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.REQUEST_CONSULTATION;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.SEARCH_TEACHER;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.SUBSCRIBE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.SUBSCRIPTIONS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.TEACHERS_MENU;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.UNREGISTER_FROM_REQUEST;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.UNSUBSCRIBE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.VIEW_REQUESTS;
 
 /**
  * Утилита для построения клавиатур студента.
@@ -24,7 +42,7 @@ public class StudentKeyboardBuilder extends BaseKeyboardBuilder {
      */
     public ReplyKeyboardMarkup buildMainMenu() {
         List<KeyboardRow> keyboard = new ArrayList<>();
-        
+
         keyboard.add(createSingleButtonRow(TEACHERS_MENU));
         keyboard.add(createTwoButtonRow(SUBSCRIPTIONS, MY_REGISTRATIONS));
         keyboard.add(createTwoButtonRow(REQUEST_CONSULTATION, VIEW_REQUESTS));
@@ -53,7 +71,7 @@ public class StudentKeyboardBuilder extends BaseKeyboardBuilder {
 
         // Добавляем первых 5 преподавателей как кнопки
         addTeacherButtons(keyboard, teachers, MAX_LIST_ITEMS);
-        
+
         keyboard.add(createSingleButtonRow(SEARCH_TEACHER));
         keyboard.add(createSingleButtonRow(BACK_TO_TEACHERS));
 
@@ -71,7 +89,7 @@ public class StudentKeyboardBuilder extends BaseKeyboardBuilder {
 
         // Добавляем консультации (максимум 5)
         addConsultationButtons(keyboard, consultations, MAX_LIST_ITEMS);
-        
+
         // Фильтры
         keyboard.add(createFilterRow());
 
@@ -92,7 +110,7 @@ public class StudentKeyboardBuilder extends BaseKeyboardBuilder {
 
         // Кнопка записи/отмены зависит от статуса консультации
         addRegistrationButtons(keyboard, consultation, isRegistered);
-        
+
         keyboard.add(createSingleButtonRow(BACK_TO_LIST));
 
         return buildKeyboard(keyboard);
@@ -106,7 +124,7 @@ public class StudentKeyboardBuilder extends BaseKeyboardBuilder {
 
         // Добавляем запросы (максимум 10)
         addConsultationButtons(keyboard, requests, MAX_REQUESTS_ITEMS);
-        
+
         keyboard.add(createSingleButtonRow(BACK));
 
         return buildKeyboard(keyboard);
@@ -183,7 +201,7 @@ public class StudentKeyboardBuilder extends BaseKeyboardBuilder {
      */
     private void addRegistrationButtons(List<KeyboardRow> keyboard, Consultation consultation, boolean isRegistered) {
         ConsultationStatus status = consultation.getStatus();
-        
+
         // Для открытых консультаций - полный функционал
         if (status == ConsultationStatus.OPEN) {
             String buttonText = isRegistered ? CANCEL_REGISTRATION : REGISTER;

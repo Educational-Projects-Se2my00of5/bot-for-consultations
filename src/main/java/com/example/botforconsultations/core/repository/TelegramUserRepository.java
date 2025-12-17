@@ -7,8 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface TelegramUserRepository extends JpaRepository<TelegramUser,Long> {
+public interface TelegramUserRepository extends JpaRepository<TelegramUser, Long> {
     List<TelegramUser> findByRoleAndHasConfirmed(Role role, boolean hasConfirmed);
+
+    List<TelegramUser> findByHasConfirmed(boolean hasConfirmed);
+
     Optional<TelegramUser> findByTelegramId(Long telegramId);
 
     List<TelegramUser> findByRoleAndHasConfirmedTrueAndFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(Role role, String searchQuery, String searchQuery1);

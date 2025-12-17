@@ -44,7 +44,6 @@ public class TeacherCommandHandler {
     private final TeacherConsultationService consultationService;
     private final ConsultationRequestService requestService;
     private final NotificationService notificationService;
-    private final ProfileService profileService;
     private final TodoTaskService todoTaskService;
     private final BotMessenger botMessenger;
 
@@ -123,7 +122,7 @@ public class TeacherCommandHandler {
 
         // Основные команды
         // case "👤 Профиль", "✏️ Изменить имя", "✏️ Изменить фамилию" 
-        if(profileCommandHandler.handleProfileCommand(text, chatId)){
+        if (profileCommandHandler.handleProfileCommand(text, chatId)) {
             return;
         }
         switch (text) {
@@ -191,7 +190,7 @@ public class TeacherCommandHandler {
 
         // Основные команды
         // case "👤 Профиль", "✏️ Изменить имя", "✏️ Изменить фамилию" 
-        if (profileCommandHandler.handleProfileCommand(text, chatId)){
+        if (profileCommandHandler.handleProfileCommand(text, chatId)) {
             return;
         }
         switch (text) {
@@ -209,9 +208,11 @@ public class TeacherCommandHandler {
     public void sendWaitingApprovalMenu(Long chatId) {
         stateManager.resetState(chatId);
         botMessenger.execute(SendMessage.builder()
-                .text("⏳ Ваш аккаунт ожидает подтверждения администратором.\n" +
-                        "Вы сможете создавать консультации после активации.\n\n" +
-                        "Пока вы можете редактировать свой профиль:")
+                .text("""
+                        ⏳ Ваш аккаунт ожидает подтверждения администратором.
+                        Вы сможете создавать консультации после активации.
+                        
+                        Пока вы можете редактировать свой профиль:""")
                 .chatId(chatId)
                 .replyMarkup(keyboardBuilder.buildWaitingForApprovalMenu())
                 .build());
@@ -269,9 +270,11 @@ public class TeacherCommandHandler {
         stateManager.setState(chatId, TeacherState.WAITING_FOR_CONSULTATION_TITLE);
         botMessenger.execute(SendMessage.builder()
                 .chatId(chatId)
-                .text("➕ Создание новой консультации\n\n" +
-                        "Шаг 1/4: Введите название консультации\n" +
-                        "Например: \"Разбор курсовых работ\" или \"Подготовка к экзамену\"")
+                .text("""
+                        ➕ Создание новой консультации
+                        
+                        Шаг 1/4: Введите название консультации
+                        Например: "Разбор курсовых работ" или "Подготовка к экзамену\"""")
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build());
     }
@@ -374,14 +377,17 @@ public class TeacherCommandHandler {
         botMessenger.execute(SendMessage.builder()
                 .chatId(chatId)
                 .text(String.format(
-                        "✅ Консультация успешно создана!\n\n" +
-                                "📋 Консультация №%d\n" +
-                                "📝 %s\n" +
-                                "📅 %s\n" +
-                                "🕐 %s - %s\n" +
-                                "👥 Вместимость: %s\n" +
-                                "🔒 Автозакрытие: %s\n\n" +
-                                "Уведомления отправлены всем подписанным студентам.",
+                        """
+                                ✅ Консультация успешно создана!
+                                
+                                📋 Консультация №%d
+                                📝 %s
+                                📅 %s
+                                🕐 %s - %s
+                                👥 Вместимость: %s
+                                🔒 Автозакрытие: %s
+                                
+                                Уведомления отправлены всем подписанным студентам.""",
                         consultation.getId(),
                         title,
                         date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")),
@@ -722,12 +728,14 @@ public class TeacherCommandHandler {
 
         SendMessage sendMessage = SendMessage.builder()
                 .chatId(chatId)
-                .text("Введите новую дату и время в формате:\n" +
-                        "ДД.ММ.ГГГГ ЧЧ:ММ-ЧЧ:ММ\n\n" +
-                        "Примеры:\n" +
-                        "25.12.2024 15:30-17:00\n" +
-                        "25.12.24 15:30-17:00\n" +
-                        "25.12 15:30-17:00")
+                .text("""
+                        Введите новую дату и время в формате:
+                        ДД.ММ.ГГГГ ЧЧ:ММ-ЧЧ:ММ
+                        
+                        Примеры:
+                        25.12.2024 15:30-17:00
+                        25.12.24 15:30-17:00
+                        25.12 15:30-17:00""")
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build();
 
@@ -778,9 +786,11 @@ public class TeacherCommandHandler {
 
         SendMessage sendMessage = SendMessage.builder()
                 .chatId(chatId)
-                .text("Введите новую вместимость:\n\n" +
-                        "• Введите число (например: 5)\n" +
-                        "• Или введите 0 для без ограничений")
+                .text("""
+                        Введите новую вместимость:
+                        
+                        • Введите число (например: 5)
+                        • Или введите 0 для без ограничений""")
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build();
 
@@ -826,25 +836,25 @@ public class TeacherCommandHandler {
                     // Проверяем автоматическое изменение статуса при включённом автозакрытии
                     if (consultation.isAutoCloseOnCapacity()) {
                         ConsultationStatus oldStatus = consultation.getStatus();
-                        
+
                         // Случай 1: Уменьшили capacity или убрали ограничение → проверяем автозакрытие
-                        if (capacity != null && registeredCount >= capacity && 
-                            consultation.getStatus() == ConsultationStatus.OPEN) {
+                        if (capacity != null && registeredCount >= capacity &&
+                                consultation.getStatus() == ConsultationStatus.OPEN) {
                             // Автозакрытие: мест больше нет
                             consultationService.closeConsultation(consultation);
                             botMessenger.sendText("🔒 Консультация автоматически закрыта (достигнут лимит)", chatId);
-                        } 
+                        }
                         // Случай 2: Увеличили capacity или убрали ограничение → проверяем автооткрытие
-                        else if ((capacity == null || registeredCount < capacity) && 
-                                 consultation.getStatus() == ConsultationStatus.CLOSED) {
+                        else if ((capacity == null || registeredCount < capacity) &&
+                                consultation.getStatus() == ConsultationStatus.CLOSED) {
                             // Автооткрытие: появились свободные места
-                            TeacherConsultationService.OpenResult result = 
-                                consultationService.openConsultation(consultation);
+                            TeacherConsultationService.OpenResult result =
+                                    consultationService.openConsultation(consultation);
                             if (result.isSuccess()) {
                                 botMessenger.sendText("🔓 Консультация автоматически открыта (есть свободные места)", chatId);
                             }
                         }
-                        
+
                         // Если статус изменился, уведомляем
                         if (consultation.getStatus() != oldStatus) {
                             if (consultation.getStatus() == ConsultationStatus.OPEN) {
@@ -857,8 +867,8 @@ public class TeacherCommandHandler {
                     // notificationService.notifyRegisteredStudentsUpdate(consultation, "Изменена вместимость консультации");
 
                     // Если появились свободные места И статус не изменился, уведомляем подписчиков
-                    if (capacity != null && (oldCapacity == null || capacity > oldCapacity) && 
-                        registeredCount < capacity && consultation.getStatus() == ConsultationStatus.OPEN) {
+                    if (capacity != null && (oldCapacity == null || capacity > oldCapacity) &&
+                            registeredCount < capacity && consultation.getStatus() == ConsultationStatus.OPEN) {
                         notificationService.notifySubscribersAvailableSpots(consultation.getId(), null);
                     }
 
@@ -911,10 +921,10 @@ public class TeacherCommandHandler {
                         long registeredCount = consultation.getRegUsers() != null
                                 ? consultation.getRegUsers().size()
                                 : 0;
-                        
-                        if (consultation.getCapacity() != null && 
-                            registeredCount >= consultation.getCapacity() &&
-                            consultation.getStatus() == ConsultationStatus.OPEN) {
+
+                        if (consultation.getCapacity() != null &&
+                                registeredCount >= consultation.getCapacity() &&
+                                consultation.getStatus() == ConsultationStatus.OPEN) {
                             // Автоматически закрываем консультацию
                             consultationService.closeConsultation(consultation);
                             botMessenger.sendText("🔒 Консультация автоматически закрыта (достигнут лимит)", chatId);
@@ -1013,13 +1023,17 @@ public class TeacherCommandHandler {
         stateManager.setState(chatId, TeacherState.ACCEPTING_REQUEST_DATETIME);
         botMessenger.execute(SendMessage.builder()
                 .chatId(chatId)
-                .text("✅ Принятие запроса студента\n\n" +
-                        "Название уже указано студентом.\n\n" +
-                        "Шаг 1/3: Введите дату и время одной строкой\n\n" +
-                        "Формат: ДД.ММ.ГГГГ ЧЧ:ММ-ЧЧ:ММ\n" +
-                        "Примеры:\n" +
-                        "• 15.10.2025 14:00-16:00\n" +
-                        "• 20.10 10:00-12:00")
+                .text("""
+                        ✅ Принятие запроса студента
+                        
+                        Название уже указано студентом.
+                        
+                        Шаг 1/3: Введите дату и время одной строкой
+                        
+                        Формат: ДД.ММ.ГГГГ ЧЧ:ММ-ЧЧ:ММ
+                        Примеры:
+                        • 15.10.2025 14:00-16:00
+                        • 20.10 10:00-12:00""")
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build());
     }
@@ -1038,10 +1052,12 @@ public class TeacherCommandHandler {
         stateManager.setState(chatId, TeacherState.ACCEPTING_REQUEST_CAPACITY);
 
         botMessenger.sendText(
-                "✅ Дата и время сохранены\n\n" +
-                        "Шаг 2/3: Введите вместимость\n" +
-                        "• Введите число (например: 5)\n" +
-                        "• Или 0 для без ограничений",
+                """
+                        ✅ Дата и время сохранены
+                        
+                        Шаг 2/3: Введите вместимость
+                        • Введите число (например: 5)
+                        • Или 0 для без ограничений""",
                 chatId
         );
     }
@@ -1091,11 +1107,14 @@ public class TeacherCommandHandler {
                     botMessenger.execute(SendMessage.builder()
                             .chatId(chatId)
                             .text(String.format(
-                                    "✅ Запрос принят и превращён в консультацию!\n\n" +
-                                            "📋 Консультация №%d\n" +
-                                            "📝 %s\n" +
-                                            "📅 %s %s-%s\n\n" +
-                                            "Все заинтересованные студенты автоматически записаны и получили уведомление.",
+                                    """
+                                            ✅ Запрос принят и превращён в консультацию!
+                                            
+                                            📋 Консультация №%d
+                                            📝 %s
+                                            📅 %s %s-%s
+                                            
+                                            Все заинтересованные студенты автоматически записаны и получили уведомление.""",
                                     consultation.getId(),
                                     consultation.getTitle(),
                                     date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
@@ -1212,9 +1231,9 @@ public class TeacherCommandHandler {
         } else if (currentState == TeacherState.EDITING_REMINDER_TIME) {
             // 4) Редактирование времени напоминаний - возврат к профилю
             stateManager.resetState(chatId);
-            
+
             botMessenger.sendText("❌ Изменение времени напоминаний отменено", chatId);
-            
+
             // Показываем профиль через profileCommandHandler
             profileCommandHandler.handleProfileCommand("👤 Профиль", chatId);
 

@@ -73,7 +73,7 @@ public class ConsultationCleanupService {
         int deletedConsultations = consultationRepository.deleteByDateBefore(thirtyDaysAgo);
         log.info("Deleted {} old consultations", deletedConsultations);
 
-        log.info("Scheduled task completed: deleted {} consultations and {} registrations", 
+        log.info("Scheduled task completed: deleted {} consultations and {} registrations",
                 deletedConsultations, deletedRegistrations);
     }
 }

@@ -10,7 +10,33 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.*;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.ACCEPT_REQUEST;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK_TO_LIST;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CANCEL;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CANCEL_CONSULTATION;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CLOSE_REGISTRATION;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CONSULTATION_REQUESTS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CREATE_CONSULTATION;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_AUTO_CLOSE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_CAPACITY;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_CONSULTATION;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_DATE_TIME;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_TITLE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.FILTER_TASK_ALL;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.FILTER_TASK_COMPLETED;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.FILTER_TASK_INCOMPLETE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.HELP;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.MARK_TASK_COMPLETED;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.MARK_TASK_PENDING;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.MY_CONSULTATIONS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.MY_TASKS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.NO;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.NUMBER_PREFIX;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.OPEN_REGISTRATION;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.PROFILE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.VIEW_STUDENTS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.YES;
 
 /**
  * Утилита для построения клавиатур преподавателя.
@@ -49,7 +75,7 @@ public class TeacherKeyboardBuilder extends BaseKeyboardBuilder {
 
         // Добавляем консультации (максимум 5)
         addConsultationButtons(keyboard, consultations, MAX_LIST_ITEMS);
-        
+
         keyboard.add(createSingleButtonRow(BACK));
 
         return buildKeyboard(keyboard);
@@ -98,7 +124,7 @@ public class TeacherKeyboardBuilder extends BaseKeyboardBuilder {
 
         // Добавляем запросы (максимум 5)
         addConsultationButtons(keyboard, requests, MAX_LIST_ITEMS);
-        
+
         keyboard.add(createSingleButtonRow(BACK));
 
         return buildKeyboard(keyboard);

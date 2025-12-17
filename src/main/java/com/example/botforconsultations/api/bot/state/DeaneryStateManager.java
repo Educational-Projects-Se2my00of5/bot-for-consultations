@@ -31,11 +31,11 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
         EDITING_TODO_TITLE,                // Редактирование названия задачи
         EDITING_TODO_DESCRIPTION,          // Редактирование описания задачи
         EDITING_TODO_DEADLINE,             // Редактирование дедлайна задачи
-        
+
         // Состояния редактирования профиля для неподтвержденных пользователей
         WAITING_APPROVAL_EDITING_FIRST_NAME,  // Ожидание ввода нового имени (неподтвержденный)
         WAITING_APPROVAL_EDITING_LAST_NAME,   // Ожидание ввода новой фамилии (неподтвержденный)
-        
+
         // Состояния редактирования профиля для подтвержденных пользователей
         EDITING_PROFILE_FIRST_NAME,        // Ожидание ввода нового имени (подтвержденный)
         EDITING_PROFILE_LAST_NAME          // Ожидание ввода новой фамилии (подтвержденный)

@@ -8,7 +8,15 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -29,32 +37,6 @@ public class AdminController {
         return adminService.login(request);
     }
 
-    @GetMapping("activate-account/{id}")
-    @Operation(summary = "Активация аккаунта", security = @SecurityRequirement(name = "bearerAuth"))
-    @ResponseStatus(HttpStatus.OK)
-    public void activateAcc(
-            @PathVariable Long id
-    ) {
-        adminService.activateAcc(id);
-    }
-
-    @GetMapping("deactivate-account/{id}")
-    @Operation(summary = "Деактивация аккаунта", security = @SecurityRequirement(name = "bearerAuth"))
-    @ResponseStatus(HttpStatus.OK)
-    public void deactivateAcc(
-            @PathVariable Long id
-    ) {
-        adminService.deactivateAcc(id);
-    }
-
-    @GetMapping("unactive-accounts")
-    @Operation(summary = "Получения списка неактивных аккаунтов", security = @SecurityRequirement(name = "bearerAuth"))
-    @ResponseStatus(HttpStatus.OK)
-    public List<UserDto.TelegramUserInfo> getUnactiveAccounts(
-    ) {
-        return userMapper.toTelegramUserInfo(adminService.getUnactiveAccounts());
-    }
-
     @PostMapping("check-token")
     @Operation(summary = "Валидация токена")
     @ResponseStatus(HttpStatus.OK)
@@ -62,42 +44,58 @@ public class AdminController {
         adminService.checkToken(token.token());
     }
 
-    @GetMapping("user-info/{id}")
+    // ========== Универсальные эндпоинты для работы с пользователями ==========
+
+    @GetMapping("users/inactive")
+    @Operation(summary = "Получение всех неактивных пользователей", security = @SecurityRequirement(name = "bearerAuth"))
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserDto.TelegramUserInfo> getAllInactiveUsers() {
+        return userMapper.toTelegramUserInfo(adminService.getAllInactiveUsers());
+    }
+
+    @GetMapping("users/active")
+    @Operation(summary = "Получение всех активных пользователей", security = @SecurityRequirement(name = "bearerAuth"))
+    @ResponseStatus(HttpStatus.OK)
+    public List<UserDto.TelegramUserInfo> getAllActiveUsers() {
+        return userMapper.toTelegramUserInfo(adminService.getAllActiveUsers());
+    }
+
+    @GetMapping("users/{id}")
     @Operation(summary = "Получение информации о пользователе", security = @SecurityRequirement(name = "bearerAuth"))
     @ResponseStatus(HttpStatus.OK)
-    public UserDto.TelegramUserInfo getUserInfo(
-            @PathVariable Long id
-    ) {
+    public UserDto.TelegramUserInfo getUserInfo(@PathVariable Long id) {
         return userMapper.toTelegramUserInfo(adminService.getUserInfo(id));
     }
 
-    // Эндпоинты для работы с деканатом
-    @GetMapping("unactive-deanery-accounts")
-    @Operation(summary = "Получение списка неактивных аккаунтов деканата", security = @SecurityRequirement(name = "bearerAuth"))
+    @PutMapping("users/{id}/activate")
+    @Operation(summary = "Активация пользователя", security = @SecurityRequirement(name = "bearerAuth"))
     @ResponseStatus(HttpStatus.OK)
-    public List<UserDto.TelegramUserInfo> getUnactiveDeaneryAccounts() {
-        return userMapper.toTelegramUserInfo(adminService.getUnactiveDeaneryAccounts());
+    public void activateUser(@PathVariable Long id) {
+        adminService.toggleUserActivation(id, true);
     }
 
-    @GetMapping("activate-deanery-account/{id}")
-    @Operation(summary = "Активация аккаунта деканата", security = @SecurityRequirement(name = "bearerAuth"))
+    @PutMapping("users/{id}/deactivate")
+    @Operation(summary = "Деактивация пользователя", security = @SecurityRequirement(name = "bearerAuth"))
     @ResponseStatus(HttpStatus.OK)
-    public void activateDeaneryAccount(@PathVariable Long id) {
-        adminService.activateDeaneryAccount(id);
+    public void deactivateUser(@PathVariable Long id) {
+        adminService.toggleUserActivation(id, false);
     }
 
-    @GetMapping("deactivate-deanery-account/{id}")
-    @Operation(summary = "Деактивация аккаунта деканата", security = @SecurityRequirement(name = "bearerAuth"))
+    @PutMapping("users/{id}")
+    @Operation(summary = "Обновление информации о пользователе", security = @SecurityRequirement(name = "bearerAuth"))
     @ResponseStatus(HttpStatus.OK)
-    public void deactivateDeaneryAccount(@PathVariable Long id) {
-        adminService.deactivateDeaneryAccount(id);
+    public void updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UserDto.UpdateUser updateDto
+    ) {
+        adminService.updateUser(id, updateDto);
     }
 
-    @GetMapping("deanery-user-info/{id}")
-    @Operation(summary = "Получение информации о пользователе деканата", security = @SecurityRequirement(name = "bearerAuth"))
+    @DeleteMapping("users/{id}")
+    @Operation(summary = "Удаление пользователя (кроме студентов)", security = @SecurityRequirement(name = "bearerAuth"))
     @ResponseStatus(HttpStatus.OK)
-    public UserDto.TelegramUserInfo getDeaneryUserInfo(@PathVariable Long id) {
-        return userMapper.toTelegramUserInfo(adminService.getDeaneryUserInfo(id));
+    public void deleteUser(@PathVariable Long id) {
+        adminService.deleteUser(id);
     }
 }
 

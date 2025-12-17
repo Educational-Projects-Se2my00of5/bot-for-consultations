@@ -1,12 +1,12 @@
 package com.example.botforconsultations.api.contoller;
 
 import com.example.botforconsultations.api.bot.BotMessenger;
+import com.example.botforconsultations.api.bot.service.TodoTaskService;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import com.example.botforconsultations.core.service.GoogleCalendarService;
 import com.example.botforconsultations.core.service.GoogleOAuthService;
-import com.example.botforconsultations.api.bot.service.TodoTaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -42,20 +42,20 @@ public class GoogleOAuthController {
             @RequestParam(value = "code", required = false) String code,
             @RequestParam(value = "state", required = false) String state,
             @RequestParam(value = "error", required = false) String error) {
-        
+
         try {
             // Проверяем, есть ли ошибка от Google
             if (error != null) {
                 log.error("OAuth error from Google: {}", error);
                 return new RedirectView("/oauth-error.html?message=Google+OAuth+error:+" + error);
             }
-            
+
             // Проверяем наличие обязательных параметров
             if (code == null || state == null) {
                 log.error("Missing required parameters: code={}, state={}", code, state);
                 return new RedirectView("/oauth-error.html?message=Missing+required+parameters");
             }
-            
+
             // state содержит userId
             Long userId;
             try {
@@ -64,7 +64,7 @@ public class GoogleOAuthController {
                 log.error("Invalid state parameter: {}", state);
                 return new RedirectView("/oauth-error.html?message=Invalid+state+parameter");
             }
-            
+
             Optional<TelegramUser> userOpt = userRepository.findById(userId);
             if (userOpt.isEmpty()) {
                 log.error("User not found for OAuth callback: userId={}", userId);
@@ -117,11 +117,11 @@ public class GoogleOAuthController {
                 }
             }
 
-            log.info("Synced {} existing tasks to Google Calendar for user #{}", 
+            log.info("Synced {} existing tasks to Google Calendar for user #{}",
                     syncedCount, user.getId());
 
         } catch (Exception e) {
-            log.error("Error syncing existing tasks to calendar for user #{}: {}", 
+            log.error("Error syncing existing tasks to calendar for user #{}: {}",
                     user.getId(), e.getMessage());
         }
     }
@@ -140,10 +140,10 @@ public class GoogleOAuthController {
                     
                     Вы можете отключить интеграцию в любой момент через профиль.
                     """;
-            
+
             botMessenger.sendText(message, user.getTelegramId());
         } catch (Exception e) {
-            log.error("Error notifying user #{} about calendar connection: {}", 
+            log.error("Error notifying user #{} about calendar connection: {}",
                     user.getId(), e.getMessage());
         }
     }

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -51,7 +52,7 @@ public class GoogleCalendarService {
             DateTime deadline = new DateTime(
                     Date.from(task.getDeadline().atZone(ZoneId.systemDefault()).toInstant())
             );
-            
+
             EventDateTime start = new EventDateTime()
                     .setDateTime(deadline)
                     .setTimeZone("Europe/Moscow");
@@ -75,13 +76,13 @@ public class GoogleCalendarService {
 
                 Event.Reminders reminders = new Event.Reminders()
                         .setUseDefault(false)
-                        .setOverrides(Arrays.asList(reminder));
+                        .setOverrides(List.of(reminder));
                 event.setReminders(reminders);
             }
 
             // Создаем событие
             event = service.events().insert("primary", event).execute();
-            
+
             log.info("Created Google Calendar event {} for task #{}", event.getId(), task.getId());
             return Optional.of(event.getId());
 
@@ -114,7 +115,7 @@ public class GoogleCalendarService {
             DateTime deadline = new DateTime(
                     Date.from(task.getDeadline().atZone(ZoneId.systemDefault()).toInstant())
             );
-            
+
             EventDateTime start = new EventDateTime()
                     .setDateTime(deadline)
                     .setTimeZone("Europe/Moscow");
@@ -131,12 +132,12 @@ public class GoogleCalendarService {
 
             // Обновляем событие
             service.events().update("primary", eventId, event).execute();
-            
+
             log.info("Updated Google Calendar event {} for task #{}", eventId, task.getId());
             return true;
 
         } catch (Exception e) {
-            log.error("Error updating calendar event {} for task #{}: {}", 
+            log.error("Error updating calendar event {} for task #{}: {}",
                     eventId, task.getId(), e.getMessage());
             return false;
         }
@@ -154,7 +155,7 @@ public class GoogleCalendarService {
 
             Calendar service = getCalendarService(credentialOpt.get());
             service.events().delete("primary", eventId).execute();
-            
+
             log.info("Deleted Google Calendar event {}", eventId);
             return true;
 
@@ -175,13 +176,13 @@ public class GoogleCalendarService {
             }
 
             Calendar service = getCalendarService(credentialOpt.get());
-            
+
             Event event = service.events().get("primary", eventId).execute();
             event.setSummary("✅ " + event.getSummary().replace("📋 ", ""));
             event.setColorId("10"); // Зеленый цвет для выполненных
-            
+
             service.events().update("primary", eventId, event).execute();
-            
+
             log.info("Marked Google Calendar event {} as completed", eventId);
             return true;
 
@@ -196,16 +197,16 @@ public class GoogleCalendarService {
      */
     private String buildEventDescription(TodoTask task) {
         StringBuilder description = new StringBuilder();
-        
+
         description.append("Задача от деканата\n\n");
-        
+
         if (task.getDescription() != null && !task.getDescription().isEmpty()) {
             description.append("Описание: ").append(task.getDescription()).append("\n\n");
         }
-        
+
         description.append("Статус: ")
                 .append(task.getIsCompleted() ? "✅ Выполнено" : "⏳ В процессе");
-        
+
         return description.toString();
     }
 

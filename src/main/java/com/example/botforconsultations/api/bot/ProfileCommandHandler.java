@@ -96,14 +96,14 @@ public class ProfileCommandHandler {
             message.append("Роль: Студент\n");
         } else if (role == Role.TEACHER) {
             message.append("Роль: Преподаватель\n");
-            
+
             // Показываем время напоминаний для преподавателей
             if (user.isHasConfirmed()) {
-                String reminderTime = user.getReminderTime() != null 
-                    ? user.getReminderTime().getDisplayName() 
-                    : "не установлено";
+                String reminderTime = user.getReminderTime() != null
+                        ? user.getReminderTime().getDisplayName()
+                        : "не установлено";
                 message.append(String.format("⏰ Напоминания о задачах: %s\n", reminderTime));
-                
+
                 // Показываем статус подключения Google Calendar
                 boolean isCalendarConnected = googleOAuthService.isConnected(user);
                 if (isCalendarConnected) {
@@ -112,7 +112,7 @@ public class ProfileCommandHandler {
                     message.append("📅 Google Calendar: не подключен\n");
                 }
             }
-            
+
             if (!user.isHasConfirmed()) {
                 message.append("\n⏳ Ваш аккаунт ожидает подтверждения администратором");
             }
@@ -135,8 +135,8 @@ public class ProfileCommandHandler {
                 .chatId(chatId)
                 .text(message.toString())
                 .replyMarkup(keyboardBuilder.buildProfileKeyboard(
-                        showReminderButton, 
-                        showConnectCalendar, 
+                        showReminderButton,
+                        showConnectCalendar,
                         showDisconnectCalendar))
                 .build());
     }
@@ -226,14 +226,16 @@ public class ProfileCommandHandler {
 
         teacherStateManager.setState(chatId, TeacherState.EDITING_REMINDER_TIME);
 
-        String currentTime = user.getReminderTime() != null 
-            ? user.getReminderTime().getDisplayName() 
-            : "не установлено";
+        String currentTime = user.getReminderTime() != null
+                ? user.getReminderTime().getDisplayName()
+                : "не установлено";
 
         botMessenger.execute(SendMessage.builder()
                 .chatId(chatId)
-                .text(String.format("⏰ Текущее время напоминаний: %s\n\n" +
-                        "Выберите за сколько времени до дедлайна задачи вы хотите получать напоминание:", 
+                .text(String.format("""
+                                ⏰ Текущее время напоминаний: %s
+                                
+                                Выберите за сколько времени до дедлайна задачи вы хотите получать напоминание:""",
                         currentTime))
                 .replyMarkup(keyboardBuilder.buildReminderTimeKeyboard())
                 .build());
@@ -244,14 +246,14 @@ public class ProfileCommandHandler {
      */
     private boolean handleReminderTimeSelection(String text, Long chatId, TelegramUser user) {
         ReminderTime selectedTime = parseReminderTime(text);
-        
+
         if (selectedTime == null) {
             return false;
         }
 
         ProfileService.ProfileUpdateResult result = profileService.updateReminderTime(user, selectedTime);
         botMessenger.sendText(result.message(), chatId);
-        
+
         showProfile(chatId, user);
         return true;
     }
@@ -276,7 +278,7 @@ public class ProfileCommandHandler {
         try {
             // Генерируем URL для авторизации
             String authUrl = googleOAuthService.getAuthorizationUrl(user.getId());
-            
+
             String message = String.format("""
                     🔗 Подключение Google Calendar
                     
@@ -292,7 +294,7 @@ public class ProfileCommandHandler {
                     
                     ℹ️ После подключения все ваши активные задачи будут добавлены в календарь, а новые задачи будут автоматически синхронизироваться.
                     """, authUrl);
-            
+
             botMessenger.sendText(message, chatId);
         } catch (Exception e) {
             botMessenger.sendText("❌ Ошибка при создании ссылки для авторизации. Попробуйте позже.", chatId);
@@ -305,7 +307,7 @@ public class ProfileCommandHandler {
     private void handleDisconnectGoogleCalendar(Long chatId, TelegramUser user) {
         try {
             googleOAuthService.disconnect(user);
-            
+
             String message = """
                     ✅ Google Calendar отключен
                     
@@ -314,7 +316,7 @@ public class ProfileCommandHandler {
                     
                     Вы можете подключить календарь снова в любой момент через профиль.
                     """;
-            
+
             botMessenger.sendText(message, chatId);
             showProfile(chatId, user);
         } catch (Exception e) {

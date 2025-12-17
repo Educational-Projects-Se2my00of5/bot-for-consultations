@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
+import { login as apiLogin } from '../api/adminApi';
 import './LoginPage.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 const LoginPage = () => {
   const [login, setLogin] = useState('');
@@ -15,7 +14,7 @@ const LoginPage = () => {
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (token) {
-      navigate('/users');
+      navigate('/inactive');
     }
   }, [navigate]);
 
@@ -25,23 +24,9 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/admin/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ login, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Неверный логин или пароль');
-      }
-
-      const token = await response.text();
-      // Сохраняем токен в localStorage
+      const token = await apiLogin({ login, password });
       localStorage.setItem('adminToken', token);
-      // Перенаправляем на страницу списка пользователей (создадим её позже)
-      navigate('/users');
+      navigate('/inactive');
     } catch (err) {
       setError(err.message || 'Произошла ошибка при входе');
     } finally {

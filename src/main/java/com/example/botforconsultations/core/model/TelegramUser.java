@@ -4,11 +4,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(
-    name = "telegram_users"
+        name = "telegram_users"
 )
 @Getter
 @Setter
@@ -22,7 +27,7 @@ public class TelegramUser extends User {
     private String lastName;
     private String phone;
     private boolean hasConfirmed;
-    
+
     // Настройки напоминаний для ToDo
     @Enumerated(EnumType.STRING)
     private ReminderTime reminderTime;

@@ -5,7 +5,11 @@ import com.example.botforconsultations.api.bot.service.TeacherSearchService;
 import com.example.botforconsultations.api.bot.service.TodoTaskService;
 import com.example.botforconsultations.api.bot.state.DeaneryStateManager;
 import com.example.botforconsultations.api.bot.state.DeaneryStateManager.DeaneryState;
-import com.example.botforconsultations.api.bot.utils.*;
+import com.example.botforconsultations.api.bot.utils.ConsultationMessageFormatter;
+import com.example.botforconsultations.api.bot.utils.DeaneryKeyboardBuilder;
+import com.example.botforconsultations.api.bot.utils.KeyboardConstants;
+import com.example.botforconsultations.api.bot.utils.TeacherNameFormatter;
+import com.example.botforconsultations.api.bot.utils.TodoMessageFormatter;
 import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.model.TodoTask;
@@ -199,9 +203,12 @@ public class DeaneryCommandHandler {
     public void sendWaitingApprovalMenu(Long chatId) {
         stateManager.resetState(chatId);
         botMessenger.execute(SendMessage.builder()
-                .text("⏳ Ваш аккаунт ожидает подтверждения администратором.\n\n" +
-                        "После подтверждения вы сможете управлять консультациями и задачами.\n\n" +
-                        "Пока вы можете редактировать свой профиль:")
+                .text("""
+                        ⏳ Ваш аккаунт ожидает подтверждения администратором.
+                        
+                        После подтверждения вы сможете управлять консультациями и задачами.
+                        
+                        Пока вы можете редактировать свой профиль:""")
                 .chatId(chatId)
                 .replyMarkup(keyboardBuilder.buildWaitingForApprovalMenu())
                 .build());
@@ -352,9 +359,6 @@ public class DeaneryCommandHandler {
                 .build());
     }
 
-    /**
-     * Применить фильтр к консультациям
-     */
     /**
      * Применить фильтр по времени (консультации или задачи в зависимости от контекста)
      */
@@ -582,11 +586,7 @@ public class DeaneryCommandHandler {
 
         switch (currentState) {
             case VIEWING_TEACHER_CONSULTATIONS -> sendTeachersMenu(chatId);
-            case VIEWING_CONSULTATION_DETAILS -> {
-                // Вернуться к списку консультаций преподавателя
-                backToConsultationsList(chatId);
-            }
-            case VIEWING_TEACHER_TASKS -> {
+            case VIEWING_CONSULTATION_DETAILS, VIEWING_TEACHER_TASKS -> {
                 // Вернуться к списку консультаций преподавателя
                 backToConsultationsList(chatId);
             }
@@ -717,9 +717,6 @@ public class DeaneryCommandHandler {
     /**
      * Применить фильтр по статусу задач
      */
-    /**
-     * Применить фильтр по статусу задач
-     */
     private void applyTaskStatusFilter(Long chatId, String filter) {
         DeaneryState currentState = stateManager.getState(chatId);
         stateManager.setTaskStatusFilter(chatId, filter);
@@ -763,8 +760,10 @@ public class DeaneryCommandHandler {
         stateManager.setState(chatId, DeaneryState.CREATING_TODO_TITLE);
         botMessenger.execute(SendMessage.builder()
                 .chatId(chatId)
-                .text("➕ Создание новой задачи\n\n" +
-                        "Шаг 1/3: Введите название задачи")
+                .text("""
+                        ➕ Создание новой задачи
+                        
+                        Шаг 1/3: Введите название задачи""")
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build());
     }
@@ -795,10 +794,12 @@ public class DeaneryCommandHandler {
         stateManager.setState(chatId, DeaneryState.CREATING_TODO_DEADLINE);
 
         botMessenger.sendText(
-                "✅ Описание сохранено.\n\n" +
-                        "Шаг 3/3: Введите дедлайн\n" +
-                        "Формат: ДД.ММ.ГГГГ ЧЧ:ММ\n" +
-                        "Например: 15.12.2025 18:00",
+                """
+                        ✅ Описание сохранено.
+                        
+                        Шаг 3/3: Введите дедлайн
+                        Формат: ДД.ММ.ГГГГ ЧЧ:ММ
+                        Например: 15.12.2025 18:00""",
                 chatId
         );
     }
@@ -850,11 +851,13 @@ public class DeaneryCommandHandler {
             );
 
             botMessenger.sendText(
-                    String.format("✅ Задача успешно создана!\n\n" +
-                                    "📋 Задача №%d\n" +
-                                    "👨‍🏫 Преподаватель: %s %s\n" +
-                                    "📌 Название: %s\n" +
-                                    "⏰ Дедлайн: %s",
+                    String.format("""
+                                    ✅ Задача успешно создана!
+                                    
+                                    📋 Задача №%d
+                                    👨‍🏫 Преподаватель: %s %s
+                                    📌 Название: %s
+                                    ⏰ Дедлайн: %s""",
                             createdTask.getId(),
                             teacher.getFirstName(),
                             teacher.getLastName() != null ? teacher.getLastName() : "",
@@ -871,10 +874,13 @@ public class DeaneryCommandHandler {
 
         } catch (java.time.format.DateTimeParseException e) {
             botMessenger.sendText(
-                    "❌ Неверный формат даты и времени.\n\n" +
-                            "Используйте формат: ДД.ММ.ГГГГ ЧЧ:ММ\n" +
-                            "Например: 15.12.2025 18:00\n\n" +
-                            "Попробуйте ещё раз:",
+                    """
+                            ❌ Неверный формат даты и времени.
+                            
+                            Используйте формат: ДД.ММ.ГГГГ ЧЧ:ММ
+                            Например: 15.12.2025 18:00
+                            
+                            Попробуйте ещё раз:""",
                     chatId
             );
         }
@@ -994,8 +1000,10 @@ public class DeaneryCommandHandler {
         }
 
         String message = String.format(
-                "✏️ Редактирование задачи №%d\n\n" +
-                        "Выберите, что хотите изменить:",
+                """
+                        ✏️ Редактирование задачи №%d
+                        
+                        Выберите, что хотите изменить:""",
                 taskId
         );
 
@@ -1025,9 +1033,13 @@ public class DeaneryCommandHandler {
         stateManager.setState(chatId, DeaneryState.EDITING_TODO_TITLE);
         botMessenger.execute(SendMessage.builder()
                 .text(String.format(
-                        "✏️ Редактирование названия\n\n" +
-                                "Текущее название:\n%s\n\n" +
-                                "Введите новое название:",
+                        """
+                                ✏️ Редактирование названия
+                                
+                                Текущее название:
+                                %s
+                                
+                                Введите новое название:""",
                         task.getTitle()))
                 .chatId(chatId)
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
@@ -1082,9 +1094,13 @@ public class DeaneryCommandHandler {
         stateManager.setState(chatId, DeaneryState.EDITING_TODO_DESCRIPTION);
         botMessenger.execute(SendMessage.builder()
                 .text(String.format(
-                        "✏️ Редактирование описания\n\n" +
-                                "Текущее описание:\n%s\n\n" +
-                                "Введите новое описание:",
+                        """
+                                ✏️ Редактирование описания
+                                
+                                Текущее описание:
+                                %s
+                                
+                                Введите новое описание:""",
                         task.getDescription()))
                 .chatId(chatId)
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
@@ -1139,11 +1155,15 @@ public class DeaneryCommandHandler {
         stateManager.setState(chatId, DeaneryState.EDITING_TODO_DEADLINE);
         botMessenger.execute(SendMessage.builder()
                 .text(String.format(
-                        "✏️ Редактирование дедлайна\n\n" +
-                                "Текущий дедлайн:\n%s\n\n" +
-                                "Введите новый дедлайн\n" +
-                                "Формат: ДД.ММ.ГГГГ ЧЧ:ММ\n" +
-                                "Например: 15.12.2025 18:00",
+                        """
+                                ✏️ Редактирование дедлайна
+                                
+                                Текущий дедлайн:
+                                %s
+                                
+                                Введите новый дедлайн
+                                Формат: ДД.ММ.ГГГГ ЧЧ:ММ
+                                Например: 15.12.2025 18:00""",
                         task.getDeadline().format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))))
                 .chatId(chatId)
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
@@ -1183,10 +1203,13 @@ public class DeaneryCommandHandler {
             showTaskDetails(chatId, taskId);
         } catch (java.time.format.DateTimeParseException e) {
             botMessenger.sendText(
-                    "❌ Неверный формат даты и времени.\n\n" +
-                            "Используйте формат: ДД.ММ.ГГГГ ЧЧ:ММ\n" +
-                            "Например: 15.12.2025 18:00\n\n" +
-                            "Попробуйте ещё раз:",
+                    """
+                            ❌ Неверный формат даты и времени.
+                            
+                            Используйте формат: ДД.ММ.ГГГГ ЧЧ:ММ
+                            Например: 15.12.2025 18:00
+                            
+                            Попробуйте ещё раз:""",
                     chatId
             );
         } catch (Exception e) {
@@ -1217,11 +1240,15 @@ public class DeaneryCommandHandler {
         stateManager.setState(chatId, DeaneryState.CONFIRMING_DELETE_TASK);
 
         String message = String.format(
-                "⚠️ Подтверждение удаления\n\n" +
-                        "Вы уверены, что хотите удалить задачу?\n\n" +
-                        "📝 %s\n" +
-                        "👨‍🏫 %s %s\n\n" +
-                        "❗ Это действие нельзя отменить!",
+                """
+                        ⚠️ Подтверждение удаления
+                        
+                        Вы уверены, что хотите удалить задачу?
+                        
+                        📝 %s
+                        👨‍🏫 %s %s
+                        
+                        ❗ Это действие нельзя отменить!""",
                 task.getTitle(),
                 task.getTeacher().getFirstName(),
                 task.getTeacher().getLastName() != null ? task.getTeacher().getLastName() : ""
