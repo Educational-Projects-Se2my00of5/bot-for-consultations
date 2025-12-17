@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -521,8 +522,8 @@ public class DeaneryCommandHandler {
         message.append("👥 Список студентов\n\n");
         message.append(String.format("📋 Консультация №%d\n", consultation.getId()));
         message.append(String.format("📅 %s в %s\n\n",
-                consultation.getDate().format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")),
-                consultation.getStartTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))));
+                consultation.getDate().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
+                consultation.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"))));
 
         var regUsers = consultation.getRegUsers();
         if (regUsers == null || regUsers.isEmpty()) {
@@ -862,7 +863,7 @@ public class DeaneryCommandHandler {
                             teacher.getFirstName(),
                             teacher.getLastName() != null ? teacher.getLastName() : "",
                             title,
-                            deadline.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))),
+                            deadline.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))),
                     chatId
             );
 
@@ -1164,7 +1165,7 @@ public class DeaneryCommandHandler {
                                 Введите новый дедлайн
                                 Формат: ДД.ММ.ГГГГ ЧЧ:ММ
                                 Например: 15.12.2025 18:00""",
-                        task.getDeadline().format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))))
+                        task.getDeadline().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))))
                 .chatId(chatId)
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build());

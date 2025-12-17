@@ -4,6 +4,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -129,5 +131,13 @@ public abstract class BaseKeyboardBuilder {
         keyboard.add(createSingleButtonRow(KeyboardConstants.CANCEL));
 
         return buildKeyboard(keyboard);
+    }
+
+    protected String formatDate(LocalDate date) {
+        return date != null ? date.format(BUTTON_DATE_FORMATTER) : "";
+    }
+    
+    protected String formatTime(LocalTime time) {
+        return time != null ? time.format(BUTTON_TIME_FORMATTER) : "";
     }
 }

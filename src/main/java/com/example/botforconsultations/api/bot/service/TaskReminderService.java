@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -101,6 +102,6 @@ public class TaskReminderService {
      * Форматирование дедлайна для отображения
      */
     private String formatDeadline(LocalDateTime deadline) {
-        return deadline.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+        return deadline.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
     }
 }

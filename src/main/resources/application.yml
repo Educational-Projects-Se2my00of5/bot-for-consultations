@@ -20,6 +20,10 @@ bot:
   name: consultations1_bot
   token: ${BOT_TOKEN}
 
+springdoc:
+  swagger-ui:
+    url: /v3/api-docs
+
 google:
   calendar:
     client-id: ${GOOGLE_CLIENT_ID}

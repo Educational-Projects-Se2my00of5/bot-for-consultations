@@ -266,11 +266,21 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         int count = 0;
         for (Consultation consultation : consultations) {
             if (count >= maxCount) break;
-            String buttonText = String.format("%s%d - %s %s",
-                    NUMBER_PREFIX,
-                    consultation.getId(),
-                    consultation.getDate().format(BUTTON_DATE_FORMATTER),
-                    consultation.getStartTime().format(BUTTON_TIME_FORMATTER));
+            String buttonText;
+            if (consultation.getDate()!=null) {
+                buttonText = String.format("%s%d - %s %s",
+                        NUMBER_PREFIX,
+                        consultation.getId(),
+                        formatDate(consultation.getDate()),
+                        formatTime(consultation.getStartTime())
+                );
+            } else{
+                buttonText = String.format("%s%d - %s",
+                        NUMBER_PREFIX,
+                        consultation.getId(),
+                        consultation.getTitle()
+                );
+            }
             keyboard.add(createSingleButtonRow(buttonText));
             count++;
         }
