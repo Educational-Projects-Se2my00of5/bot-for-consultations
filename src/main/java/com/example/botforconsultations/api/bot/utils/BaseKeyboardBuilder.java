@@ -115,6 +115,8 @@ public abstract class BaseKeyboardBuilder {
             keyboard.add(createSingleButtonRow(KeyboardConstants.DISCONNECT_GOOGLE_CALENDAR));
         }
 
+        // Удаление аккаунта доступно для всех ролей
+        keyboard.add(createSingleButtonRow(KeyboardConstants.DELETE_ACCOUNT));
         keyboard.add(createSingleButtonRow(KeyboardConstants.BACK));
 
         return buildKeyboard(keyboard);
@@ -130,6 +132,15 @@ public abstract class BaseKeyboardBuilder {
         keyboard.add(createTwoButtonRow("⏱️ 1 час", "⏱️ 1 день"));
         keyboard.add(createSingleButtonRow(KeyboardConstants.CANCEL));
 
+        return buildKeyboard(keyboard);
+    }
+
+    /**
+     * Клавиатура подтверждения удаления (Да/Отмена)
+     */
+    public ReplyKeyboardMarkup buildConfirmDeleteKeyboard() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(createTwoButtonRow(KeyboardConstants.CONFIRM_DELETE, KeyboardConstants.CANCEL));
         return buildKeyboard(keyboard);
     }
 

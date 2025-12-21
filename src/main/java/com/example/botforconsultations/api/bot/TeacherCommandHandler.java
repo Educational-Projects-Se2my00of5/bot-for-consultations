@@ -19,6 +19,8 @@ import com.example.botforconsultations.core.repository.ConsultationRepository;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
@@ -53,7 +55,9 @@ public class TeacherCommandHandler {
     private final TeacherKeyboardBuilder keyboardBuilder;
     private final TeacherMessageFormatter messageFormatter;
     private final ProfileCommandHandler profileCommandHandler;
-    private final AuthCommandHandler authCommandHandler;
+    @Autowired
+    @Lazy
+    private AuthCommandHandler authCommandHandler;
 
     // Форматтеры для парсинга
     private static final DateTimeFormatter[] DATE_FORMATTERS = {
@@ -79,7 +83,8 @@ public class TeacherCommandHandler {
         if (currentState != TeacherState.DEFAULT
                 && currentState != TeacherState.VIEWING_CONSULTATION_DETAILS
                 && currentState != TeacherState.VIEWING_REQUEST_DETAILS
-                && currentState != TeacherState.VIEWING_TASK_DETAILS) {
+                && currentState != TeacherState.VIEWING_TASK_DETAILS
+                && currentState != TeacherState.WAITING_DELETE_CONFIRMATION) {
             switch (currentState) {
                 case WAITING_FOR_CONSULTATION_TITLE -> processConsultationTitle(text, chatId);
                 case WAITING_FOR_CONSULTATION_DATETIME -> processConsultationDateTime(text, chatId);

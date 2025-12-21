@@ -7,6 +7,7 @@ import com.example.botforconsultations.api.bot.state.StudentStateManager;
 import com.example.botforconsultations.api.bot.state.StudentStateManager.UserState;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager.TeacherState;
+import com.example.botforconsultations.api.bot.utils.KeyboardConstants;
 import com.example.botforconsultations.api.bot.utils.StudentKeyboardBuilder;
 import com.example.botforconsultations.core.model.ReminderTime;
 import com.example.botforconsultations.core.model.Role;
@@ -25,7 +26,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 public class ProfileCommandHandler {
 
     private final BotMessenger botMessenger;
-    private final TelegramUserRepository userRepository;
+    private final TelegramUserRepository telegramUserRepository;
     private final ProfileService profileService;
     private final StudentKeyboardBuilder keyboardBuilder;
     private final StudentStateManager studentStateManager;
@@ -38,6 +39,10 @@ public class ProfileCommandHandler {
      */
     public boolean handleProfileCommand(String text, Long chatId) {
         final TelegramUser user = getCurrentUser(chatId);
+
+        if (handleWaitingDeleteConfirmations(text, chatId, user)) {
+            return true;
+        }
         switch (text) {
             case "👤 Профиль" -> showProfile(chatId, user);
             case "✏️ Изменить имя" -> startFirstNameEdit(chatId, user);
@@ -45,6 +50,7 @@ public class ProfileCommandHandler {
             case "⏰ Время напоминаний" -> startReminderTimeEdit(chatId, user);
             case "🔗 Подключить Google Calendar" -> handleConnectGoogleCalendar(chatId, user);
             case "🔓 Отключить Google Calendar" -> handleDisconnectGoogleCalendar(chatId, user);
+            case KeyboardConstants.DELETE_ACCOUNT -> startDeleteConfirmation(chatId, user);
             default -> {
                 // Проверяем, не выбрано ли время напоминания
                 if (text.startsWith("⏱️ ")) {
@@ -202,7 +208,7 @@ public class ProfileCommandHandler {
      * Получить текущего пользователя
      */
     private TelegramUser getCurrentUser(Long chatId) {
-        return userRepository.findByTelegramId(chatId)
+        return telegramUserRepository.findByTelegramId(chatId)
                 .orElseThrow(() -> new IllegalStateException("Пользователь не найден"));
     }
 
@@ -239,6 +245,71 @@ public class ProfileCommandHandler {
                         currentTime))
                 .replyMarkup(keyboardBuilder.buildReminderTimeKeyboard())
                 .build());
+    }
+
+    private void startDeleteConfirmation(Long chatId, TelegramUser user) {
+        Role role = user.getRole();
+        if (role == Role.STUDENT) {
+            studentStateManager.setState(chatId, UserState.WAITING_DELETE_CONFIRMATION);
+        } else if (role == Role.TEACHER) {
+            teacherStateManager.setState(chatId, TeacherState.WAITING_DELETE_CONFIRMATION);
+        } else if (role == Role.DEANERY) {
+            deaneryStateManager.setState(chatId, DeaneryState.WAITING_DELETE_CONFIRMATION);
+        }
+
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text("Вы уверены, что хотите удалить аккаунт? Это действие необратимо.")
+                .replyMarkup(keyboardBuilder.buildConfirmDeleteKeyboard())
+                .build());
+    }
+
+    private void performAccountDeletion(TelegramUser user, Long chatId) {
+        // Удаляем аккаунт (каскадное удаление связанных данных)
+        telegramUserRepository.delete(user);
+        // Очищаем состояния
+        studentStateManager.clearUserData(chatId);
+        teacherStateManager.clearUserData(chatId);
+        deaneryStateManager.clearUserData(chatId);
+
+        botMessenger.sendText("Ваш аккаунт удалён. Чтобы зарегистрироваться снова, отправьте /start.", chatId);
+    }
+
+    private boolean handleWaitingDeleteConfirmations(String text, Long chatId, TelegramUser user) {
+        if (studentStateManager.getState(chatId) == UserState.WAITING_DELETE_CONFIRMATION) {
+            if (text.equals(KeyboardConstants.CONFIRM_DELETE)) {
+                performAccountDeletion(user, chatId);
+                return true;
+            } else if (text.equals(KeyboardConstants.CANCEL)) {
+                studentStateManager.resetState(chatId);
+                showProfile(chatId, user);
+                return true;
+            }
+        }
+
+        if (teacherStateManager.getState(chatId) == TeacherState.WAITING_DELETE_CONFIRMATION) {
+            if (text.equals(KeyboardConstants.CONFIRM_DELETE)) {
+                performAccountDeletion(user, chatId);
+                return true;
+            } else if (text.equals(KeyboardConstants.CANCEL)) {
+                teacherStateManager.resetState(chatId);
+                showProfile(chatId, user);
+                return true;
+            }
+        }
+
+        if (deaneryStateManager.getState(chatId) == DeaneryState.WAITING_DELETE_CONFIRMATION) {
+            if (text.equals(KeyboardConstants.CONFIRM_DELETE)) {
+                performAccountDeletion(user, chatId);
+                return true;
+            } else if (text.equals(KeyboardConstants.CANCEL)) {
+                deaneryStateManager.resetState(chatId);
+                showProfile(chatId, user);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

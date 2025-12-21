@@ -1,5 +1,6 @@
 package com.example.botforconsultations.core.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +20,8 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -63,4 +66,8 @@ public class Consultation {
 
     @OneToMany(mappedBy = "consultation", fetch = FetchType.EAGER)
     private Set<StudentConsultation> regUsers;
+
+    @OneToMany(mappedBy = "consultation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<StudentConsultation> studentConsultations = new ArrayList<>();
 }

@@ -17,6 +17,8 @@ import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
@@ -48,7 +50,10 @@ public class DeaneryCommandHandler {
     private final DeaneryKeyboardBuilder keyboardBuilder;
     private final ConsultationMessageFormatter messageFormatter;
     private final TodoMessageFormatter todoMessageFormatter;
-    private final AuthCommandHandler authCommandHandler;
+
+    @Autowired
+    @Lazy
+    private AuthCommandHandler authCommandHandler;
 
     /**
      * Главный обработчик команд деканата
@@ -1282,7 +1287,7 @@ public class DeaneryCommandHandler {
         botMessenger.execute(SendMessage.builder()
                 .text(message)
                 .chatId(chatId)
-                .replyMarkup(keyboardBuilder.buildDeleteTaskConfirmation())
+                .replyMarkup(keyboardBuilder.buildConfirmDeleteKeyboard())
                 .build());
     }
 

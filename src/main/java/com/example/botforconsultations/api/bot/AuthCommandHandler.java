@@ -151,6 +151,7 @@ public class AuthCommandHandler {
                     deaneryCommands.sendWaitingApprovalMenu(chatId);
                 }
             }
+            default -> botMessenger.sendText("Неизвестная ошибка.", chatId);
         }
     }
 

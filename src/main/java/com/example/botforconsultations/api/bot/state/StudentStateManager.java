@@ -21,6 +21,7 @@ public class StudentStateManager extends BaseStateManager<StudentStateManager.Us
         VIEWING_REQUEST_DETAILS,       // просмотр деталей запроса
         EDITING_PROFILE_FIRST_NAME,    // редактирование имени
         EDITING_PROFILE_LAST_NAME,     // редактирование фамилии
+        WAITING_DELETE_CONFIRMATION,   // подтверждение удаления аккаунта
         DEFAULT
     }
 

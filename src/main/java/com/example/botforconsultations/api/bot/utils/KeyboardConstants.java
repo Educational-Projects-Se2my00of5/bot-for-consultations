@@ -100,4 +100,5 @@ public final class KeyboardConstants {
 
 
     public static final String EDIT_ROLE = "✏️ Изменить роль";
+    public static final String DELETE_ACCOUNT = "🗑️ Удалить аккаунт";
 }

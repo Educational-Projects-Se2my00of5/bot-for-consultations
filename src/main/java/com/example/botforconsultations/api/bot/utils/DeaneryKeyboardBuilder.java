@@ -16,7 +16,6 @@ import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BA
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK_TO_LIST;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK_TO_TEACHERS;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CANCEL;
-import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CONFIRM_DELETE;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CREATE_TASK;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.DELETE_TASK;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_ROLE;
@@ -209,17 +208,6 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
 
         // Навигация
         keyboard.add(createSingleButtonRow(BACK_TO_LIST));
-
-        return buildKeyboard(keyboard);
-    }
-
-    /**
-     * Подтверждение удаления задачи
-     */
-    public ReplyKeyboardMarkup buildDeleteTaskConfirmation() {
-        List<KeyboardRow> keyboard = new ArrayList<>();
-
-        keyboard.add(createTwoButtonRow(CONFIRM_DELETE, CANCEL));
 
         return buildKeyboard(keyboard);
     }
