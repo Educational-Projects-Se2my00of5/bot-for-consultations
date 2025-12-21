@@ -44,7 +44,6 @@ public final class KeyboardConstants {
     public static final String CREATE_CONSULTATION = "➕ Создать консультацию";
     public static final String MY_CONSULTATIONS = "📅 Мои консультации";
     public static final String MY_TASKS = "📋 Мои задачи";
-    public static final String CONSULTATION_REQUESTS = "📋 Запросы на консультации";
     public static final String ACCEPT_REQUEST = "✅ Принять запрос";
     public static final String VIEW_STUDENTS = "👥 Просмотреть студентов";
     public static final String CLOSE_REGISTRATION = "🔒 Закрыть запись";

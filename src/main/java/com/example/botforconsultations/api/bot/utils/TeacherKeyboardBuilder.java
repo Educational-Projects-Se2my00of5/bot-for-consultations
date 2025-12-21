@@ -16,7 +16,6 @@ import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BA
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CANCEL;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CANCEL_CONSULTATION;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CLOSE_REGISTRATION;
-import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CONSULTATION_REQUESTS;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CREATE_CONSULTATION;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_AUTO_CLOSE;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_CAPACITY;
@@ -35,6 +34,7 @@ import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.NO
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.NUMBER_PREFIX;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.OPEN_REGISTRATION;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.PROFILE;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.VIEW_REQUESTS;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.VIEW_STUDENTS;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.YES;
 
@@ -61,7 +61,7 @@ public class TeacherKeyboardBuilder extends BaseKeyboardBuilder {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createTwoButtonRow(MY_CONSULTATIONS, CREATE_CONSULTATION));
-        keyboard.add(createTwoButtonRow(MY_TASKS, CONSULTATION_REQUESTS));
+        keyboard.add(createTwoButtonRow(MY_TASKS, VIEW_REQUESTS));
         keyboard.add(createTwoButtonRow(PROFILE, HELP));
 
         return buildKeyboard(keyboard);
