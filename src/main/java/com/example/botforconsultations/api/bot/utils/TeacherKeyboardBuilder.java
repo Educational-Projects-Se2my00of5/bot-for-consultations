@@ -21,6 +21,7 @@ import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.ED
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_CAPACITY;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_CONSULTATION;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_DATE_TIME;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_ROLE;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_TITLE;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.FILTER_TASK_ALL;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.FILTER_TASK_COMPLETED;
@@ -51,6 +52,7 @@ public class TeacherKeyboardBuilder extends BaseKeyboardBuilder {
     public ReplyKeyboardMarkup buildWaitingForApprovalMenu() {
         List<KeyboardRow> keyboard = new ArrayList<>();
         keyboard.add(createSingleButtonRow(PROFILE));
+        keyboard.add(createSingleButtonRow(EDIT_ROLE));
         return buildKeyboard(keyboard);
     }
 
@@ -198,18 +200,18 @@ public class TeacherKeyboardBuilder extends BaseKeyboardBuilder {
         for (Consultation consultation : consultations) {
             if (count >= maxCount) break;
             String buttonText;
-            if (consultation.getDate()!=null) {
+            if (consultation.getDate() != null) {
                 buttonText = String.format("%s%d - %s %s",
-                    NUMBER_PREFIX,
-                    consultation.getId(),
-                    formatDate(consultation.getDate()),
-                    formatTime(consultation.getStartTime())
+                        NUMBER_PREFIX,
+                        consultation.getId(),
+                        formatDate(consultation.getDate()),
+                        formatTime(consultation.getStartTime())
                 );
-            } else{
+            } else {
                 buttonText = String.format("%s%d - %s",
-                    NUMBER_PREFIX,
-                    consultation.getId(),
-                    consultation.getTitle()
+                        NUMBER_PREFIX,
+                        consultation.getId(),
+                        consultation.getTitle()
                 );
             }
             keyboard.add(createSingleButtonRow(buttonText));

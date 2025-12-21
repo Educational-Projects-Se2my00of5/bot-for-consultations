@@ -11,6 +11,7 @@ import com.example.botforconsultations.api.bot.utils.KeyboardConstants;
 import com.example.botforconsultations.api.bot.utils.TeacherNameFormatter;
 import com.example.botforconsultations.api.bot.utils.TodoMessageFormatter;
 import com.example.botforconsultations.core.model.Consultation;
+import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.model.TodoTask;
 import com.example.botforconsultations.core.repository.TelegramUserRepository;
@@ -47,6 +48,7 @@ public class DeaneryCommandHandler {
     private final DeaneryKeyboardBuilder keyboardBuilder;
     private final ConsultationMessageFormatter messageFormatter;
     private final TodoMessageFormatter todoMessageFormatter;
+    private final AuthCommandHandler authCommandHandler;
 
     /**
      * Главный обработчик команд деканата
@@ -189,8 +191,30 @@ public class DeaneryCommandHandler {
             return;
         }
 
+        // Если ожидаем выбора роли
+        if (currentState == DeaneryState.WAITING_APPROVAL_ROLE_SELECTION) {
+            Role role = switch (text) {
+                case "Я студент" -> Role.STUDENT;
+                case "Я преподаватель" -> Role.TEACHER;
+                case "Я сотрудник деканата" -> Role.DEANERY;
+                default -> null;
+            };
+
+            if (role != null) {
+                authCommandHandler.handleRoleChange(chatId, role);
+                stateManager.resetState(chatId);
+            } else {
+                sendWaitingApprovalMenu(chatId);
+            }
+            return;
+        }
+
         switch (text) {
             case KeyboardConstants.BACK -> sendWaitingApprovalMenu(chatId);
+            case KeyboardConstants.EDIT_ROLE -> {
+                stateManager.setState(chatId, DeaneryState.WAITING_APPROVAL_ROLE_SELECTION);
+                authCommandHandler.sendRoleSelectionMenu(chatId, true);
+            }
             default -> botMessenger.sendText(
                     "Извините, я не понимаю эту команду.",
                     chatId

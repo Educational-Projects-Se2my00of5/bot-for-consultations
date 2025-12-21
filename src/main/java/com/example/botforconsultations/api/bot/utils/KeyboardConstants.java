@@ -97,4 +97,7 @@ public final class KeyboardConstants {
     public static final String COMPLETED_PREFIX = "✅ ";
     public static final String PENDING_PREFIX = "⏳ ";
     public static final String NUMBER_PREFIX = "№";
+
+
+    public static final String EDIT_ROLE = "✏️ Изменить роль";
 }

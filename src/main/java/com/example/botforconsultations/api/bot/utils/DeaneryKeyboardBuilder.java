@@ -19,6 +19,7 @@ import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CA
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CONFIRM_DELETE;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CREATE_TASK;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.DELETE_TASK;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_ROLE;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_TASK;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_TASK_DEADLINE;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.EDIT_TASK_DESCRIPTION;
@@ -63,6 +64,7 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         keyboard.add(createSingleButtonRow(PROFILE));
+        keyboard.add(createSingleButtonRow(EDIT_ROLE));
 
         return buildKeyboard(keyboard);
     }
@@ -267,14 +269,14 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         for (Consultation consultation : consultations) {
             if (count >= maxCount) break;
             String buttonText;
-            if (consultation.getDate()!=null) {
+            if (consultation.getDate() != null) {
                 buttonText = String.format("%s%d - %s %s",
                         NUMBER_PREFIX,
                         consultation.getId(),
                         formatDate(consultation.getDate()),
                         formatTime(consultation.getStartTime())
                 );
-            } else{
+            } else {
                 buttonText = String.format("%s%d - %s",
                         NUMBER_PREFIX,
                         consultation.getId(),

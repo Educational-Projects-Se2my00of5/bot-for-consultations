@@ -2,15 +2,16 @@ package com.example.botforconsultations.api.bot;
 
 import com.example.botforconsultations.api.bot.service.ConsultationRequestService;
 import com.example.botforconsultations.api.bot.service.NotificationService;
-import com.example.botforconsultations.api.bot.service.ProfileService;
 import com.example.botforconsultations.api.bot.service.TeacherConsultationService;
 import com.example.botforconsultations.api.bot.service.TodoTaskService;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager.TeacherState;
+import com.example.botforconsultations.api.bot.utils.KeyboardConstants;
 import com.example.botforconsultations.api.bot.utils.TeacherKeyboardBuilder;
 import com.example.botforconsultations.api.bot.utils.TeacherMessageFormatter;
 import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.ConsultationStatus;
+import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.StudentConsultation;
 import com.example.botforconsultations.core.model.TelegramUser;
 import com.example.botforconsultations.core.model.TodoTask;
@@ -52,6 +53,7 @@ public class TeacherCommandHandler {
     private final TeacherKeyboardBuilder keyboardBuilder;
     private final TeacherMessageFormatter messageFormatter;
     private final ProfileCommandHandler profileCommandHandler;
+    private final AuthCommandHandler authCommandHandler;
 
     // Форматтеры для парсинга
     private static final DateTimeFormatter[] DATE_FORMATTERS = {
@@ -193,8 +195,30 @@ public class TeacherCommandHandler {
         if (profileCommandHandler.handleProfileCommand(text, chatId)) {
             return;
         }
+        // Если ожидаем выбора роли
+        if (currentState == TeacherState.WAITING_APPROVAL_ROLE_SELECTION) {
+            Role role = switch (text) {
+                case "Я студент" -> Role.STUDENT;
+                case "Я преподаватель" -> Role.TEACHER;
+                case "Я сотрудник деканата" -> Role.DEANERY;
+                default -> null;
+            };
+
+            if (role != null) {
+                authCommandHandler.handleRoleChange(chatId, role);
+                stateManager.resetState(chatId);
+            } else {
+                sendWaitingApprovalMenu(chatId);
+            }
+            return;
+        }
+
         switch (text) {
-            case "◀️ Назад" -> sendWaitingApprovalMenu(chatId);
+            case KeyboardConstants.BACK -> sendWaitingApprovalMenu(chatId);
+            case KeyboardConstants.EDIT_ROLE -> {
+                stateManager.setState(chatId, TeacherState.WAITING_APPROVAL_ROLE_SELECTION);
+                authCommandHandler.sendRoleSelectionMenu(chatId, true);
+            }
             default -> botMessenger.sendText(
                     "Извините, я не понимаю эту команду.",
                     chatId
@@ -217,6 +241,7 @@ public class TeacherCommandHandler {
                 .replyMarkup(keyboardBuilder.buildWaitingForApprovalMenu())
                 .build());
     }
+
 
     // ========== Главное меню и справка ==========
 

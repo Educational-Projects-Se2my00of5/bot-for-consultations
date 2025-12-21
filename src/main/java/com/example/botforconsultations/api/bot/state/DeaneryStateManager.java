@@ -35,6 +35,7 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
         // Состояния редактирования профиля для неподтвержденных пользователей
         WAITING_APPROVAL_EDITING_FIRST_NAME,  // Ожидание ввода нового имени (неподтвержденный)
         WAITING_APPROVAL_EDITING_LAST_NAME,   // Ожидание ввода новой фамилии (неподтвержденный)
+        WAITING_APPROVAL_ROLE_SELECTION,      // Ожидание выбора роли (неподтвержденный)
 
         // Состояния редактирования профиля для подтвержденных пользователей
         EDITING_PROFILE_FIRST_NAME,        // Ожидание ввода нового имени (подтвержденный)

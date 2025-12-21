@@ -136,7 +136,7 @@ public abstract class BaseKeyboardBuilder {
     protected String formatDate(LocalDate date) {
         return date != null ? date.format(BUTTON_DATE_FORMATTER) : "";
     }
-    
+
     protected String formatTime(LocalTime time) {
         return time != null ? time.format(BUTTON_TIME_FORMATTER) : "";
     }
