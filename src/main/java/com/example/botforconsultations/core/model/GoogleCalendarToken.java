@@ -18,6 +18,8 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 /**
  * Модель для хранения токенов Google Calendar для пользователей
  */
@@ -55,18 +57,18 @@ public class GoogleCalendarToken {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = now();
     }
 
     /**
      * Проверка, истёк ли токен
      */
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return now().isAfter(expiresAt);
     }
 }

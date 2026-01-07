@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -105,7 +107,7 @@ public class TodoTaskService {
         if (todoOpt.isPresent()) {
             TodoTask todo = todoOpt.get();
             todo.setIsCompleted(true);
-            todo.setCompletedAt(LocalDateTime.now());
+            todo.setCompletedAt(now());
             todoTaskRepository.save(todo);
             log.info("Todo task {} marked as completed", todoId);
 
@@ -231,7 +233,7 @@ public class TodoTaskService {
      * Получить просроченные задачи
      */
     public List<TodoTask> getOverdueTasks() {
-        return todoTaskRepository.findOverdueTasks(LocalDateTime.now());
+        return todoTaskRepository.findOverdueTasks(now());
     }
 
     /**

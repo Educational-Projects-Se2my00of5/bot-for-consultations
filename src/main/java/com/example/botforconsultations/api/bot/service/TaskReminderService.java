@@ -16,6 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 /**
  * Сервис для отправки напоминаний преподавателям о приближающихся дедлайнах задач
  */
@@ -35,10 +37,10 @@ public class TaskReminderService {
     public void checkAndSendReminders() {
         log.debug("Checking for task reminders...");
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime currentTime = now();
 
         // Получаем все невыполненные задачи с дедлайном в будущем
-        List<TodoTask> tasks = todoTaskRepository.findByIsCompletedFalseAndDeadlineAfter(now);
+        List<TodoTask> tasks = todoTaskRepository.findByIsCompletedFalseAndDeadlineAfter(currentTime);
 
         for (TodoTask task : tasks) {
             if (task.getTeacher() == null || task.getTeacher().getReminderTimes() == null 
@@ -63,7 +65,7 @@ public class TaskReminderService {
 
                 // Проверяем, находится ли текущее время в интервале для отправки напоминания
                 // Интервал: от reminderDateTime до reminderDateTime + 5 минут (частота проверки)
-                if (now.isAfter(reminderDateTime) && now.isBefore(reminderDateTime.plusMinutes(5))) {
+                if (currentTime.isAfter(reminderDateTime) && currentTime.isBefore(reminderDateTime.plusMinutes(5))) {
                     sendReminder(task, reminderTime);
                 }
             }

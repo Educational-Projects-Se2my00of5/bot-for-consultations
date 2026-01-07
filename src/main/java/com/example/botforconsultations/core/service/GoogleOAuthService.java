@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Optional;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 /**
  * Сервис для OAuth авторизации с Google Calendar
  */
@@ -70,7 +72,7 @@ public class GoogleOAuthService {
             log.debug("Received token response from Google");
 
             // Вычисляем время истечения токена
-            LocalDateTime expiresAt = LocalDateTime.now()
+            LocalDateTime expiresAt = now()
                     .plusSeconds(tokenResponse.getExpiresInSeconds());
             log.debug("Token expires at: {}", expiresAt);
 
@@ -164,7 +166,7 @@ public class GoogleOAuthService {
 
             // Обновляем токен в базе
             token.setAccessToken(credential.getAccessToken());
-            token.setExpiresAt(LocalDateTime.now().plusSeconds(3600)); // Google обычно дает 1 час
+            token.setExpiresAt(now().plusSeconds(3600)); // Google обычно дает 1 час
             tokenRepository.save(token);
 
             log.info("Refreshed access token for user #{}", token.getUser().getId());

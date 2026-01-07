@@ -32,6 +32,8 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 /**
  * Обработчик команд преподавателя
  */
@@ -335,7 +337,8 @@ public class TeacherCommandHandler {
                         "Формат: ДД.ММ.ГГГГ ЧЧ:ММ-ЧЧ:ММ\n" +
                         "Примеры:\n" +
                         "• 15.10.2025 14:00-16:00\n" +
-                        "• 20.10 10:00-12:00",
+                        "• 20.10 10:00-12:00\n\n" +
+                        "🕒 Время по Томску (UTC+7)",
                 chatId
         );
     }
@@ -768,7 +771,9 @@ public class TeacherCommandHandler {
                         Примеры:
                         25.12.2024 15:30-17:00
                         25.12.24 15:30-17:00
-                        25.12 15:30-17:00""")
+                        25.12 15:30-17:00
+                        
+                        🕒 Время по Томску (UTC+7)""")
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build();
 
@@ -1066,7 +1071,9 @@ public class TeacherCommandHandler {
                         Формат: ДД.ММ.ГГГГ ЧЧ:ММ-ЧЧ:ММ
                         Примеры:
                         • 15.10.2025 14:00-16:00
-                        • 20.10 10:00-12:00""")
+                        • 20.10 10:00-12:00
+                        
+                        🕒 Время по Томску (UTC+7)""")
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build());
     }
@@ -1385,6 +1392,7 @@ public class TeacherCommandHandler {
                             "Примеры:\n" +
                             "• 15.10.2025 14:00-16:00\n" +
                             "• 20.10 10:00-12:00\n\n" +
+                            "🕒 Время по Томску (UTC+7)\n\n" +
                             "Попробуйте ещё раз:",
                     chatId
             );
@@ -1402,7 +1410,7 @@ public class TeacherCommandHandler {
         }
 
         // Валидация: дата и время начала не должны быть в прошлом
-        if (parsed.date.atTime(parsed.startTime).isBefore(java.time.LocalDateTime.now())) {
+        if (parsed.date.atTime(parsed.startTime).isBefore(now())) {
             botMessenger.sendText(
                     "❌ Дата и время консультации не могут быть в прошлом!\n" +
                             "Попробуйте ещё раз:",
@@ -1453,7 +1461,7 @@ public class TeacherCommandHandler {
      * Применить фильтры к списку задач
      */
     private List<TodoTask> applyTaskFilters(List<TodoTask> tasks, String statusFilter, String deadlineFilter) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime currentTime = now();
 
         return tasks.stream()
                 .filter(task -> {
@@ -1466,8 +1474,8 @@ public class TeacherCommandHandler {
 
                     // Фильтр по дедлайну
                     boolean deadlineMatch = switch (deadlineFilter) {
-                        case "past" -> task.getDeadline().isBefore(now) && !task.getIsCompleted();
-                        case "future" -> task.getDeadline().isAfter(now);
+                        case "past" -> task.getDeadline().isBefore(currentTime) && !task.getIsCompleted();
+                        case "future" -> task.getDeadline().isAfter(currentTime);
                         default -> true; // "all"
                     };
 

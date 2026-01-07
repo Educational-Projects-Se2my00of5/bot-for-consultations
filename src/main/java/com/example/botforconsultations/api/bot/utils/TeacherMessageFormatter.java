@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 /**
  * Утилита для форматирования сообщений преподавателя
  */
@@ -358,10 +360,10 @@ public class TeacherMessageFormatter {
             message.append(filterText).append("\n\n");
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime currentTime = now();
 
         for (TodoTask task : tasks) {
-            message.append(formatTaskShort(task, now));
+            message.append(formatTaskShort(task, currentTime));
         }
 
         message.append(String.format("\nВсего задач: %d", tasks.size()));
@@ -409,7 +411,7 @@ public class TeacherMessageFormatter {
      */
     public static String formatTaskDetails(TodoTask task) {
         StringBuilder message = new StringBuilder();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime currentTime = now();
 
         message.append(String.format("📋 Задача №%d\n\n", task.getId()));
 
@@ -427,12 +429,12 @@ public class TeacherMessageFormatter {
                     task.getDeadline().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))));
 
             // Статус просрочки/времени
-            if (!task.getIsCompleted() && task.getDeadline().isBefore(now)) {
-                long daysOverdue = java.time.Duration.between(task.getDeadline(), now).toDays();
+            if (!task.getIsCompleted() && task.getDeadline().isBefore(currentTime)) {
+                long daysOverdue = java.time.Duration.between(task.getDeadline(), currentTime).toDays();
                 message.append(String.format("⚠️ Просрочено на %d %s\n",
                         daysOverdue, getDaysWord(daysOverdue)));
             } else if (!task.getIsCompleted()) {
-                long daysLeft = java.time.Duration.between(now, task.getDeadline()).toDays();
+                long daysLeft = java.time.Duration.between(currentTime, task.getDeadline()).toDays();
                 if (daysLeft == 0) {
                     message.append("⏳ Дедлайн сегодня!\n");
                 } else {

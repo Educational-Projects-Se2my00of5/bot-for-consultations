@@ -26,6 +26,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 /**
  * Обработчик команд деканата
  * Управляет поиском преподавателей, просмотром консультаций и управлением задачами
@@ -763,7 +765,7 @@ public class DeaneryCommandHandler {
      * Применить фильтры к списку задач
      */
     private List<TodoTask> applyTaskFilters(List<TodoTask> tasks, String statusFilter, String deadlineFilter) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime currentTime = now();
 
         return tasks.stream()
                 .filter(task -> {
@@ -776,8 +778,8 @@ public class DeaneryCommandHandler {
 
                     // Фильтр по дедлайну
                     boolean deadlineMatch = switch (deadlineFilter) {
-                        case "past" -> task.getDeadline().isBefore(now);
-                        case "future" -> task.getDeadline().isAfter(now);
+                        case "past" -> task.getDeadline().isBefore(currentTime);
+                        case "future" -> task.getDeadline().isAfter(currentTime);
                         default -> true; // "all"
                     };
 
@@ -829,7 +831,9 @@ public class DeaneryCommandHandler {
                         
                         Шаг 3/3: Введите дедлайн
                         Формат: ДД.ММ.ГГГГ ЧЧ:ММ
-                        Например: 15.12.2025 18:00""",
+                        Например: 15.12.2025 18:00
+                        
+                        🕒 Время по Томску (UTC+7)""",
                 chatId
         );
     }
@@ -843,10 +847,10 @@ public class DeaneryCommandHandler {
         try {
             // Парсинг даты и времени в формате ДД.ММ.ГГГГ ЧЧ:ММ
             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-            java.time.LocalDateTime deadline = java.time.LocalDateTime.parse(deadlineText.trim(), formatter);
+            LocalDateTime deadline = LocalDateTime.parse(deadlineText.trim(), formatter);
 
             // Проверка что дата не в прошлом
-            if (deadline.isBefore(java.time.LocalDateTime.now())) {
+            if (deadline.isBefore(now())) {
                 botMessenger.sendText("❌ Дедлайн не может быть в прошлом. Введите другую дату:", chatId);
                 return;
             }
@@ -909,6 +913,8 @@ public class DeaneryCommandHandler {
                             
                             Используйте формат: ДД.ММ.ГГГГ ЧЧ:ММ
                             Например: 15.12.2025 18:00
+                            
+                            🕒 Время по Томску (UTC+7)
                             
                             Попробуйте ещё раз:""",
                     chatId
@@ -1193,7 +1199,9 @@ public class DeaneryCommandHandler {
                                 
                                 Введите новый дедлайн
                                 Формат: ДД.ММ.ГГГГ ЧЧ:ММ
-                                Например: 15.12.2025 18:00""",
+                                Например: 15.12.2025 18:00
+                                
+                                🕒 Время по Томску (UTC+7)""",
                         task.getDeadline().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))))
                 .chatId(chatId)
                 .replyMarkup(keyboardBuilder.buildCancelKeyboard())
@@ -1219,10 +1227,10 @@ public class DeaneryCommandHandler {
 
         try {
             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-            java.time.LocalDateTime newDeadline = java.time.LocalDateTime.parse(deadlineText.trim(), formatter);
+            LocalDateTime newDeadline = LocalDateTime.parse(deadlineText.trim(), formatter);
 
             // Проверка что дата не в прошлом
-            if (newDeadline.isBefore(java.time.LocalDateTime.now())) {
+            if (newDeadline.isBefore(now())) {
                 botMessenger.sendText("❌ Дедлайн не может быть в прошлом. Введите другую дату:", chatId);
                 return;
             }
@@ -1238,6 +1246,8 @@ public class DeaneryCommandHandler {
                             
                             Используйте формат: ДД.ММ.ГГГГ ЧЧ:ММ
                             Например: 15.12.2025 18:00
+                            
+                            🕒 Время по Томску (UTC+7)
                             
                             Попробуйте ещё раз:""",
                     chatId

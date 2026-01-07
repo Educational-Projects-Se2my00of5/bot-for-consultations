@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 /**
  * Контроллер для OAuth авторизации с Google Calendar
  */
@@ -101,7 +103,7 @@ public class GoogleOAuthController {
                     .stream()
                     .filter(task -> !task.getIsCompleted())
                     .filter(task -> task.getDeadline() != null)
-                    .filter(task -> task.getDeadline().isAfter(LocalDateTime.now()))
+                    .filter(task -> task.getDeadline().isAfter(now()))
                     .filter(task -> task.getGoogleCalendarEventId() == null) // Еще не добавлены в календарь
                     .toList();
 

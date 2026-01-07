@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 /**
  * Форматтер сообщений для задач (Todo)
  */
@@ -37,10 +39,10 @@ public class TodoMessageFormatter {
             message.append(filterText).append("\n\n");
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime currentTime = now();
 
         for (TodoTask task : tasks) {
-            message.append(formatTaskShort(task, now));
+            message.append(formatTaskShort(task, currentTime));
         }
 
         message.append(String.format("\nВсего задач: %d", tasks.size()));
@@ -67,10 +69,10 @@ public class TodoMessageFormatter {
             message.append(filterText).append("\n\n");
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime currentTime = now();
 
         for (TodoTask task : tasks) {
-            message.append(formatTaskShort(task, now));
+            message.append(formatTaskShort(task, currentTime));
         }
 
         message.append(String.format("\nВсего задач: %d", tasks.size()));
@@ -122,7 +124,7 @@ public class TodoMessageFormatter {
      */
     public String formatTaskDetails(TodoTask task) {
         StringBuilder message = new StringBuilder();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = now();
 
         message.append("📋 Детали задачи\n\n");
 

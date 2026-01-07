@@ -17,6 +17,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import static com.example.botforconsultations.core.util.TimeUtils.now;
+
 @Entity
 @Table(name = "todo_tasks")
 @Data
@@ -63,7 +65,7 @@ public class TodoTask {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = now();
         if (isCompleted == null) {
             isCompleted = false;
         }
