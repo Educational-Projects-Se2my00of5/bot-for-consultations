@@ -91,10 +91,7 @@ public class AuthCommandHandler {
             user.setRole(role);
             switch (role) {
                 case STUDENT -> user.setHasConfirmed(true);
-                case TEACHER -> {
-                    user.setHasConfirmed(false); // Преподаватели должны быть подтверждены администратором
-                    user.setReminderTime(ReminderTime.MIN_30); // Время напоминаний по умолчанию: 30 минут
-                }
+                case TEACHER -> user.setHasConfirmed(false); // Преподаватели должны быть подтверждены администратором
                 case DEANERY -> user.setHasConfirmed(false); // Деканат должен быть подтвержден администратором
                 case ADMIN -> user.setHasConfirmed(false); // Администраторы должны быть подтверждены
             }
@@ -218,10 +215,7 @@ public class AuthCommandHandler {
         user.setRole(role);
         switch (role) {
             case STUDENT -> user.setHasConfirmed(true);
-            case TEACHER -> {
-                user.setHasConfirmed(false);
-                user.setReminderTime(ReminderTime.MIN_30);
-            }
+            case TEACHER -> user.setHasConfirmed(false);
             case DEANERY -> user.setHasConfirmed(false);
             case ADMIN -> user.setHasConfirmed(false);
         }

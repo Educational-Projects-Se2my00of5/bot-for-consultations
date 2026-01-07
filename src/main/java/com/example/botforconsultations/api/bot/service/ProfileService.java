@@ -55,18 +55,41 @@ public class ProfileService {
     }
 
     /**
-     * Обновить время напоминаний
+     * Добавить время напоминаний
      */
     @Transactional
-    public ProfileUpdateResult updateReminderTime(TelegramUser user, ReminderTime reminderTime) {
+    public ProfileUpdateResult addReminderTime(TelegramUser user, ReminderTime reminderTime) {
         if (reminderTime == null) {
             return ProfileUpdateResult.failure("Некорректное время напоминания");
         }
 
-        user.setReminderTime(reminderTime);
+        if (user.getReminderTimes().contains(reminderTime)) {
+            return ProfileUpdateResult.failure("Это время напоминания уже добавлено");
+        }
+
+        user.getReminderTimes().add(reminderTime);
         telegramUserRepository.save(user);
 
-        return ProfileUpdateResult.success("⏰ Время напоминаний обновлено: " + reminderTime.getDisplayName() + " до дедлайна");
+        return ProfileUpdateResult.success("✅ Напоминание добавлено: " + reminderTime.getDisplayName() + " до дедлайна");
+    }
+
+    /**
+     * Удалить время напоминаний
+     */
+    @Transactional
+    public ProfileUpdateResult removeReminderTime(TelegramUser user, ReminderTime reminderTime) {
+        if (reminderTime == null) {
+            return ProfileUpdateResult.failure("Некорректное время напоминания");
+        }
+
+        if (!user.getReminderTimes().contains(reminderTime)) {
+            return ProfileUpdateResult.failure("Это время напоминания не установлено");
+        }
+
+        user.getReminderTimes().remove(reminderTime);
+        telegramUserRepository.save(user);
+
+        return ProfileUpdateResult.success("✅ Напоминание удалено: " + reminderTime.getDisplayName());
     }
 
     /**

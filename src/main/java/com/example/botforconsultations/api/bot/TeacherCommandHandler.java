@@ -30,6 +30,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Обработчик команд преподавателя
@@ -67,6 +68,17 @@ public class TeacherCommandHandler {
     };
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
+    private static final Set<TeacherState> EXCLUDE_STATES = Set.of(
+            TeacherState.DEFAULT,
+            TeacherState.VIEWING_CONSULTATION_DETAILS,
+            TeacherState.VIEWING_REQUEST_DETAILS,
+            TeacherState.VIEWING_TASK_DETAILS,
+            TeacherState.WAITING_DELETE_CONFIRMATION,
+            TeacherState.EDITING_REMINDER_TIME,
+            TeacherState.ADDING_REMINDER_TIME,
+            TeacherState.REMOVING_REMINDER_TIME
+    );
+
     /**
      * Главный обработчик команд преподавателя
      */
@@ -80,11 +92,8 @@ public class TeacherCommandHandler {
         }
 
         // Обработка состояний ввода
-        if (currentState != TeacherState.DEFAULT
-                && currentState != TeacherState.VIEWING_CONSULTATION_DETAILS
-                && currentState != TeacherState.VIEWING_REQUEST_DETAILS
-                && currentState != TeacherState.VIEWING_TASK_DETAILS
-                && currentState != TeacherState.WAITING_DELETE_CONFIRMATION) {
+
+        if (!EXCLUDE_STATES.contains(currentState)) {
             switch (currentState) {
                 case WAITING_FOR_CONSULTATION_TITLE -> processConsultationTitle(text, chatId);
                 case WAITING_FOR_CONSULTATION_DATETIME -> processConsultationDateTime(text, chatId);
@@ -104,12 +113,6 @@ public class TeacherCommandHandler {
                 case EDITING_PROFILE_LAST_NAME -> {
                     profileCommandHandler.processLastNameUpdate(text, chatId, getCurrentTeacher(chatId));
                     stateManager.resetState(chatId);
-                }
-                case EDITING_REMINDER_TIME -> {
-                    // Обработка выбора времени напоминаний через profileCommandHandler
-                    if (profileCommandHandler.handleProfileCommand(text, chatId)) {
-                        stateManager.resetState(chatId);
-                    }
                 }
                 default -> {
                 } // Никогда не должно произойти из-за условия if

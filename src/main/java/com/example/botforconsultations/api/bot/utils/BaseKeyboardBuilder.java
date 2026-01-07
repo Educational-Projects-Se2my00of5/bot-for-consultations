@@ -123,19 +123,6 @@ public abstract class BaseKeyboardBuilder {
     }
 
     /**
-     * Клавиатура для выбора времени напоминаний
-     */
-    public ReplyKeyboardMarkup buildReminderTimeKeyboard() {
-        List<KeyboardRow> keyboard = new ArrayList<>();
-
-        keyboard.add(createTwoButtonRow("⏱️ 15 минут", "⏱️ 30 минут"));
-        keyboard.add(createTwoButtonRow("⏱️ 1 час", "⏱️ 1 день"));
-        keyboard.add(createSingleButtonRow(KeyboardConstants.CANCEL));
-
-        return buildKeyboard(keyboard);
-    }
-
-    /**
      * Клавиатура подтверждения удаления (Да/Отмена)
      */
     public ReplyKeyboardMarkup buildConfirmDeleteKeyboard() {

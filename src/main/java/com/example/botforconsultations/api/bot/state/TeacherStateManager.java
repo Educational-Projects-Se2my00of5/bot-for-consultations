@@ -37,7 +37,9 @@ public class TeacherStateManager extends BaseStateManager<TeacherStateManager.Te
         EDITING_AUTOCLOSE,                    // Редактирование автозакрытия
         EDITING_PROFILE_FIRST_NAME,           // Редактирование имени (для активированных)
         EDITING_PROFILE_LAST_NAME,            // Редактирование фамилии (для активированных)
-        EDITING_REMINDER_TIME,                // Редактирование времени напоминаний (для активированных)
+        EDITING_REMINDER_TIME,                // Меню времени напоминаний (для активированных)
+        ADDING_REMINDER_TIME,                 // Добавление времени напоминания
+        REMOVING_REMINDER_TIME,               // Удаление времени напоминания
         WAITING_APPROVAL_EDITING_FIRST_NAME,  // Редактирование имени (для неактивированных)
         WAITING_APPROVAL_EDITING_LAST_NAME,   // Редактирование фамилии (для неактивированных)
         WAITING_APPROVAL_ROLE_SELECTION,      // Ожидание выбора роли (для неактивированных)

@@ -68,15 +68,17 @@ public class GoogleCalendarService {
                     .setTimeZone("Europe/Moscow");
             event.setEnd(end);
 
-            // Напоминания на основе настроек пользователя
-            if (user.getReminderTime() != null) {
-                EventReminder reminder = new EventReminder()
-                        .setMethod("popup")
-                        .setMinutes(user.getReminderTime().getMinutesBeforeDeadline());
+            // Напоминания на основе настроек пользователя (множественные напоминания)
+            if (user.getReminderTimes() != null && !user.getReminderTimes().isEmpty()) {
+                List<EventReminder> reminderList = user.getReminderTimes().stream()
+                        .map(rt -> new EventReminder()
+                                .setMethod("popup")
+                                .setMinutes(rt.getMinutesBeforeDeadline()))
+                        .toList();
 
                 Event.Reminders reminders = new Event.Reminders()
                         .setUseDefault(false)
-                        .setOverrides(List.of(reminder));
+                        .setOverrides(reminderList);
                 event.setReminders(reminders);
             }
 

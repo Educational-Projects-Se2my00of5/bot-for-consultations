@@ -9,6 +9,7 @@ import com.example.botforconsultations.api.bot.state.TeacherStateManager;
 import com.example.botforconsultations.api.bot.state.TeacherStateManager.TeacherState;
 import com.example.botforconsultations.api.bot.utils.KeyboardConstants;
 import com.example.botforconsultations.api.bot.utils.StudentKeyboardBuilder;
+import com.example.botforconsultations.api.bot.utils.TeacherKeyboardBuilder;
 import com.example.botforconsultations.core.model.ReminderTime;
 import com.example.botforconsultations.core.model.Role;
 import com.example.botforconsultations.core.model.TelegramUser;
@@ -17,6 +18,9 @@ import com.example.botforconsultations.core.service.GoogleOAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Обработчик команд профиля (общий для студентов и преподавателей)
@@ -29,6 +33,7 @@ public class ProfileCommandHandler {
     private final TelegramUserRepository telegramUserRepository;
     private final ProfileService profileService;
     private final StudentKeyboardBuilder keyboardBuilder;
+    private final TeacherKeyboardBuilder teacherKeyboardBuilder;
     private final StudentStateManager studentStateManager;
     private final TeacherStateManager teacherStateManager;
     private final DeaneryStateManager deaneryStateManager;
@@ -48,6 +53,8 @@ public class ProfileCommandHandler {
             case "✏️ Изменить имя" -> startFirstNameEdit(chatId, user);
             case "✏️ Изменить фамилию" -> startLastNameEdit(chatId, user);
             case "⏰ Время напоминаний" -> startReminderTimeEdit(chatId, user);
+            case KeyboardConstants.ADD_REMINDER_TIME -> startAddReminderTime(chatId, user);
+            case KeyboardConstants.REMOVE_REMINDER_TIME -> startRemoveReminderTime(chatId, user);
             case "🔗 Подключить Google Calendar" -> handleConnectGoogleCalendar(chatId, user);
             case "🔓 Отключить Google Calendar" -> handleDisconnectGoogleCalendar(chatId, user);
             case KeyboardConstants.DELETE_ACCOUNT -> startDeleteConfirmation(chatId, user);
@@ -83,6 +90,71 @@ public class ProfileCommandHandler {
         showProfile(chatId, user);
     }
 
+    /**
+     * Обработка добавления времени напоминания (вызывается из TeacherCommandHandler)
+     */
+    public void processAddReminderTime(String text, Long chatId) {
+        TelegramUser user = getCurrentUser(chatId);
+        ReminderTime selectedTime = parseReminderTime(text);
+        
+        if (selectedTime == null) {
+            botMessenger.sendText("⚠️ Неизвестное время напоминания", chatId);
+            return;
+        }
+
+        ProfileService.ProfileUpdateResult result = profileService.addReminderTime(user, selectedTime);
+        botMessenger.sendText(result.message(), chatId);
+    }
+
+    /**
+     * Обработка удаления времени напоминания (вызывается из TeacherCommandHandler)
+     */
+    public void processRemoveReminderTime(String text, Long chatId) {
+        TelegramUser user = getCurrentUser(chatId);
+        ReminderTime selectedTime = parseReminderTime(text);
+        
+        if (selectedTime == null) {
+            botMessenger.sendText("⚠️ Неизвестное время напоминания", chatId);
+            return;
+        }
+
+        ProfileService.ProfileUpdateResult result = profileService.removeReminderTime(user, selectedTime);
+        botMessenger.sendText(result.message(), chatId);
+    }
+
+    /**
+     * Начать редактирование времени напоминаний (публичный для TeacherCommandHandler)
+     */
+    public void startReminderTimeEdit(Long chatId, TelegramUser user) {
+        Role role = user.getRole();
+
+        // Только для преподавателей
+        if (role != Role.TEACHER) {
+            botMessenger.sendText("⚠️ Настройка времени напоминаний доступна только преподавателям", chatId);
+            return;
+        }
+
+        // Только для подтвержденных
+        if (!user.isHasConfirmed()) {
+            botMessenger.sendText("⚠️ Настройка времени напоминаний доступна после подтверждения аккаунта", chatId);
+            return;
+        }
+
+        teacherStateManager.setState(chatId, TeacherState.EDITING_REMINDER_TIME);
+
+        String currentTimesStr = formatReminderTimes(user.getReminderTimes());
+
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text(String.format("""
+                                ⏰ Текущие напоминания: %s
+                                
+                                Выберите действие:""",
+                        currentTimesStr))
+                .replyMarkup(teacherKeyboardBuilder.buildReminderTimeMenuKeyboard())
+                .build());
+    }
+
     // ========== Приватные методы ==========
 
     /**
@@ -105,10 +177,8 @@ public class ProfileCommandHandler {
 
             // Показываем время напоминаний для преподавателей
             if (user.isHasConfirmed()) {
-                String reminderTime = user.getReminderTime() != null
-                        ? user.getReminderTime().getDisplayName()
-                        : "не установлено";
-                message.append(String.format("⏰ Напоминания о задачах: %s\n", reminderTime));
+                String reminderTimesStr = formatReminderTimes(user.getReminderTimes());
+                message.append(String.format("⏰ Напоминания о задачах: %s\n", reminderTimesStr));
 
                 // Показываем статус подключения Google Calendar
                 boolean isCalendarConnected = googleOAuthService.isConnected(user);
@@ -213,37 +283,42 @@ public class ProfileCommandHandler {
     }
 
     /**
-     * Начать редактирование времени напоминаний (только для преподавателей)
+     * Начать добавление времени напоминания
      */
-    private void startReminderTimeEdit(Long chatId, TelegramUser user) {
-        Role role = user.getRole();
-
-        // Только для преподавателей
-        if (role != Role.TEACHER) {
-            botMessenger.sendText("⚠️ Настройка времени напоминаний доступна только преподавателям", chatId);
+    private void startAddReminderTime(Long chatId, TelegramUser user) {
+        Set<ReminderTime> existingTimes = user.getReminderTimes();
+        
+        if (existingTimes.size() >= ReminderTime.values().length) {
+            botMessenger.sendText("⚠️ Все доступные времена напоминаний уже добавлены", chatId);
             return;
         }
 
-        // Только для подтвержденных
-        if (!user.isHasConfirmed()) {
-            botMessenger.sendText("⚠️ Настройка времени напоминаний доступна после подтверждения аккаунта", chatId);
-            return;
-        }
-
-        teacherStateManager.setState(chatId, TeacherState.EDITING_REMINDER_TIME);
-
-        String currentTime = user.getReminderTime() != null
-                ? user.getReminderTime().getDisplayName()
-                : "не установлено";
+        teacherStateManager.setState(chatId, TeacherState.ADDING_REMINDER_TIME);
 
         botMessenger.execute(SendMessage.builder()
                 .chatId(chatId)
-                .text(String.format("""
-                                ⏰ Текущее время напоминаний: %s
-                                
-                                Выберите за сколько времени до дедлайна задачи вы хотите получать напоминание:""",
-                        currentTime))
-                .replyMarkup(keyboardBuilder.buildReminderTimeKeyboard())
+                .text("Выберите время напоминания для добавления:")
+                .replyMarkup(teacherKeyboardBuilder.buildAddReminderTimeKeyboard(existingTimes))
+                .build());
+    }
+
+    /**
+     * Начать удаление времени напоминания
+     */
+    private void startRemoveReminderTime(Long chatId, TelegramUser user) {
+        Set<ReminderTime> existingTimes = user.getReminderTimes();
+        
+        if (existingTimes.isEmpty()) {
+            botMessenger.sendText("⚠️ У вас нет установленных напоминаний для удаления", chatId);
+            return;
+        }
+
+        teacherStateManager.setState(chatId, TeacherState.REMOVING_REMINDER_TIME);
+
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text("Выберите время напоминания для удаления:")
+                .replyMarkup(teacherKeyboardBuilder.buildRemoveReminderTimeKeyboard(existingTimes))
                 .build());
     }
 
@@ -313,7 +388,7 @@ public class ProfileCommandHandler {
     }
 
     /**
-     * Обработка выбора времени напоминаний
+     * Обработка выбора времени напоминаний (добавление или удаление)
      */
     private boolean handleReminderTimeSelection(String text, Long chatId, TelegramUser user) {
         ReminderTime selectedTime = parseReminderTime(text);
@@ -322,11 +397,23 @@ public class ProfileCommandHandler {
             return false;
         }
 
-        ProfileService.ProfileUpdateResult result = profileService.updateReminderTime(user, selectedTime);
-        botMessenger.sendText(result.message(), chatId);
+        TeacherState state = teacherStateManager.getState(chatId);
+        
+        if (state == TeacherState.ADDING_REMINDER_TIME) {
+            ProfileService.ProfileUpdateResult result = profileService.addReminderTime(user, selectedTime);
+            botMessenger.sendText(result.message(), chatId);
+            teacherStateManager.resetState(chatId);
+            showProfile(chatId, user);
+            return true;
+        } else if (state == TeacherState.REMOVING_REMINDER_TIME) {
+            ProfileService.ProfileUpdateResult result = profileService.removeReminderTime(user, selectedTime);
+            botMessenger.sendText(result.message(), chatId);
+            teacherStateManager.resetState(chatId);
+            showProfile(chatId, user);
+            return true;
+        }
 
-        showProfile(chatId, user);
-        return true;
+        return false;
     }
 
     /**
@@ -340,6 +427,18 @@ public class ProfileCommandHandler {
             case "⏱️ 1 день" -> ReminderTime.DAY_1;
             default -> null;
         };
+    }
+
+    /**
+     * Форматирование списка времён напоминаний для отображения
+     */
+    private String formatReminderTimes(Set<ReminderTime> times) {
+        if (times == null || times.isEmpty()) {
+            return "не установлено";
+        }
+        return times.stream()
+                .map(ReminderTime::getDisplayName)
+                .collect(Collectors.joining(", "));
     }
 
     /**

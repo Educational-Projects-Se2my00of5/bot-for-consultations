@@ -1,12 +1,19 @@
 package com.example.botforconsultations.core.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -34,9 +41,13 @@ public class TelegramUser extends User {
     private String phone;
     private boolean hasConfirmed;
 
-    // Настройки напоминаний для ToDo
+    // Настройки напоминаний для ToDo (множественный выбор)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_reminder_times", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "reminder_time")
     @Enumerated(EnumType.STRING)
-    private ReminderTime reminderTime;
+    @Builder.Default
+    private Set<ReminderTime> reminderTimes = new HashSet<>();
 
         // Консультации студента - при удалении студента удаляются его записи
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)

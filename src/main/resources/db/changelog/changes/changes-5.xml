@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+
+    <changeSet id="1767771659191-1" author="Se2my00of5">
+        <createTable tableName="user_reminder_times">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reminder_time" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet id="1767771659191-2" author="Se2my00of5">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_reminder_times"
+                                 constraintName="fk_user_reminder_times_on_telegram_user" referencedColumnNames="id"
+                                 referencedTableName="telegram_users"/>
+    </changeSet>
+    <changeSet id="1767771659191-3" author="Se2my00of5">
+        <dropColumn columnName="reminder_time" tableName="telegram_users"/>
+    </changeSet>
+</databaseChangeLog>

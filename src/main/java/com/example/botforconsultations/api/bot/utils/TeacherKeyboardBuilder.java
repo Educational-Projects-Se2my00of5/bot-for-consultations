@@ -2,6 +2,7 @@ package com.example.botforconsultations.api.bot.utils;
 
 import com.example.botforconsultations.core.model.Consultation;
 import com.example.botforconsultations.core.model.ConsultationStatus;
+import com.example.botforconsultations.core.model.ReminderTime;
 import com.example.botforconsultations.core.model.TodoTask;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -9,6 +10,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.ACCEPT_REQUEST;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK;
@@ -281,6 +283,70 @@ public class TeacherKeyboardBuilder extends BaseKeyboardBuilder {
 
         keyboard.add(createSingleButtonRow(BACK_TO_LIST));
 
+        return buildKeyboard(keyboard);
+    }
+
+    // ========== Клавиатуры для напоминаний ==========
+
+    /**
+     * Клавиатура главного меню напоминаний (добавить/удалить)
+     */
+    public ReplyKeyboardMarkup buildReminderTimeMenuKeyboard() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(createTwoButtonRow(KeyboardConstants.ADD_REMINDER_TIME, KeyboardConstants.REMOVE_REMINDER_TIME));
+        keyboard.add(createSingleButtonRow(BACK));
+        return buildKeyboard(keyboard);
+    }
+
+    /**
+     * Клавиатура для добавления времени напоминаний (показывает только не выбранные времена)
+     */
+    public ReplyKeyboardMarkup buildAddReminderTimeKeyboard(Set<ReminderTime> existingTimes) {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        List<String> availableTimes = new ArrayList<>();
+
+        // Добавляем только те времена, которых ещё нет у пользователя
+        for (ReminderTime time : ReminderTime.values()) {
+            if (!existingTimes.contains(time)) {
+                availableTimes.add("⏱️ " + time.getDisplayName());
+            }
+        }
+
+        // Формируем ряды по 2 кнопки
+        for (int i = 0; i < availableTimes.size(); i += 2) {
+            if (i + 1 < availableTimes.size()) {
+                keyboard.add(createTwoButtonRow(availableTimes.get(i), availableTimes.get(i + 1)));
+            } else {
+                keyboard.add(createSingleButtonRow(availableTimes.get(i)));
+            }
+        }
+
+        keyboard.add(createSingleButtonRow(BACK));
+        return buildKeyboard(keyboard);
+    }
+
+    /**
+     * Клавиатура для удаления времени напоминаний (показывает только выбранные времена)
+     */
+    public ReplyKeyboardMarkup buildRemoveReminderTimeKeyboard(Set<ReminderTime> existingTimes) {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        List<String> selectedTimes = new ArrayList<>();
+
+        // Добавляем только те времена, которые уже выбраны
+        for (ReminderTime time : existingTimes) {
+            selectedTimes.add("⏱️ " + time.getDisplayName());
+        }
+
+        // Формируем ряды по 2 кнопки
+        for (int i = 0; i < selectedTimes.size(); i += 2) {
+            if (i + 1 < selectedTimes.size()) {
+                keyboard.add(createTwoButtonRow(selectedTimes.get(i), selectedTimes.get(i + 1)));
+            } else {
+                keyboard.add(createSingleButtonRow(selectedTimes.get(i)));
+            }
+        }
+
+        keyboard.add(createSingleButtonRow(BACK));
         return buildKeyboard(keyboard);
     }
 }

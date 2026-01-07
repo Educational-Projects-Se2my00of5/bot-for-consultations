@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Сервис для отправки напоминаний преподавателям о приближающихся дедлайнах задач
@@ -39,7 +41,8 @@ public class TaskReminderService {
         List<TodoTask> tasks = todoTaskRepository.findByIsCompletedFalseAndDeadlineAfter(now);
 
         for (TodoTask task : tasks) {
-            if (task.getTeacher() == null || task.getTeacher().getReminderTime() == null) {
+            if (task.getTeacher() == null || task.getTeacher().getReminderTimes() == null 
+                    || task.getTeacher().getReminderTimes().isEmpty()) {
                 continue;
             }
 
@@ -51,16 +54,18 @@ public class TaskReminderService {
                 continue;
             }
 
-            ReminderTime reminderTime = task.getTeacher().getReminderTime();
-            int minutesBeforeDeadline = reminderTime.getMinutesBeforeDeadline();
+            // Проверяем каждое время напоминания
+            for (ReminderTime reminderTime : task.getTeacher().getReminderTimes()) {
+                int minutesBeforeDeadline = reminderTime.getMinutesBeforeDeadline();
 
-            // Вычисляем время, когда нужно отправить напоминание
-            LocalDateTime reminderDateTime = task.getDeadline().minusMinutes(minutesBeforeDeadline);
+                // Вычисляем время, когда нужно отправить напоминание
+                LocalDateTime reminderDateTime = task.getDeadline().minusMinutes(minutesBeforeDeadline);
 
-            // Проверяем, находится ли текущее время в интервале для отправки напоминания
-            // Интервал: от reminderDateTime до reminderDateTime + 5 минут (частота проверки)
-            if (now.isAfter(reminderDateTime) && now.isBefore(reminderDateTime.plusMinutes(5))) {
-                sendReminder(task);
+                // Проверяем, находится ли текущее время в интервале для отправки напоминания
+                // Интервал: от reminderDateTime до reminderDateTime + 5 минут (частота проверки)
+                if (now.isAfter(reminderDateTime) && now.isBefore(reminderDateTime.plusMinutes(5))) {
+                    sendReminder(task, reminderTime);
+                }
             }
         }
     }
@@ -69,7 +74,7 @@ public class TaskReminderService {
      * Отправить напоминание о задаче в Telegram
      * Используется только для преподавателей без подключенного Google Calendar
      */
-    private void sendReminder(TodoTask task) {
+    private void sendReminder(TodoTask task, ReminderTime reminderTime) {
         try {
             Long chatId = task.getTeacher().getTelegramId();
 
@@ -87,7 +92,7 @@ public class TaskReminderService {
                     task.getTitle(),
                     task.getDescription() != null ? task.getDescription() : "Не указано",
                     formatDeadline(task.getDeadline()),
-                    task.getTeacher().getReminderTime().getDisplayName()
+                    reminderTime.getDisplayName()
             );
 
             botMessenger.sendText(message, chatId);
