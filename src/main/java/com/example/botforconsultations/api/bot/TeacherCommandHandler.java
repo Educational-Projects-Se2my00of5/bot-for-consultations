@@ -1108,6 +1108,34 @@ public class TeacherCommandHandler {
     private void processAcceptRequestCapacity(String input, Long chatId) {
         Integer capacity = parseCapacity(input);
 
+        // Проверяем, не меньше ли вместимость, чем уже записавшихся студентов
+        Long requestId = stateManager.getCurrentRequest(chatId);
+        if (requestId != null && capacity != null) {
+            requestService.findRequestById(requestId).ifPresent(request -> {
+                int interestedCount = request.getRegUsers() != null
+                        ? request.getRegUsers().size()
+                        : 0;
+
+                if (capacity < interestedCount) {
+                    botMessenger.sendText(
+                            String.format(
+                                    "❌ Вместимость (%d) не может быть меньше количества уже заинтересованных студентов (%d)!\n\n" +
+                                            "На этот запрос уже записалось %d %s.\n" +
+                                            "Укажите вместимость не менее %d или 0 для без ограничений.\n\n" +
+                                            "Попробуйте ещё раз:",
+                                    capacity,
+                                    interestedCount,
+                                    interestedCount,
+                                    getStudentWord(interestedCount),
+                                    interestedCount
+                            ),
+                            chatId
+                    );
+                    return;
+                }
+            });
+        }
+
         stateManager.setTempCapacity(chatId, capacity);
         stateManager.setState(chatId, TeacherState.ACCEPTING_REQUEST_AUTOCLOSE);
 
@@ -1119,6 +1147,19 @@ public class TeacherCommandHandler {
                         "Шаг 3/3: Автоматически закрывать запись при достижении лимита?")
                 .replyMarkup(keyboardBuilder.buildYesNoKeyboard())
                 .build());
+    }
+
+    /**
+     * Правильное склонение слова "студент"
+     */
+    private String getStudentWord(int count) {
+        if (count % 10 == 1 && count % 100 != 11) {
+            return "студент";
+        } else if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) {
+            return "студента";
+        } else {
+            return "студентов";
+        }
     }
 
     private void processAcceptRequestAutoClose(String answer, Long chatId) {

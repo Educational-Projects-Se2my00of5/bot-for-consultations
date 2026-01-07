@@ -18,6 +18,15 @@ public class TeacherNameFormatter {
                 lastName).trim();
     }
 
+    public static String formatFullNameExcludeId(TelegramUser teacher) {
+        String lastName = teacher.getLastName() != null ? teacher.getLastName() : "";
+        return String.format("%s %s",
+                teacher.getFirstName(),
+                lastName).trim();
+    }
+
+
+
     /**
      * Извлекает ID преподавателя из текста кнопки
      * Формат кнопки: "👨‍🏫 №123 Имя Фамилия"

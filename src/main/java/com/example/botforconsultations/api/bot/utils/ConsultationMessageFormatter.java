@@ -314,7 +314,7 @@ public class ConsultationMessageFormatter {
                     request.getId(),
                     request.getTitle()));
             message.append(String.format("   👤 Автор: %s\n",
-                    TeacherNameFormatter.formatFullName(request.getTeacher())));
+                    TeacherNameFormatter.formatFullNameExcludeId(request.getTeacher())));
             message.append(String.format("   👥 Заинтересовано: %d\n",
                     interestedCount));
             message.append("\n");
@@ -334,7 +334,7 @@ public class ConsultationMessageFormatter {
         message.append(String.format("📝 Тема: %s\n\n", request.getTitle()));
 
         message.append(String.format("👤 Автор запроса: %s\n",
-                TeacherNameFormatter.formatFullName(request.getTeacher())));
+                TeacherNameFormatter.formatFullNameExcludeId(request.getTeacher())));
 
         // Количество заинтересованных студентов
         int interestedCount = request.getRegUsers() != null ? request.getRegUsers().size() : 0;
