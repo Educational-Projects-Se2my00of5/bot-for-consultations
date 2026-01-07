@@ -132,6 +132,20 @@ public class StudentKeyboardBuilder extends BaseKeyboardBuilder {
     }
 
     /**
+     * Клавиатура для просмотра списка "Мои записи"
+     */
+    public ReplyKeyboardMarkup buildMyRegistrationsList(List<Consultation> consultations) {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        // Добавляем консультации (максимум 10)
+        addConsultationButtons(keyboard, consultations, MAX_REQUESTS_ITEMS);
+
+        keyboard.add(createSingleButtonRow(BACK));
+
+        return buildKeyboard(keyboard);
+    }
+
+    /**
      * Клавиатура для детального просмотра запроса
      */
     public ReplyKeyboardMarkup buildRequestDetails(boolean isRegistered) {

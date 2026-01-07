@@ -606,7 +606,17 @@ public class StudentCommandHandler {
             // Есть записи - устанавливаем состояние для возможности выбора по номеру
             stateManager.setState(chatId, UserState.VIEWING_CONSULTATION_DETAILS);
             stateManager.clearCurrentConsultation(chatId);
-            botMessenger.sendText(message, chatId);
+            
+            // Извлекаем консультации из регистраций
+            List<Consultation> consultations = registrations.stream()
+                    .map(StudentConsultation::getConsultation)
+                    .toList();
+            
+            botMessenger.execute(SendMessage.builder()
+                    .chatId(chatId)
+                    .text(message)
+                    .replyMarkup(keyboardBuilder.buildMyRegistrationsList(consultations))
+                    .build());
         }
     }
 

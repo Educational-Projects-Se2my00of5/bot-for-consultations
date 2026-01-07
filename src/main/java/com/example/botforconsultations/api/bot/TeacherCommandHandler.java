@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CLOSE_REGISTRATION;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.OPEN_REGISTRATION;
 import static com.example.botforconsultations.core.util.TimeUtils.now;
 
 /**
@@ -146,8 +148,8 @@ public class TeacherCommandHandler {
             case "📋 Просмотреть запросы" -> showStudentRequests(chatId);
 
             // Управление консультацией
-            case "🔒 Закрыть запись" -> handleCloseConsultation(chatId);
-            case "🔓 Открыть запись" -> handleOpenConsultation(chatId);
+            case CLOSE_REGISTRATION -> handleCloseConsultation(chatId);
+            case OPEN_REGISTRATION -> handleOpenConsultation(chatId);
             case "✏️ Редактировать" -> showEditMenu(chatId);
             case "❌ Отменить консультацию" -> handleCancelConsultation(chatId);
             case "👥 Просмотреть студентов" -> showRegisteredStudents(chatId);
