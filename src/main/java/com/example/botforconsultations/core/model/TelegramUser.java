@@ -41,7 +41,6 @@ public class TelegramUser extends User {
     private String phone;
     private boolean hasConfirmed;
 
-    // Настройки напоминаний для ToDo (множественный выбор)
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_reminder_times", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "reminder_time")

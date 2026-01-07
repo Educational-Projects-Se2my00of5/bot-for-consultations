@@ -27,7 +27,12 @@ public class TeacherConsultationService {
      * Получить все консультации преподавателя
      */
     public List<Consultation> getTeacherConsultations(TelegramUser teacher) {
-        return consultationRepository.findByTeacherOrderByStartTimeAsc(teacher);
+        List<Consultation> allConsultations = consultationRepository.findByTeacherOrderByStartTimeAsc(teacher);
+        List<Consultation> requests = consultationRepository.findByTeacherAndStatusOrderByIdDesc(teacher, ConsultationStatus.REQUEST);
+        // Исключаем запросы из всех консультаций
+        return allConsultations.stream()
+                .filter(consultation -> requests.stream().noneMatch(request -> request.getId().equals(consultation.getId())))
+                .toList();
     }
 
     /**

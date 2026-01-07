@@ -14,6 +14,7 @@ import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.AL
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK_TO_LIST;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.BACK_TO_TEACHERS;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CANCEL;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CANCEL_REGISTRATION;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.HELP;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.MY_REGISTRATIONS;
@@ -148,6 +149,15 @@ public class StudentKeyboardBuilder extends BaseKeyboardBuilder {
     public ReplyKeyboardMarkup buildBackKeyboard() {
         List<KeyboardRow> keyboard = new ArrayList<>();
         keyboard.add(createSingleButtonRow(BACK));
+        return buildKeyboard(keyboard);
+    }
+
+    /**
+     * Клавиатура с кнопкой "Отмена" для прерывания ввода
+     */
+    public ReplyKeyboardMarkup buildCancelKeyboard() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(createSingleButtonRow(CANCEL));
         return buildKeyboard(keyboard);
     }
 

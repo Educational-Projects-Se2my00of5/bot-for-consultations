@@ -68,6 +68,11 @@ public class StudentCommandHandler {
 
         UserState currentState = stateManager.getState(chatId);
 
+        // Обработка кнопки отмены для всех состояний ввода
+        if (handleCancelButton(text, chatId, currentState)) {
+            return;
+        }
+
         // Обработка состояний ввода
         if (currentState == UserState.WAITING_FOR_TEACHER_NAME) {
             processTeacherSearch(text, chatId);
@@ -364,7 +369,8 @@ public class StudentCommandHandler {
             );
         }
 
-        showTeacherConsultations(chatId, teacher);
+        // Решил что не надо отображать повторно список консультаций
+        //showTeacherConsultations(chatId, teacher);
     }
 
     private void showMySubscriptions(Long chatId) {
@@ -518,13 +524,14 @@ public class StudentCommandHandler {
 
         // Запрашиваем тему/вопрос от студента
         stateManager.setState(chatId, UserState.WAITING_FOR_CONSULTATION_MESSAGE);
-        botMessenger.sendText(
-                """
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text("""
                         Пожалуйста, укажите тему или вопрос, который хотите обсудить на консультации:
                         
-                        Например: "Разбор темы 'Рекурсия'" или "Помощь с курсовой работой\"""",
-                chatId
-        );
+                        Например: "Разбор темы 'Рекурсия'" или "Помощь с курсовой работой""")
+                .replyMarkup(keyboardBuilder.buildCancelKeyboard())
+                .build());
     }
 
     private void processConsultationRegistration(String message, Long chatId) {
@@ -606,6 +613,40 @@ public class StudentCommandHandler {
     // ========== Вспомогательные методы ==========
 
     /**
+     * Обработка кнопки отмены для всех состояний ввода
+     */
+    private boolean handleCancelButton(String text, Long chatId, UserState currentState) {
+        if (!text.equals("❌ Отмена")) {
+            return false;
+        }
+
+        stateManager.resetState(chatId);
+
+        switch (currentState) {
+            case WAITING_FOR_CONSULTATION_MESSAGE -> {
+                Long consultationId = stateManager.getCurrentConsultation(chatId);
+                if (consultationId != null) {
+                    showConsultationDetails(chatId, consultationId);
+                } else {
+                    sendMainMenu(chatId);
+                }
+            }
+            case WAITING_FOR_REQUEST_TITLE -> sendMainMenu(chatId);
+            case WAITING_FOR_REQUEST_MESSAGE -> {
+                Long requestId = stateManager.getCurrentRequest(chatId);
+                if (requestId != null) {
+                    showRequestDetails(chatId, requestId);
+                } else {
+                    showMyRequests(chatId);
+                }
+            }
+            default -> sendMainMenu(chatId);
+        }
+
+        return true;
+    }
+
+    /**
      * Получить текущего студента по chatId
      * Гарантированно вернет пользователя, т.к. UpdateConsumer проверяет регистрацию
      */
@@ -679,7 +720,7 @@ public class StudentCommandHandler {
                         Например: "Помощь с курсовой работой по Java" или "Разбор темы Многопоточность"
                         
                         Ваш запрос увидят все преподаватели, и кто-то из них сможет его принять.""")
-                .replyMarkup(keyboardBuilder.buildBackKeyboard())
+                .replyMarkup(keyboardBuilder.buildCancelKeyboard())
                 .build());
     }
 
@@ -774,13 +815,14 @@ public class StudentCommandHandler {
         }
 
         stateManager.setState(chatId, UserState.WAITING_FOR_REQUEST_MESSAGE);
-        botMessenger.sendText(
-                """
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text("""
                         Пожалуйста, укажите тему или вопрос, который хотите обсудить:
                         
-                        Например: "Интересует эта тема" или "Тоже нужна помощь\"""",
-                chatId
-        );
+                        Например: "Интересует эта тема" или "Тоже нужна помощь""")
+                .replyMarkup(keyboardBuilder.buildCancelKeyboard())
+                .build());
     }
 
     /**
