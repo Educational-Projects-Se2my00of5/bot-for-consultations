@@ -1111,29 +1111,30 @@ public class TeacherCommandHandler {
         // Проверяем, не меньше ли вместимость, чем уже записавшихся студентов
         Long requestId = stateManager.getCurrentRequest(chatId);
         if (requestId != null && capacity != null) {
-            requestService.findRequestById(requestId).ifPresent(request -> {
-                int interestedCount = request.getRegUsers() != null
-                        ? request.getRegUsers().size()
-                        : 0;
+            Consultation request = requestService.findRequestById(requestId).get();
 
-                if (capacity < interestedCount) {
-                    botMessenger.sendText(
-                            String.format(
-                                    "❌ Вместимость (%d) не может быть меньше количества уже заинтересованных студентов (%d)!\n\n" +
-                                            "На этот запрос уже записалось %d %s.\n" +
-                                            "Укажите вместимость не менее %d или 0 для без ограничений.\n\n" +
-                                            "Попробуйте ещё раз:",
-                                    capacity,
-                                    interestedCount,
-                                    interestedCount,
-                                    getStudentWord(interestedCount),
-                                    interestedCount
-                            ),
-                            chatId
-                    );
-                    return;
-                }
-            });
+            int interestedCount = request.getRegUsers() != null
+                    ? request.getRegUsers().size()
+                    : 0;
+
+            if (capacity < interestedCount) {
+                botMessenger.sendText(
+                        String.format(
+                                "❌ Вместимость (%d) не может быть меньше количества уже заинтересованных студентов (%d)!\n\n" +
+                                        "На этот запрос уже записалось %d %s.\n" +
+                                        "Укажите вместимость не менее %d или 0 для без ограничений.\n\n" +
+                                        "Попробуйте ещё раз:",
+                                capacity,
+                                interestedCount,
+                                interestedCount,
+                                getStudentWord(interestedCount),
+                                interestedCount
+                        ),
+                        chatId
+                );
+                return;
+            }
+
         }
 
         stateManager.setTempCapacity(chatId, capacity);
