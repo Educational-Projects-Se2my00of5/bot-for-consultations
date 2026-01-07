@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Утилита для форматирования сообщений о консультациях
@@ -16,7 +17,7 @@ import java.util.List;
 @Component
 public class ConsultationMessageFormatter {
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMMM yyyy");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("ru"));
     private static final DateTimeFormatter SHORT_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
@@ -229,13 +230,13 @@ public class ConsultationMessageFormatter {
             }
 
             if (consultation.getStatus() != null) {
-                String statusEmoji = switch (consultation.getStatus()) {
-                    case OPEN -> "✅";
-                    case CLOSED -> "🔒";
-                    case CANCELLED -> "❌";
-                    case REQUEST -> "⏳";
+                String statusText = switch (consultation.getStatus()) {
+                    case OPEN -> "✅ Открыта";
+                    case CLOSED -> "🔒 Закрыта";
+                    case CANCELLED -> "❌ Отменена";
+                    case REQUEST -> "⏳ Запрос";
                 };
-                message.append(String.format("%s Статус: %s\n", statusEmoji, consultation.getStatus()));
+                message.append(String.format("Статус: %s\n", statusText));
             }
         }
 

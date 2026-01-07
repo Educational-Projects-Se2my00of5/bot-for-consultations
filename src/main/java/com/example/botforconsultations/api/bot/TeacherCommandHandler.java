@@ -30,6 +30,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static com.example.botforconsultations.core.util.TimeUtils.now;
@@ -426,7 +427,7 @@ public class TeacherCommandHandler {
                                 Уведомления отправлены всем подписанным студентам.""",
                         consultation.getId(),
                         title,
-                        date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy")),
+                        date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("ru"))),
                         startTime.format(TIME_FORMATTER),
                         endTime.format(TIME_FORMATTER),
                         capacity == null ? "без ограничений" : capacity,
