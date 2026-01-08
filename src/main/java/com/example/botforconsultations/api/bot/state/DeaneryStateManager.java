@@ -19,6 +19,7 @@ public class DeaneryStateManager extends BaseStateManager<DeaneryStateManager.De
     public enum DeaneryState {
         DEFAULT,                           // Обычное состояние (главное меню)
         WAITING_FOR_TEACHER_NAME,          // Ожидание ввода имени преподавателя для поиска
+        VIEWING_TEACHER_MENU,              // Просмотр меню действий с преподавателем
         VIEWING_TEACHER_CONSULTATIONS,     // Просмотр консультаций преподавателя
         VIEWING_CONSULTATION_DETAILS,      // Просмотр деталей конкретной консультации
         VIEWING_TEACHER_TASKS,             // Просмотр задач преподавателя

@@ -35,6 +35,7 @@ import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.PR
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.SEARCH_TEACHER;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.STUDENT_LIST;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.TEACHERS_MENU;
+import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.TEACHER_CONSULTATIONS;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.TEACHER_TASKS;
 
 /**
@@ -98,6 +99,24 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
     }
 
     /**
+     * Меню действий с выбранным преподавателем
+     */
+    public ReplyKeyboardMarkup buildTeacherMenu() {
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        // Кнопка "Консультации" на всю ширину
+        keyboard.add(createSingleButtonRow(TEACHER_CONSULTATIONS));
+
+        // Кнопки управления задачами
+        keyboard.add(createTwoButtonRow(CREATE_TASK, TEACHER_TASKS));
+
+        // Навигация
+        keyboard.add(createTwoButtonRow(BACK_TO_TEACHERS, MAIN_MENU));
+
+        return buildKeyboard(keyboard);
+    }
+
+    /**
      * Клавиатура со списком консультаций преподавателя
      * (с кнопками для управления задачами вместо подписки)
      */
@@ -110,11 +129,7 @@ public class DeaneryKeyboardBuilder extends BaseKeyboardBuilder {
         // Фильтры консультаций
         keyboard.add(createFilterRow());
 
-        // Действия с задачами преподавателя
-        keyboard.add(createTwoButtonRow(CREATE_TASK, TEACHER_TASKS));
-
         // Навигация
-        keyboard.add(createTwoButtonRow(BACK_TO_TEACHERS, MAIN_MENU));
         keyboard.add(createSingleButtonRow(BACK));
 
         return buildKeyboard(keyboard);

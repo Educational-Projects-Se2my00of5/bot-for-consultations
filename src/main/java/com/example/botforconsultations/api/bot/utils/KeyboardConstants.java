@@ -60,6 +60,7 @@ public final class KeyboardConstants {
     // ========== Действия деканата ==========
     public static final String CREATE_TASK = "📝 Создать задачу";
     public static final String TEACHER_TASKS = "📋 Задачи преподавателя";
+    public static final String TEACHER_CONSULTATIONS = "📅 Консультации";
     public static final String ALL_TASKS = "📋 Все задачи";
     public static final String STUDENT_LIST = "👥 Список студентов";
     public static final String EDIT_TASK = "✏️ Редактировать";

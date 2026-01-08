@@ -77,7 +77,8 @@ public class DeaneryCommandHandler {
                 && currentState != DeaneryState.VIEWING_TASK_DETAILS
                 && currentState != DeaneryState.VIEWING_ALL_TASKS
                 && currentState != DeaneryState.CONFIRMING_DELETE_TASK
-                && currentState != DeaneryState.WAITING_FOR_TEACHER_NAME) {
+                && currentState != DeaneryState.WAITING_FOR_TEACHER_NAME
+                && currentState != DeaneryState.VIEWING_TEACHER_MENU) {
             switch (currentState) {
                 case CREATING_TODO_TITLE -> processTaskTitle(text, chatId);
                 case CREATING_TODO_DESCRIPTION -> processTaskDescription(text, chatId);
@@ -135,6 +136,7 @@ public class DeaneryCommandHandler {
             case KeyboardConstants.ALL_TASKS -> showAllTasks(chatId);
             case KeyboardConstants.CREATE_TASK -> startTaskCreation(chatId);
             case KeyboardConstants.TEACHER_TASKS -> showTeacherTasks(chatId);
+            case KeyboardConstants.TEACHER_CONSULTATIONS -> showTeacherConsultationsFromMenu(chatId);
 
             // Просмотр консультации
             case KeyboardConstants.STUDENT_LIST -> showStudentList(chatId);
@@ -372,9 +374,45 @@ public class DeaneryCommandHandler {
 
         // Сохраняем выбранного преподавателя
         stateManager.setCurrentTeacher(chatId, teacher.getId());
-        stateManager.setState(chatId, DeaneryState.VIEWING_TEACHER_CONSULTATIONS);
-        stateManager.setFilter(chatId, "future");
+        stateManager.setState(chatId, DeaneryState.VIEWING_TEACHER_MENU);
 
+        showTeacherMenu(chatId, teacher);
+    }
+
+    /**
+     * Показать меню действий с преподавателем
+     */
+    private void showTeacherMenu(Long chatId, TelegramUser teacher) {
+        String message = String.format(
+                "👨‍🏫 Преподаватель: %s %s\n\nВыберите действие:",
+                teacher.getFirstName(),
+                teacher.getLastName() != null ? teacher.getLastName() : ""
+        );
+
+        botMessenger.execute(SendMessage.builder()
+                .chatId(chatId)
+                .text(message)
+                .replyMarkup(keyboardBuilder.buildTeacherMenu())
+                .build());
+    }
+
+    /**
+     * Показать консультации преподавателя из меню
+     */
+    private void showTeacherConsultationsFromMenu(Long chatId) {
+        Long teacherId = stateManager.getCurrentTeacher(chatId);
+        if (teacherId == null) {
+            botMessenger.sendText("Ошибка: преподаватель не выбран", chatId);
+            return;
+        }
+
+        TelegramUser teacher = teacherSearchService.findById(teacherId);
+        if (teacher == null) {
+            botMessenger.sendText("Преподаватель не найден", chatId);
+            return;
+        }
+
+        stateManager.setFilter(chatId, "future");
         showTeacherConsultations(chatId, teacher);
     }
 
@@ -593,6 +631,30 @@ public class DeaneryCommandHandler {
     }
 
     /**
+     * Вернуться к меню преподавателя
+     */
+    private void backToTeacherMenu(Long chatId) {
+        Long teacherId = stateManager.getCurrentTeacher(chatId);
+        if (teacherId == null) {
+            botMessenger.sendText("❌ Преподаватель не выбран.", chatId);
+            sendTeachersMenu(chatId);
+            return;
+        }
+
+        TelegramUser teacher = teacherSearchService.findById(teacherId);
+        if (teacher == null) {
+            botMessenger.sendText("❌ Преподаватель не найден.", chatId);
+            sendTeachersMenu(chatId);
+            return;
+        }
+
+        // Очищаем ID консультации и фильтры
+        stateManager.clearCurrentConsultation(chatId);
+        stateManager.setFilter(chatId, "future");
+        showTeacherMenu(chatId, teacher);
+    }
+
+    /**
      * Вернуться к списку консультаций
      */
     private void backToConsultationsList(Long chatId) {
@@ -624,7 +686,8 @@ public class DeaneryCommandHandler {
         DeaneryState currentState = stateManager.getState(chatId);
 
         switch (currentState) {
-            case VIEWING_TEACHER_CONSULTATIONS -> sendTeachersMenu(chatId);
+            case VIEWING_TEACHER_MENU -> sendTeachersMenu(chatId);
+            case VIEWING_TEACHER_CONSULTATIONS -> backToTeacherMenu(chatId);
             case VIEWING_CONSULTATION_DETAILS, VIEWING_TEACHER_TASKS -> {
                 // Вернуться к списку консультаций преподавателя
                 backToConsultationsList(chatId);
