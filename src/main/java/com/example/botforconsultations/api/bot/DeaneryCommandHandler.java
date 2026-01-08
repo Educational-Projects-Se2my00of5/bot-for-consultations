@@ -76,9 +76,9 @@ public class DeaneryCommandHandler {
                 && currentState != DeaneryState.VIEWING_TEACHER_TASKS
                 && currentState != DeaneryState.VIEWING_TASK_DETAILS
                 && currentState != DeaneryState.VIEWING_ALL_TASKS
-                && currentState != DeaneryState.CONFIRMING_DELETE_TASK) {
+                && currentState != DeaneryState.CONFIRMING_DELETE_TASK
+                && currentState != DeaneryState.WAITING_FOR_TEACHER_NAME) {
             switch (currentState) {
-                case WAITING_FOR_TEACHER_NAME -> processTeacherSearch(text, chatId);
                 case CREATING_TODO_TITLE -> processTaskTitle(text, chatId);
                 case CREATING_TODO_DESCRIPTION -> processTaskDescription(text, chatId);
                 case CREATING_TODO_DEADLINE -> processTaskDeadline(text, chatId);
@@ -166,10 +166,17 @@ public class DeaneryCommandHandler {
             case KeyboardConstants.FILTER_TASK_ALL -> applyTaskStatusFilter(chatId, "all");
             case KeyboardConstants.FILTER_TASK_COMPLETED -> applyTaskStatusFilter(chatId, "completed");
 
-            default -> botMessenger.sendText(
+            default ->{
+                // Обработка состояний ввода
+                if (currentState == DeaneryState.WAITING_FOR_TEACHER_NAME) {
+                    processTeacherSearch(text, chatId);
+                    return;
+                }
+                botMessenger.sendText(
                     "Извините, я не понимаю эту команду. Отправьте 'Помощь' для получения списка доступных команд.",
                     chatId
-            );
+                );
+            } 
         }
     }
 

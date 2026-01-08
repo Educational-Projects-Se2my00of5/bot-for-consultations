@@ -73,11 +73,7 @@ public class StudentCommandHandler {
             return;
         }
 
-        // Обработка состояний ввода
-        if (currentState == UserState.WAITING_FOR_TEACHER_NAME) {
-            processTeacherSearch(text, chatId);
-            return;
-        }
+        
 
         if (currentState == UserState.WAITING_FOR_CONSULTATION_MESSAGE) {
             processConsultationRegistration(text, chatId);
@@ -153,10 +149,17 @@ public class StudentCommandHandler {
             case "🔙 К преподавателям" -> sendTeachersMenu(chatId);
             case "◀️ Назад к списку" -> backToConsultationsList(chatId);
 
-            default -> botMessenger.sendText(
+            default ->{
+                // Обработка состояний ввода
+                if (currentState == UserState.WAITING_FOR_TEACHER_NAME) {
+                    processTeacherSearch(text, chatId);
+                    return;
+                }
+                botMessenger.sendText(
                     "Извините, я не понимаю эту команду. Отправьте 'Помощь' для получения списка доступных команд.",
                     chatId
-            );
+                );
+            } 
         }
     }
 

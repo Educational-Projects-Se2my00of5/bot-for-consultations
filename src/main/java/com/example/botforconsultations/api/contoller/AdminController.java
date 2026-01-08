@@ -92,7 +92,7 @@ public class AdminController {
     }
 
     @DeleteMapping("users/{id}")
-    @Operation(summary = "Удаление пользователя (кроме студентов)", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Удаление пользователя", security = @SecurityRequirement(name = "bearerAuth"))
     @ResponseStatus(HttpStatus.OK)
     public void deleteUser(@PathVariable Long id) {
         adminService.deleteUser(id);
