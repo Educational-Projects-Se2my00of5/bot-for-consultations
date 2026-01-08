@@ -252,5 +252,13 @@ public class TeacherStateManager extends BaseStateManager<TeacherStateManager.Te
     public String getTaskDeadlineFilter(Long chatId) {
         return taskDeadlineFilters.getOrDefault(chatId, "all");
     }
+
+    /**
+     * Сбросить все фильтры задач
+     */
+    public void clearTaskFilters(Long chatId) {
+        taskStatusFilters.remove(chatId);
+        taskDeadlineFilters.remove(chatId);
+    }
 }
 

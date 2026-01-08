@@ -264,6 +264,7 @@ public class TeacherCommandHandler {
         stateManager.clearCurrentConsultation(chatId);
         stateManager.clearCurrentRequest(chatId);
         stateManager.clearCurrentTask(chatId);
+        stateManager.clearTaskFilters(chatId);
         botMessenger.execute(SendMessage.builder()
                 .text("Добро пожаловать, преподаватель! Выберите действие:")
                 .chatId(chatId)

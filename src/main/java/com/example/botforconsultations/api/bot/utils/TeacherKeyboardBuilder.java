@@ -257,11 +257,9 @@ public class TeacherKeyboardBuilder extends BaseKeyboardBuilder {
             count++;
         }
 
-        // Фильтры
-        if (!tasks.isEmpty()) {
-            keyboard.add(createTwoButtonRow(FILTER_TASK_INCOMPLETE, FILTER_TASK_COMPLETED));
-            keyboard.add(createSingleButtonRow(FILTER_TASK_ALL));
-        }
+        // Фильтры (всегда показываем, чтобы можно было изменить фильтр даже если список пуст)
+        keyboard.add(createTwoButtonRow(FILTER_TASK_INCOMPLETE, FILTER_TASK_COMPLETED));
+        keyboard.add(createSingleButtonRow(FILTER_TASK_ALL));
 
         keyboard.add(createSingleButtonRow(BACK));
 
