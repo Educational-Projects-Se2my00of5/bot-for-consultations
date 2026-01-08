@@ -27,6 +27,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.example.botforconsultations.core.util.TimeUtils.now;
+import static com.example.botforconsultations.core.util.TimeUtils.parseDateTime;
 
 /**
  * Обработчик команд деканата
@@ -914,82 +915,79 @@ public class DeaneryCommandHandler {
             return;
         }
 
-        try {
-            // Парсинг даты и времени в формате ДД.ММ.ГГГГ ЧЧ:ММ
-            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-            LocalDateTime deadline = LocalDateTime.parse(deadlineText.trim(), formatter);
-
-            // Проверка что дата не в прошлом
-            if (deadline.isBefore(now())) {
-                botMessenger.sendText("❌ Дедлайн не может быть в прошлом. Введите другую дату:", chatId);
-                return;
-            }
-
-            // Получаем данные для создания задачи
-            Long teacherId = stateManager.getCurrentTeacher(chatId);
-            String title = stateManager.getTempTitle(chatId);
-            String description = stateManager.getTempDescription(chatId);
-
-            if (teacherId == null || title == null || description == null) {
-                botMessenger.sendText("❌ Ошибка: данные задачи потеряны. Начните заново.", chatId);
-                stateManager.resetState(chatId);
-                stateManager.clearTempData(chatId);
-                sendMainMenu(chatId);
-                return;
-            }
-
-            TelegramUser teacher = teacherSearchService.findById(teacherId);
-            if (teacher == null) {
-                botMessenger.sendText("❌ Преподаватель не найден.", chatId);
-                stateManager.resetState(chatId);
-                stateManager.clearTempData(chatId);
-                sendMainMenu(chatId);
-                return;
-            }
-
-            TelegramUser createdBy = getCurrentDeanery(chatId);
-
-            // Создаём задачу
-            TodoTask createdTask = todoTaskService.createTodoForTeacher(
-                    teacher, createdBy, title, description, deadline
-            );
-
-            botMessenger.sendText(
-                    String.format("""
-                                    ✅ Задача успешно создана!
-                                    
-                                    📋 Задача №%d
-                                    👨‍🏫 Преподаватель: %s %s
-                                    📌 Название: %s
-                                    ⏰ Дедлайн: %s""",
-                            createdTask.getId(),
-                            teacher.getFirstName(),
-                            teacher.getLastName() != null ? teacher.getLastName() : "",
-                            title,
-                            deadline.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))),
-                    chatId
-            );
-
-            stateManager.resetState(chatId);
-            stateManager.clearTempData(chatId);
-
-            // Показываем обновлённый список задач преподавателя
-            showTeacherTasks(chatId);
-
-        } catch (java.time.format.DateTimeParseException e) {
+        // Парсинг даты и времени с поддержкой разных форматов
+        LocalDateTime deadline = parseDateTime(deadlineText);
+        
+        if (deadline == null) {
             botMessenger.sendText(
                     """
                             ❌ Неверный формат даты и времени.
                             
                             Используйте формат: ДД.ММ.ГГГГ ЧЧ:ММ
-                            Например: 15.12.2025 18:00
-                            
-                            🕒 Время по Томску (UTC+7)
+                            Пример: 25.12.2024 15:30 или 8.01.2026 9:00
                             
                             Попробуйте ещё раз:""",
                     chatId
             );
+            return;
         }
+
+        // Проверка что дата не в прошлом
+        if (deadline.isBefore(now())) {
+            botMessenger.sendText("❌ Дедлайн не может быть в прошлом. Введите другую дату:", chatId);
+            return;
+        }
+
+        // Получаем данные для создания задачи
+        Long teacherId = stateManager.getCurrentTeacher(chatId);
+        String title = stateManager.getTempTitle(chatId);
+        String description = stateManager.getTempDescription(chatId);
+
+        if (teacherId == null || title == null || description == null) {
+            botMessenger.sendText("❌ Ошибка: данные задачи потеряны. Начните заново.", chatId);
+            stateManager.resetState(chatId);
+            stateManager.clearTempData(chatId);
+            sendMainMenu(chatId);
+            return;
+        }
+
+        TelegramUser teacher = teacherSearchService.findById(teacherId);
+        if (teacher == null) {
+            botMessenger.sendText("❌ Преподаватель не найден.", chatId);
+            stateManager.resetState(chatId);
+            stateManager.clearTempData(chatId);
+            sendMainMenu(chatId);
+            return;
+        }
+
+        TelegramUser createdBy = getCurrentDeanery(chatId);
+
+        // Создаём задачу
+        TodoTask createdTask = todoTaskService.createTodoForTeacher(
+                teacher, createdBy, title, description, deadline
+        );
+
+        botMessenger.sendText(
+                String.format("""
+                                ✅ Задача успешно создана!
+                                
+                                📋 Задача №%d
+                                👨‍🏫 Преподаватель: %s %s
+                                📌 Название: %s
+                                ⏰ Дедлайн: %s""",
+                        createdTask.getId(),
+                        teacher.getFirstName(),
+                        teacher.getLastName() != null ? teacher.getLastName() : "",
+                        title,
+                        deadline.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))),
+                chatId
+        );
+
+        stateManager.resetState(chatId);
+        stateManager.clearTempData(chatId);
+
+        // Показываем обновлённый список задач преподавателя
+        showTeacherTasks(chatId);
     }
 
     /**
@@ -1295,33 +1293,36 @@ public class DeaneryCommandHandler {
             return;
         }
 
-        try {
-            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-            LocalDateTime newDeadline = LocalDateTime.parse(deadlineText.trim(), formatter);
-
-            // Проверка что дата не в прошлом
-            if (newDeadline.isBefore(now())) {
-                botMessenger.sendText("❌ Дедлайн не может быть в прошлом. Введите другую дату:", chatId);
-                return;
-            }
-
-            todoTaskService.updateDeadline(taskId, newDeadline);
-            botMessenger.sendText("✅ Дедлайн задачи обновлён!", chatId);
-            stateManager.resetState(chatId);
-            showTaskDetails(chatId, taskId);
-        } catch (java.time.format.DateTimeParseException e) {
+        // Парсинг даты и времени с поддержкой разных форматов
+        LocalDateTime newDeadline = parseDateTime(deadlineText);
+        
+        if (newDeadline == null) {
             botMessenger.sendText(
                     """
                             ❌ Неверный формат даты и времени.
                             
                             Используйте формат: ДД.ММ.ГГГГ ЧЧ:ММ
-                            Например: 15.12.2025 18:00
+                            Пример: 25.12.2024 15:30 или 8.01.2026 9:00
                             
                             🕒 Время по Томску (UTC+7)
                             
                             Попробуйте ещё раз:""",
                     chatId
             );
+            return;
+        }
+
+        // Проверка что дата не в прошлом
+        if (newDeadline.isBefore(now())) {
+            botMessenger.sendText("❌ Дедлайн не может быть в прошлом. Введите другую дату:", chatId);
+            return;
+        }
+
+        try {
+            todoTaskService.updateDeadline(taskId, newDeadline);
+            botMessenger.sendText("✅ Дедлайн задачи обновлён!", chatId);
+            stateManager.resetState(chatId);
+            showTaskDetails(chatId, taskId);
         } catch (Exception e) {
             log.error("Ошибка при обновлении дедлайна задачи: {}", e.getMessage());
             botMessenger.sendText("❌ Ошибка при обновлении дедлайна. Попробуйте позже.", chatId);

@@ -31,9 +31,9 @@ public class TaskReminderService {
     private final GoogleOAuthService googleOAuthService;
 
     /**
-     * Проверка и отправка напоминаний каждые 5 минут
+     * Проверка и отправка напоминаний
      */
-    @Scheduled(fixedRate = 300000) // 5 минут в миллисекундах
+    @Scheduled(fixedRate = 30000) // 30 секунд в миллисекундах
     public void checkAndSendReminders() {
         log.debug("Checking for task reminders...");
 

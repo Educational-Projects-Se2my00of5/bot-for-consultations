@@ -36,6 +36,7 @@ import java.util.Set;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.CLOSE_REGISTRATION;
 import static com.example.botforconsultations.api.bot.utils.KeyboardConstants.OPEN_REGISTRATION;
 import static com.example.botforconsultations.core.util.TimeUtils.now;
+import static com.example.botforconsultations.core.util.TimeUtils.parseTime;
 
 /**
  * Обработчик команд преподавателя
@@ -1377,8 +1378,12 @@ public class TeacherCommandHandler {
                 return ParsedDateTime.invalid();
             }
 
-            LocalTime startTime = LocalTime.parse(timeParts[0].trim(), TIME_FORMATTER);
-            LocalTime endTime = LocalTime.parse(timeParts[1].trim(), TIME_FORMATTER);
+            LocalTime startTime = parseTime(timeParts[0]);
+            LocalTime endTime = parseTime(timeParts[1]);
+
+            if (startTime == null || endTime == null) {
+                return ParsedDateTime.invalid();
+            }
 
             return new ParsedDateTime(date, startTime, endTime, true);
         } catch (DateTimeParseException e) {
